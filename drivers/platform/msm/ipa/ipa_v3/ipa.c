@@ -2061,8 +2061,11 @@ static long ipa3_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	case IPA_IOC_GET_PHERIPHERAL_EP_INFO:
 		IPADBG("Got IPA_IOC_GET_EP_INFO\n");
-		if (ipa3_ctx->ipa_config_is_auto == false)
-			return -ENOTTY;
+		if (ipa3_ctx->ipa_config_is_auto == false) {
+			IPADBG("not an auto config: returning error\n");
+			retval = -ENOTTY;
+			break;
+		}
 		if (copy_from_user(&ep_info, (const void __user *)arg,
 			sizeof(struct ipa_ioc_get_ep_info))) {
 			IPAERR_RL("copy_from_user fails\n");
@@ -2786,7 +2789,7 @@ static int ipa3_q6_set_ex_path_to_apps(void)
 	/* Set the exception path to AP */
 	for (client_idx = 0; client_idx < IPA_CLIENT_MAX; client_idx++) {
 		ep_idx = ipa3_get_ep_mapping(client_idx);
-		if (ep_idx == -1)
+		if (ep_idx == -1 || (ep_idx >= IPA3_MAX_NUM_PIPES))
 			continue;
 
 		/* disable statuses for all modem controlled prod pipes */
@@ -5140,10 +5143,6 @@ static ssize_t ipa3_write(struct file *file, const char __user *buf,
 
 	IPADBG("user input string %s\n", dbg_buff);
 
-	/* Prevent consequent calls from trying to load the FW again. */
-	if (ipa3_is_ready())
-		return count;
-
 	/* Check MHI configuration on MDM devices */
 	if (!ipa3_is_msm_device()) {
 
@@ -5182,6 +5181,10 @@ static ssize_t ipa3_write(struct file *file, const char __user *buf,
 			return count;
 		}
 	}
+
+	/* Prevent consequent calls from trying to load the FW again. */
+	if (ipa3_is_ready())
+		return count;
 
 	/* Prevent multiple calls from trying to load the FW again. */
 	if (ipa3_ctx->fw_loaded) {
