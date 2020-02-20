@@ -1,0 +1,11 @@
+#
+# Zinitix Touchscreen driver configuration
+#
+
+config TOUCHSCREEN_ZINITIX
+        bool "Zinitix Touchscreen"
+        default y
+		depends on I2C
+		help
+		  Say Y here if you have Zinitix touch panel.
+		  If unsure, say N.
