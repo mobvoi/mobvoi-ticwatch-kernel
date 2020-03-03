@@ -23,6 +23,7 @@
  *
  */
 
+#define CONFIG_BT_HCIUART_H4
 #ifndef N_HCI
 #define N_HCI	15
 #endif
