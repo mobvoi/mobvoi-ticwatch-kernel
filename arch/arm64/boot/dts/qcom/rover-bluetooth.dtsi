@@ -1,0 +1,102 @@
+
+&soc {
+	bt_nitrous{
+	status = "ok";
+	compatible = "goog,nitrous";
+	uart-port = <0>;
+	power-gpio = <&tlmm 73 0>;
+	host-wake-gpio = <&tlmm 74 0>;
+	host-wake-polarity = <0>;
+	dev-wake-gpio = <&tlmm 129 0>;
+	dev-wake-polarity = <0>;
+	pinctrl-names = "default","sleep";
+	pinctrl-0 = <&gpio_bt_reg_on_active
+		&gpio_bt_host_wake_active &gpio_bt_dev_wake_active>;
+	pinctrl-1 = <&gpio_bt_reg_on_sleep
+		&gpio_bt_host_wake_sleep &gpio_bt_dev_wake_sleep>;
+	};
+};
+&tlmm{
+	bt_gpio {
+		gpio_bt_host_wake_active: gpio_bt_host_wake_active {
+			mux {
+				pins = "gpio74";
+				function = "gpio";
+			};
+			config {
+				pins = "gpio74";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+		gpio_bt_host_wake_sleep: gpio_bt_host_wake_sleep {
+			mux {
+				pins = "gpio74";
+				function = "gpio";
+			};
+			config {
+				pins = "gpio74";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+		gpio_bt_dev_wake_active: gpio_bt_dev_wake_active {
+			mux {
+				pins = "gpio129";
+				function = "gpio";
+			};
+			config {
+				pins = "gpio129";
+				drive-strength = <2>;
+				output-high;
+				bias-disable;
+			};
+		};
+
+		gpio_bt_dev_wake_sleep: gpio_bt_dev_wake_sleep {
+			mux {
+				pins = "gpio129";
+				function = "gpio";
+			};
+			config {
+				pins = "gpio129";
+				drive-strength = <2>;
+				output-high;
+				bias-disable;
+			};
+		};
+
+		gpio_bt_reg_on_active: gpio_bt_reg_on_active {
+			mux {
+				pins = "gpio73";
+				function = "gpio";
+			};
+			config {
+				pins = "gpio73";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+		gpio_bt_reg_on_sleep: gpio_bt_reg_on_sleep {
+			mux {
+				pins = "gpio73";
+				function = "gpio";
+			};
+			config {
+				pins = "gpio73";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+	};
+};
+
+&blsp2_uart1 {
+		status = "ok";
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&blsp2_uart1_active>;
+		pinctrl-1 = <&blsp2_uart1_sleep>;
+};
