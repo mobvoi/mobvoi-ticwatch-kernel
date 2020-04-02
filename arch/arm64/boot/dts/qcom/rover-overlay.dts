@@ -16,6 +16,8 @@
 
 #include "rover-sdm429-bg-wtp-overlay.dtsi"
 #include "rover-mdss-panels.dtsi"
+#include "rover-ts.dtsi"
+
 / {
 	model = "Qualcomm Technologies, Inc. SDM429 QRD BG WTP Overlay";
 	compatible = "qcom,sdm429w-qrd", "qcom,sdm429w", "qcom,qrd";
