@@ -15,6 +15,7 @@
 &soc {
 
 	qcom,blackghost {
+		status = "disabled";
 		compatible = "qcom,pil-blackghost";
 		qcom,pil-force-shutdown;
 		qcom,firmware-name = "bg-wear";
@@ -27,10 +28,12 @@
 	};
 
 	qcom,msm-ssc-sensors {
+		status = "disabled";
 		compatible = "qcom,msm-ssc-sensors";
 	};
 
 	qcom,glink-bgcom-xprt-bg {
+		status = "disabled";
 		compatible = "qcom,glink-bgcom-xprt";
 		label = "bg";
 		qcom,qos-config = <&glink_qos_bg>;
@@ -41,6 +44,7 @@
 	};
 
 	glink_qos_bg: qcom,glink-qos-config-bg {
+		status = "disabled";
 		compatible = "qcom,glink-qos-config";
 		qcom,flow-info = <0x80 0x0>,
 				 <0x70 0x1>,
@@ -51,6 +55,7 @@
 	};
 
 	qcom,glink_pkt {
+		status = "disabled";
 		compatible = "qcom,glinkpkt";
 
 		qcom,glinkpkt-bg-daemon {
@@ -119,6 +124,7 @@
 	};
 
 	qcom,bg-rsb {
+		status = "disabled";
 		compatible = "qcom,bg-rsb";
 		vdd-ldo1-supply = <&pm660_l11>;
 		qcom,bg-rsb-gpio = <&tlmm 40 1>;
@@ -126,6 +132,7 @@
 	};
 
 	qcom,bg-daemon {
+		status = "disabled";
 		compatible = "qcom,bg-daemon";
 		qcom,bg-reset-gpio = <&pm660_gpios 5 0>;
 		ssr-reg1-supply = <&pm660_l3>;
