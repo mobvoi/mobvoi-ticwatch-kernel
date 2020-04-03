@@ -16,6 +16,7 @@
 #include "sdm429-spyro.dtsi"
 #include "sdm429w-bg-pm660.dtsi"
 #include "sdm429-bg-memory.dtsi"
+#include "rover-bus.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. SDM429 BG WTP";
