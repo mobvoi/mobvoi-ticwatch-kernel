@@ -1,0 +1,55 @@
+&soc{
+	bcmdhd{
+		status = "ok";
+		compatible = "android,bcmdhd_wlan";
+		interrupt-parent = <&tlmm>;
+		interrupts = <128 0x2008>;
+		wl_reg_on = <&tlmm 72 0>;
+		wl_host_wake = <&tlmm 128 0>;
+	};
+};
+
+&tlmm{
+	gpio_wl_reg_on_active: gpio_wl_reg_on_active {
+		mux {
+			pins = "gpio72";
+			function = "gpio";
+		};
+		config {
+			pins = "gpio72";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+	gpio_wl_reg_on_sleep: gpio_wl_reg_on_sleep {
+		mux {
+			pins = "gpio72";
+			function = "gpio";
+		};
+		config {
+			pins = "gpio72";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+};
+&sdhc_2 {
+
+	/delete-property/ cd-gpios;
+	/delete-property/ vdd-supply;
+	/delete-property/ qcom,vdd-voltage-level;
+	/delete-property/ qcom,vdd-current-level;
+
+	qcom,vdd-io-always-on;
+	qcom,vdd-io-lpm-sup;
+	qcom,vdd-io-voltage-level = <1800000 1800000>;
+	qcom,vdd-io-current-level = <200 50000>;
+	qcom,wifi-control-func;
+	qcom,nonremovable;
+
+	pinctrl-names = "active", "sleep";
+	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
+
+	status = "ok";
+};
