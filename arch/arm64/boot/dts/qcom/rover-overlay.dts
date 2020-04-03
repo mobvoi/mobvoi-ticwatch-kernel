@@ -18,6 +18,7 @@
 #include "rover-mdss-panels.dtsi"
 #include "rover-ts.dtsi"
 #include "rover-nfc.dtsi"
+#include "rover-nanohub.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. SDM429 QRD BG WTP Overlay";

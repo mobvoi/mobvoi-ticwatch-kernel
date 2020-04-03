@@ -1,0 +1,90 @@
+&tlmm{
+	sensorhub_ctrl: sensorhub_ctrl {
+		/* NRST, BOOT0, AP2SH, SH2AP, SH2APNW */
+		sensorhub_ctrl_active: sensorhub_ctrl_active {
+			mux {
+				pins = "gpio61", "gpio62", "gpio59", \
+						"gpio63", "gpio70","gpio65", \
+						"gpio64", "gpio66", "gpio60", \
+						"gpio68", "gpio69";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio61", "gpio62", "gpio59", \
+						"gpio63", "gpio70","gpio65", \
+						"gpio64", "gpio66", "gpio60", \
+						"gpio68", "gpio69";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+	};
+};
+
+&spi_8 { /* BLSP2 QUP4 */
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	sensorhub@0 {
+		compatible = "nanohub,nanohub_spi";
+		reg = <0>;
+
+		spi-max-frequency = <8000000>;
+		spi-cpol;
+		spi-cpha;
+
+		interrupt-parent = <&tlmm>;
+		interrupts = <61 0x2008>;
+		sensorhub,irq1-gpio   = <&tlmm 61 0x2008>;
+		/* sensorhub,irq2-gpio   = <&tlmm 62 0x2008>; */
+		sensorhub,irq3-gpio   = <&tlmm 59 0x2008>;
+		sensorhub,wakeup-gpio = <&tlmm 63 0>;
+		sensorhub,spi-cs-gpio = <&tlmm 98 0>;
+		sensorhub,nreset-gpio = <&tlmm 70 0>;
+		sensorhub,nreset_active_high;
+		sensorhub,boot0-gpio  = <&tlmm 65 0>;
+		sensorhub,hub-flag-int-gpio  = <&tlmm 64 0>;
+		sensorhub,mode-flag1-gpio  = <&tlmm 66 0>;
+		sensorhub,mode-flag2-gpio  = <&tlmm 60 0>;
+		sensorhub,mode-flag3-gpio  = <&tlmm 68 0>;
+		sensorhub,mode-flag4-gpio  = <&tlmm 69 0>;
+
+		sensorhub,bl-addr = <0x08000000>;
+		sensorhub,kernel-addr = <0x08020000>;
+		sensorhub,flash-banks = <0 0x08000000 0x04000>,
+				<4 0x08010000 0x10000>,
+				<5 0x08020000 0x20000>,
+				<6 0x08040000 0x20000>,
+				<7 0x08060000 0x20000>,
+				<8 0x08080000 0x20000>;
+		sensorhub,num-flash-banks = <6>;
+
+		sensorhub,shared-flash-banks = <2 0x08008000 0x04000>,
+			<3 0x0800C000 0x04000>;
+		sensorhub,num-shared-flash-banks = <2>;
+
+		sensorhub,custom-flash-addr = <0x080A0000>;
+		sensorhub,custom-flash-len = <0x60000>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&sensorhub_ctrl_active>;
+		status = "disabled";
+	};
+};
+
+&spi_8 {
+	status = "ok";
+	sensorhub@0 {
+		status = "ok";
+	};
+};
+
+/* remove gpio conflict with nanohub */
+&int_codec{
+	qcom,cdc-us-euro-gpios = <&tlmm 102 0>;
+};
+
+&vreg_sd_pad{
+	enable-gpio = <&tlmm 103 0>;
+};
