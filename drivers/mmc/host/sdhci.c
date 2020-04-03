@@ -1592,9 +1592,12 @@ void sdhci_set_power_noreg(struct sdhci_host *host, unsigned char mode,
 			pwr = SDHCI_POWER_330;
 			break;
 		default:
-			WARN(1, "%s: Invalid vdd %#x\n",
-			     mmc_hostname(host->mmc), vdd);
-			break;
+			if (host->mmc->index == 1) {
+				if (vdd != 0)
+					pwr = SDHCI_POWER_180;
+			} else {
+				BUG();
+			}
 		}
 	}
 
@@ -4432,7 +4435,7 @@ int sdhci_setup_host(struct sdhci_host *host)
 				   SDHCI_MAX_CURRENT_MULTIPLIER;
 	}
 	if (host->caps & SDHCI_CAN_VDD_180) {
-		ocr_avail |= MMC_VDD_165_195;
+		ocr_avail |= MMC_VDD_165_195 | MMC_VDD_20_21; //Add MMC_VDD_20_21 for the BCM43436 wifi card
 
 		mmc->max_current_180 = ((max_current_caps &
 				   SDHCI_MAX_CURRENT_180_MASK) >>
@@ -4452,6 +4455,10 @@ int sdhci_setup_host(struct sdhci_host *host)
 	mmc->ocr_avail_sdio = ocr_avail;
 	if (host->ocr_avail_sdio)
 		mmc->ocr_avail_sdio &= host->ocr_avail_sdio;
+       else
+               host->ocr_avail_sdio = mmc->ocr_avail; //Jerry:fix the bug for the host->ocr_avail_sdio is NULL.
+
+
 	mmc->ocr_avail_sd = ocr_avail;
 	if (host->ocr_avail_sd)
 		mmc->ocr_avail_sd &= host->ocr_avail_sd;
