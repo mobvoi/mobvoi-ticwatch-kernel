@@ -1,0 +1,8 @@
+&soc {
+	gpio_vibrator {
+		compatible = "qcom,gpio-pwm-vibrator";
+		gpio_vibra,en_gpio = <&tlmm 58 0>;
+		gpio_vibra,trigger_gpio = <&tlmm 39 0>;
+		status = "ok";
+	};
+};
