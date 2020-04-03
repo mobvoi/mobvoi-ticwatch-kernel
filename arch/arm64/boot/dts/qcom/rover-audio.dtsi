@@ -1,0 +1,19 @@
+&int_codec{
+	ext_pa_aw882xx;
+	asoc-codec = <&stub_codec>, <&msm_dig_codec>, <&ext_smart_pa_aw882xx>;
+};
+&i2c_2{
+	ext_smart_pa_aw882xx: aw882xx_smartpa@34 {
+		compatible = "awinic,aw882xx_smartpa";
+		vdd-digital-supply = <&pm660_l11>;
+		reg = <0x34>;
+		reset-gpio = <&tlmm 92 0>;
+		irq-gpio = <&tlmm 93 0x2008>;
+		monitor-flag = <1>;
+		monitor-timer-val = <3000>;
+		status = "okay";
+	};
+};
+&ext_smart_pa{
+	status = "disabled";
+};
