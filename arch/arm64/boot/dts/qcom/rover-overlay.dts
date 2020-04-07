@@ -21,6 +21,10 @@
 #include "rover-nanohub.dtsi"
 #include "rover-vibrator.dtsi"
 #include "rover-keys.dtsi"
+#include "rover-bluetooth.dtsi"
+#include "rover-wlan.dtsi"
+#include "rover-audio.dtsi"
+#include "rover-gps.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. SDM429 QRD BG WTP Overlay";
@@ -28,4 +32,7 @@
 	qcom,msm-id = <416 0x0>;
 	qcom,board-id = <0x00010b 8>;
 	qcom,pmic-id = <0x0002001b 0x0 0x0 0x0>;
+	aliases {
+		spi3 = &spi_3;
+	};
 };
