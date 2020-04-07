@@ -111,6 +111,7 @@
 	spi_3: spi@78b7000 {  /* BLSP1 QUP3*/
 		status = "ok";
 		qcom,bg-spi {
+			status = "disabled";
 			compatible = "qcom,bg-spi";
 			reg = <0>;
 			spi-max-frequency = <16000000>;
