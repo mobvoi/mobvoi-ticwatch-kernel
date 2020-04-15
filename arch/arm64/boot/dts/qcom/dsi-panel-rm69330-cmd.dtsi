@@ -88,6 +88,6 @@
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
 		qcom,mdss-dsi-mdp-trigger = "none";
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
-		qcom,mdss-dsi-reset-sequence = <1 1>, <0 12>, <1 12>;
+		qcom,mdss-dsi-reset-sequence = <0 1>, <1 12>, <0 12>;
 	};
 };
