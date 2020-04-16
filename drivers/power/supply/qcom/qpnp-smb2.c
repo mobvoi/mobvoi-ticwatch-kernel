@@ -982,6 +982,18 @@ static int smb2_init_dc_psy(struct smb2 *chip)
  * BATT PSY REGISTRATION *
  *************************/
 
+#if defined(CONFIG_NANOHUB_MAX1726X)
+extern int max1726x_powersupply_init(struct device *dev,
+				     struct power_supply **pp);
+static int smb2_init_batt_psy(struct smb2 *chip)
+{
+	struct smb_charger *chg = &chip->chg;
+	int rc = 0;
+
+	rc = max1726x_powersupply_init(chg->dev, &chg->batt_psy);
+	return rc;
+}
+#else /* CONFIG_NANOHUB_MAX1726X */
 static enum power_supply_property smb2_batt_props[] = {
 	POWER_SUPPLY_PROP_INPUT_SUSPEND,
 	POWER_SUPPLY_PROP_STATUS,
@@ -1295,6 +1307,7 @@ static int smb2_init_batt_psy(struct smb2 *chip)
 
 	return rc;
 }
+#endif /* CONFIG_NANOHUB_MAX1726X */
 
 /******************************
  * VBUS REGULATOR REGISTRATION *

@@ -40,8 +40,11 @@
 #include "comms.h"
 #include "bl.h"
 #include "spi.h"
-#include "bq27xxx_fuelgauge.h"
 #include "custom_app_event.h"
+
+#if defined(CONFIG_NANOHUB_MAX1726X)
+#include "max1726x_fuelgauge.h"
+#endif
 
 #define READ_QUEUE_DEPTH        20
 #define APP_FROM_HOST_EVENTID   0x000000F8
@@ -857,14 +860,16 @@ static ssize_t nanohub_get_cmdline(struct device *dev,
 		"%s\n", saved_command_line);
 }
 
+#if defined(CONFIG_NANOHUB_MAX1726X)
 static ssize_t fuelgauge_wakelock_time_get(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
 	struct nanohub_data *data = dev_get_nanohub_data(dev);
 
 	return scnprintf(buf, PAGE_SIZE,
-		"%lld\n", data->fg_info->wakelock_active_time);
+		"%lld\n", data->fg_data->wakelock_active_time);
 }
+#endif
 
 static ssize_t nanohub_erase_shared(struct device *dev,
 				    struct device_attribute *attr,
@@ -1208,8 +1213,10 @@ static struct device_attribute attributes[] = {
 	__ATTR(lcd_mutex, 0660, nanohub_lcd_mutex_status, nanohub_lcd_mutex),
 	__ATTR(sensorhal_alive, 0660, nanohub_sensorhal_status_get,
 		nanohub_sensorhal_status_set),
+#if defined(CONFIG_NANOHUB_MAX1726X)
 	__ATTR(fuelgauge_wakelock_time, 0440, fuelgauge_wakelock_time_get,
 		NULL),
+#endif
 	__ATTR(cmdline, 0440, nanohub_get_cmdline, NULL),
 };
 
@@ -1683,11 +1690,14 @@ static void nanohub_process_buffer(struct nanohub_data *data,
 	}
 	if (event_id == APP_TO_HOST_EVENTID) {
 		wakeup = true;
-		/* if (!is_fuel_gauge_data(*buf, ret)) {
+
+#if defined(CONFIG_NANOHUB_MAX1726X)
+		if (!is_fuel_gauge_data(*buf, ret)) {
 			handle_fuelgauge_data(*buf, ret);
 			release_wakeup(data);
 			return;
-		} else */
+		} else
+#endif
 		if (!is_hr_log_data(*buf, ret))
 			io = &data->io[ID_NANOHUB_HR_LOG];
 		else if (!is_custom_flash_data(*buf, ret))
@@ -2271,7 +2281,9 @@ struct iio_dev *nanohub_probe(struct device *dev, struct iio_dev *iio_dev)
 	if (ret)
 		goto fail_dev;
 
-	//bq27x00_powersupply_init(dev, data);
+#if defined(CONFIG_NANOHUB_MAX1726X)
+	max1726x_nanohub_init(dev, data);
+#endif
 
 	__nanohub_send_AP_cmd(data, GPIO_CMD_NORMAL);
 

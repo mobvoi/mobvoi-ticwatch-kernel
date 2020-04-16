@@ -25,7 +25,6 @@
 #include "main.h"
 #include "bl.h"
 #include "comms.h"
-#include "bq27xxx_fuelgauge.h"
 
 #define SPI_TIMEOUT		65535
 #define SPI_MIN_DMA		48
