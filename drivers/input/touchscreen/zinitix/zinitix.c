@@ -1336,9 +1336,6 @@ static bool ts_check_need_upgrade(struct bt541_ts_info *info,
 #endif
 	u8 *firmware_data;
 
-	if (1)
-		return false;
-
 	ts_select_type_hw(info);
 	firmware_data = (u8 *)m_pFirmware[m_FirmwareIdx];
 
