@@ -4720,7 +4720,7 @@ static int bt541_ts_probe(struct i2c_client *client,
 
 	snprintf(info->phys, sizeof(info->phys), "%s/input0",
 		 dev_name(&client->dev));
-	input_dev->name = "sec_touchscreen";
+	input_dev->name = "bt541_ts";
 	input_dev->id.bustype = BUS_I2C;
 	input_dev->phys = info->phys;
 	input_dev->dev.parent = &client->dev;
