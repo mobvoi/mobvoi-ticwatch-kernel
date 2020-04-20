@@ -218,7 +218,7 @@ void bbd_update_stat(int idx, unsigned int count)
 void bbd_enable_stat(void)
 {
 	if (stat1hz.enabled) {
-		printk("%s() 1HZ stat already enable. skipping.\n", __func__);
+		pr_debug("%s() 1HZ stat already enable. skipping.\n", __func__);
 		return;
 	}
 
@@ -231,7 +231,7 @@ void bbd_enable_stat(void)
 void bbd_disable_stat(void)
 {
 	if (!stat1hz.enabled) {
-		printk("%s() 1HZ stat already disabled. skipping.\n", __func__);
+		pr_debug("%s() 1HZ stat already disabled. skipping.\n", __func__);
 		return;
 	}
 	del_timer_sync(&stat1hz.timer);
@@ -346,7 +346,7 @@ EXPORT_SYMBOL(bbd_pull_packet);
  */
 int bbd_mcu_reset(void)
 {
-	pr_info("reset request from sensor hub\n");
+	pr_debug("reset request from sensor hub\n");
 	return bbd_on_read(BBD_MINOR_CONTROL, BBD_CTRL_RESET_REQ, strlen(BBD_CTRL_RESET_REQ)+1);
 }
 EXPORT_SYMBOL(bbd_mcu_reset);
@@ -366,7 +366,7 @@ EXPORT_SYMBOL(bbd_mcu_reset);
  */
 ssize_t bbd_control(const char *buf, ssize_t len)
 {
-	printk("%s : %s \n", __func__, buf);
+	pr_debug("%s : %s \n", __func__, buf);
 
 	if (strstr(buf, ESW_CTRL_READY)) {
 
@@ -448,12 +448,12 @@ int bbd_common_open(struct inode *inode, struct file *filp)
 	unsigned int minor = iminor(inode);
 	struct circ_buf *circ = &bbd.priv[minor].read_buf;
 
-	pr_info("%s++\n", __func__);
+	pr_debug("%s++\n", __func__);
 
 	if (minor >= BBD_DEVICE_INDEX)
 		return -ENODEV;
 
-	pr_info("%s", bbd.priv[minor].name);
+	pr_debug("%s", bbd.priv[minor].name);
 
 	if (bbd.priv[minor].busy && minor!=BBD_MINOR_CONTROL)
 		return -EBUSY;
@@ -465,7 +465,7 @@ int bbd_common_open(struct inode *inode, struct file *filp)
 
 	filp->private_data = &bbd;
 
-	pr_info("%s--\n", __func__);
+	pr_debug("%s--\n", __func__);
 	return 0;
 }
 
@@ -477,14 +477,14 @@ static int bbd_common_release(struct inode *inode, struct file *filp)
 	unsigned int minor = iminor(inode);
 	//struct bbd_device *bbd = filp->private_data;
 
-	pr_info("%s++\n", __func__);
+	pr_debug("%s++\n", __func__);
 
 	BUG_ON(minor >= BBD_DEVICE_INDEX);
-	pr_info("%s", bbd.priv[minor].name);
+	pr_debug("%s", bbd.priv[minor].name);
 
 	bbd.priv[minor].busy = false;
 
-	pr_info("%s--\n", __func__);
+	pr_debug("%s--\n", __func__);
 	return 0;
 }
 
@@ -501,7 +501,7 @@ static ssize_t bbd_common_read(struct file *filp, char __user *buf, size_t size,
 	struct circ_buf *circ = &bbd.priv[minor].read_buf;
 	size_t rd_size=0;
 
-	pr_info("%s++\n", __func__);
+	pr_debug("%s++\n", __func__);
 	BUG_ON(minor >= BBD_DEVICE_INDEX);
 
 	mutex_lock(&bbd.priv[minor].lock);
@@ -527,7 +527,7 @@ static ssize_t bbd_common_read(struct file *filp, char __user *buf, size_t size,
 #ifdef DEBUG_1HZ_STAT
 	bbd_update_stat(STAT_RX_LHD, rd_size);
 #endif
-	pr_info("%s--\n", __func__);
+	pr_debug("%s--\n", __func__);
 	return rd_size;
 }
 
@@ -601,7 +601,7 @@ ssize_t bbd_sensor_write(const char *buf, size_t size)
 	else if (bbd.ssp_cb->on_packet_alarm)
 		bbd.ssp_cb->on_packet_alarm(bbd.ssp_priv);
 	else
-		pr_err("%s no SSP on_packet callback registered. "
+		pr_debug("%s no SSP on_packet callback registered. "
 				"Dropped %u bytes\n", __func__, (unsigned int)size);
 
 	return size;
@@ -752,7 +752,7 @@ void bbd_log_hex(const char*          pIntroduction,
 			size_t len = strlen(buf);
 			snprintf(buf+len, bufsize - len, "%02X ", *pData);
 		}
-		printk(KERN_INFO"%s}\n", buf);
+		pr_debug(KERN_INFO"%s}\n", buf);
 	}
 }
 
@@ -774,7 +774,7 @@ ssize_t bbd_on_read(unsigned int minor, const unsigned char *buf, size_t size)
 
 	/* If there's not enough speace, drop it but try waking up reader */
 	if (CIRC_SPACE(circ->head, circ->tail, BBD_BUFF_SIZE)<size) {
-		pr_err("%s read buffer full. Dropping %u bytes\n",
+		pr_debug("%s read buffer full. Dropping %u bytes\n",
 			       	bbd_dev_name[minor], (unsigned int)size);
 		goto skip;
 	}
@@ -804,7 +804,7 @@ skip:
 
 ssize_t bbd_request_mcu(bool on)
 {
-	printk("%s(%s) called", __func__, (on)?"On":"Off");
+	pr_debug("%s(%s) called", __func__, (on)?"On":"Off");
 	if (on)
 		return bbd_on_read(BBD_MINOR_CONTROL, GPSD_SENSOR_ON, strlen(GPSD_SENSOR_ON)+1);
 	else {
@@ -821,7 +821,7 @@ EXPORT_SYMBOL(bbd_request_mcu);
 //--------------------------------------------------------------
 static int bbd_suspend(pm_message_t state)
 {
-	pr_info("[SSPBBD]: %s ++ \n", __func__);
+	pr_debug("[SSPBBD]: %s ++ \n", __func__);
 
 #ifdef DEBUG_1HZ_STAT
 	bbd_disable_stat();
@@ -833,13 +833,13 @@ static int bbd_suspend(pm_message_t state)
 #endif
 	mdelay(20);
 
-	pr_info("[SSPBBD]: %s -- \n", __func__);
+	pr_debug("[SSPBBD]: %s -- \n", __func__);
      return 0;
 }
 
 static int bbd_resume(void)
 {
-    pr_info("[SSPBBD]: %s ++ \n", __func__);
+    pr_debug("[SSPBBD]: %s ++ \n", __func__);
 #ifdef CONFIG_SENSORS_SSP
 	/* Call SSP resume */
 	if (pssp_driver->driver.pm && pssp_driver->driver.pm->suspend)
@@ -849,7 +849,7 @@ static int bbd_resume(void)
 	bbd_enable_stat();
 #endif
 
-    pr_info("[SSPBBD]: %s -- \n", __func__);
+    pr_debug("[SSPBBD]: %s -- \n", __func__);
 	return 0;
 }
 
@@ -858,12 +858,12 @@ static int bbd_notifier(struct notifier_block *nb, unsigned long event, void * d
 	pm_message_t state = {0};
         switch (event) {
 		case PM_SUSPEND_PREPARE:
-			printk("%s going to sleep", __func__);
+			pr_debug("%s going to sleep", __func__);
 			state.event = event;
 			bbd_suspend(state);
 			break;
 		case PM_POST_SUSPEND:
-			printk("%s waking up", __func__);
+			pr_debug("%s waking up", __func__);
 			bbd_resume();
 			break;
 	}
@@ -968,7 +968,7 @@ int bbd_init(struct device *dev, bool legacy_patch)
 		/* Reserve char device number (a.k.a, major, minor) for this BBD device */
 		ret = register_chrdev_region(devno, 1, name);
 		if (ret) {
-			pr_err("BBD:%s() failed to register_chrdev_region() "
+			pr_debug("BBD:%s() failed to register_chrdev_region() "
 					"\"%s\", ret=%d", __func__, name, ret);
 			goto free_class;
 		}
@@ -979,7 +979,7 @@ int bbd_init(struct device *dev, bool legacy_patch)
 		cdev->ops = &bbd_fops[minor];
 		ret = cdev_add(cdev, devno, 1);
 		if (ret) {
-			pr_err("BBD:%s()) failed to cdev_add() \"%s\", ret=%d",
+			pr_debug("BBD:%s()) failed to cdev_add() \"%s\", ret=%d",
 						       	__func__, name, ret);
 			unregister_chrdev_region(devno, 1);
 			goto free_class;
@@ -988,7 +988,7 @@ int bbd_init(struct device *dev, bool legacy_patch)
 		/* Let it show in FS */
 		dev = device_create(bbd.class, NULL, devno, NULL, "%s", name);
 		if (IS_ERR_OR_NULL(dev)) {
-			pr_err("BBD:%s() failed to device_create() "
+			pr_debug("BBD:%s() failed to device_create() "
 				"\"%s\", ret=%d", __func__, name, ret);
 			unregister_chrdev_region(devno, 1);
 			cdev_del(&bbd.priv[minor].dev);
@@ -996,7 +996,7 @@ int bbd_init(struct device *dev, bool legacy_patch)
 		}
 
 		/* Done. Put success log and init BBD specific fields */
-		pr_info("BBD:%s(%d,%d) registered /dev/%s\n",
+		pr_debug("BBD:%s(%d,%d) registered /dev/%s\n",
 			      __func__, BBD_DEVICE_MAJOR,minor,name);
 
 	}
@@ -1006,7 +1006,7 @@ int bbd_init(struct device *dev, bool legacy_patch)
 	BUG_ON(!bbd.kobj);
 	ret = sysfs_create_group(bbd.kobj, &bbd_group);
 	if (ret < 0) {
-		pr_err("%s failed to sysfs_create_group \"bbd\", ret = %d",
+		pr_debug("%s failed to sysfs_create_group \"bbd\", ret = %d",
 							__func__, ret);
 		goto free_kobj;
 	}
@@ -1033,7 +1033,7 @@ int bbd_init(struct device *dev, bool legacy_patch)
 #endif
 	ts1 = ktime_to_timespec(ktime_get_boottime());
 	elapsed = (ts1.tv_sec * 1000000000ULL + ts1.tv_nsec) - start;
-	pr_info("BBD:%s %lu nsec elapsed\n", __func__, elapsed);
+	pr_debug("BBD:%s %lu nsec elapsed\n", __func__, elapsed);
 
 #ifdef DEBUG_1HZ_STAT
 	bbd_init_stat();
@@ -1060,7 +1060,7 @@ void bbd_exit(void)
 {
 	int minor;
 
-	pr_info("%s ++\n", __func__);
+	pr_debug("%s ++\n", __func__);
 
 #ifdef CONFIG_SENSORS_SSP
 	/* Shutdown SSP first*/
@@ -1080,7 +1080,7 @@ void bbd_exit(void)
 		cdev_del(cdev);
 		unregister_chrdev_region(devno, 1);
 
-		pr_info("%s(%d,%d) unregistered /dev/%s\n",
+		pr_debug("%s(%d,%d) unregistered /dev/%s\n",
 			       	__func__, BBD_DEVICE_MAJOR, minor, name);
 	}
 
@@ -1090,7 +1090,7 @@ void bbd_exit(void)
 	/* Remove class */
 	class_destroy(bbd.class);
 	/* Done. Put success log */
-	pr_info("%s --\n",__func__);
+	pr_debug("%s --\n",__func__);
 }
 
 MODULE_AUTHOR("Broadcom");

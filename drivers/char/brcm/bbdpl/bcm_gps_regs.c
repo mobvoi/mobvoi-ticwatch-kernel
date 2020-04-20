@@ -92,14 +92,14 @@ int bcm477x_rpc_get_version(void *prv, char *id)
 		{
 			p += snprintf(p,sizeof(acB) - (p - acB), "%08X ", transaction_1st[i]);
 		}
-		pr_info("%s\n",acB);
+		pr_debug("%s\n",acB);
 
 		p += snprintf(acB,sizeof(acB),"[SSPBBD]: DATA-VERREQ %s @ : ",id);
 		for (i=0;i<(int)sizeof(transaction_1st);i++)
 		{
 			p += snprintf(p,sizeof(acB) - (p - acB), "%08X ", transaction_1st[i]);
 		}
-		pr_info("%s\n",acB);
+		pr_debug("%s\n",acB);
 
 		p += snprintf(acB,sizeof(acB),"[SSPBBD]: DATA-VERRESP %s @ %d: ",id,n);
 	}
@@ -127,7 +127,7 @@ int bcm477x_rpc_get_version(void *prv, char *id)
 			{
 				p += snprintf(p,sizeof(acB) - (p - acB), "%08X ", transaction_1st[i]);
 			}
-			pr_info("%s\n",acB);
+			pr_debug("%s\n",acB);
 			p += snprintf(acB,sizeof(acB),"[SSPBBD]: DATA-VERRESP %s @ %d: ",id,n);
 		}
 
@@ -185,7 +185,7 @@ int RegWrite( struct bcm_spi_priv *priv, char *id, unsigned char cmdRegOffset, u
 	if (bcm_spi_sync(priv, tx, rx, cmdByteNum+3, cmdByteNum+3))
 		return -1;
 
-	pr_info("%s\n",acB);
+	pr_debug("%s\n",acB);
 
 	return (int)cmdByteNum;
 }
@@ -230,7 +230,7 @@ int RegRead( struct bcm_spi_priv *priv, char *id, unsigned char cmdRegOffset, un
 	if (bcm_spi_sync(priv, tx, rx, 3, 3))
 		return -1;
 
-	pr_info("%s\n",acB);
+	pr_debug("%s\n",acB);
 
 	p += snprintf(acB,sizeof(acB),"[SSPBBD]: REG(R) %s @ [%02X]: ",id,cmdRegOffset);
 
@@ -253,7 +253,7 @@ int RegRead( struct bcm_spi_priv *priv, char *id, unsigned char cmdRegOffset, un
 		p += snprintf(p,sizeof(acB) - (p - acB), "%08X ", cmdRegData[i]);
 	}
 
-	pr_info("%s\n",acB);
+	pr_debug("%s\n",acB);
 
 	return (int)cmdByteNum;
 }
@@ -332,7 +332,7 @@ int bcm_reg32Iwrite( struct bcm_spi_priv *priv, char *id, unsigned regaddr, unsi
 		return -1;  
 
 	if ( id )
-		pr_info("%s\n",acB);     
+		pr_debug("%s\n",acB);
 
 	return 1;
 }
@@ -412,7 +412,7 @@ int bcm_reg32Iread( struct bcm_spi_priv *priv, char *id, unsigned regaddr, unsig
 	}
 
 	if ( acB[0] )
-		pr_info("%s\n",acB);
+		pr_debug("%s\n",acB);
 
 	return i;
 }

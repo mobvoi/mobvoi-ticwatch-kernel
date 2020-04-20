@@ -41,10 +41,6 @@ void bcm_on_packet_received(void *_priv, unsigned char *data, size_t size);
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define pr_debug 	printf
-#define pr_info 	printf
-#define pr_warn 	printf
-#define pr_err		printf
 #define WARN_ON(x) 	if (x) printf("error in %s:%d\n", __func__, __LINE__)
 
 ssize_t bbd_sensor_write(const unsigned char *buf, size_t size)
@@ -419,7 +415,6 @@ static int BbdBridge_OnPacketReceived(unsigned char *pucData, unsigned short usS
 	{
 		WARN_ON(1);
 	}
-	//pr_info("[SSPBBD]: %s sensor:%d, gnss:%d\n", __func__, sensor, gnss);
 	return (sensor > 0);
 }
 
@@ -671,7 +666,6 @@ static bool TransportLayer_PacketReceived(void *priv)
 				}
 				else
 				{
-				       	//pr_info("[SSPBBD]: %s :%d\n", __func__, __LINE__);
 				       	bcm_on_packet_received(priv, m_aucRxEscapedBuf, m_uiEscLen);
 				}
 				return true;
@@ -679,7 +673,7 @@ static bool TransportLayer_PacketReceived(void *priv)
 		}
 		else
 		{
-			pr_info("[SSPBBD]: %s :%d\n", __func__, __LINE__);
+			pr_debug("[SSPBBD]: %s :%d\n", __func__, __LINE__);
 			return false;
 		}
 	}
