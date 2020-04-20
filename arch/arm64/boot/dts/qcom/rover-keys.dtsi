@@ -1,0 +1,22 @@
+&soc {
+	gpio_keys {
+		multi_function_key {
+			label = "multi_function_key";
+			gpios = <&tlmm 48 0x1>;
+			linux,input-type = <1>;
+			linux,code = <139>; /*KEY_MENU*/
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+			linux,can-disable;
+		};
+		vol_up {
+			status = "disabled";
+		};
+		function_1 {
+			status = "disabled";
+		};
+		function_2 {
+			status = "disabled";
+		};
+	};
+};
