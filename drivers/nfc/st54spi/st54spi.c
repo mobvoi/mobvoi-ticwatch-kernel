@@ -1044,7 +1044,7 @@ static int st54spi_probe(struct spi_device *spi)
 		dev = device_create(st54spi_class, &spi->dev, st54spi->devt,
 				    // spidev, "spidev%d.%d",
 				    // spi->master->bus_num, spi->chip_select);
-				    st54spi, "st54spi");
+				    st54spi, "gto");
 		status = PTR_ERR_OR_ZERO(dev);
 	} else {
 		dev_dbg(&spi->dev, "no minor number available!\n");
@@ -1085,6 +1085,8 @@ static int st54spi_probe(struct spi_device *spi)
 		kfree(st54spi);
 
 	(void)st54spi_parse_dt(&spi->dev, st54spi);
+	st54spi->power_gpio = of_get_named_gpio(spi->dev.of_node,
+						"gpio-power", 0);
 
 	if (st54spi->power_gpio != 0) {
 		ret = gpio_request(st54spi->power_gpio, "gpio-power");

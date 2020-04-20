@@ -95,15 +95,20 @@ static int st_clock_select(struct st21nfc_dev *st21nfc_dev)
 {
 	int r = 0;
 
-	st21nfc_dev->s_clk = clk_get(&st21nfc_dev->platform_data.client->dev,
-				     "nfc_ref_clk");
+	st21nfc_dev->s_clk =
+		clk_get(&st21nfc_dev->platform_data.client->dev, "ref_clk");
 
 	/* if NULL we assume external crystal and dont fail */
-	if ((st21nfc_dev->s_clk == NULL) || IS_ERR(st21nfc_dev->s_clk))
-		return 0;
+	if (st21nfc_dev->s_clk == NULL) {
+		pr_err("%s: clk_get fail\n", __func__);
+		return -1;
+	}
 
-	if (st21nfc_dev->clk_run == false)
+	/* prepare and enable clock */
+	if (st21nfc_dev->clk_run == false) {
 		r = clk_prepare_enable(st21nfc_dev->s_clk);
+		pr_info("%s: clk_prepare_enable %d\n", __func__, r);
+	}
 
 	if (r)
 		goto err_clk;
@@ -613,10 +618,17 @@ static int nfc_parse_dt(struct device *dev, struct st21nfc_platform_data *pdata)
 		return -EINVAL;
 	}
 #ifdef NO_CRYSTAL
+	if (of_property_read_string(np, "qcom,clk-src", &pdata->clk_src_name))
+		pdata->clk_pin_voting = false;
+	else
+		pdata->clk_pin_voting = true;
+	pr_info("[dsc]%s: clk-src : %d\n", __func__, pdata->clk_pin_voting);
+
 	pdata->clkreq_gpio = of_get_named_gpio(np, "st,clkreq_gpio", 0);
 	if ((!gpio_is_valid(pdata->clkreq_gpio)))
-		pr_err("[dsc]%s: [OPTIONAL] fail to get clkreq_gpio\n",
-		       __func__);
+		pr_err("[dsc]%s: fail to get clkreq_gpio\n", __func__);
+
+	pr_info("[dsc]%s : clkreq_gpio[%d]\n", __func__, pdata->clkreq_gpio);
 #endif
 
 	pdata->polarity_mode = IRQF_TRIGGER_RISING;
@@ -716,6 +728,29 @@ static int st21nfc_probe(struct i2c_client *client,
 		goto err_free_buffer;
 	}
 #ifdef NO_CRYSTAL
+
+	/* pinctrl initialize */
+	platform_data->pctrl = devm_pinctrl_get(&client->dev);
+	if (IS_ERR(platform_data->pctrl)) {
+		dev_err(&client->dev, "pinctrl not available\n");
+	}
+
+	platform_data->pctrl_state_active =
+		pinctrl_lookup_state(platform_data->pctrl, "nfc_active");
+	if (IS_ERR(platform_data->pctrl_state_active))
+		dev_err(&client->dev, "pinctrl lookup active failed\n");
+
+	platform_data->pctrl_state_suspend =
+		pinctrl_lookup_state(platform_data->pctrl, "nfc_suspend");
+	if (IS_ERR(platform_data->pctrl_state_active))
+		dev_err(&client->dev, "pinctrl lookup suspend failed\n");
+
+	/* select "nfc_active" */
+	ret = pinctrl_select_state(platform_data->pctrl,
+				   platform_data->pctrl_state_active);
+	if (ret < 0)
+		dev_err(&client->dev, "pinctrl state active select failed\n");
+
 	ret = gpio_request(platform_data->clkreq_gpio, "clkreq_gpio");
 	if (ret) {
 		pr_err("%s : [OPTIONAL] gpio_request failed\n", __FILE__);

@@ -45,6 +45,8 @@
 #define ST21NFC_LEGACY_GET_POLARITY         _IOR(ST21NFC_MAGIC, 0x07, unsigned int)
 #define ST21NFC_LEGACY_RECOVERY             _IOR(ST21NFC_MAGIC, 0x08, unsigned int)
 
+#define NO_CRYSTAL
+
 struct st21nfc_platform_data {
 	unsigned int irq_gpio;
 	unsigned int ena_gpio;
@@ -53,6 +55,11 @@ struct st21nfc_platform_data {
 	unsigned int clkreq_gpio;
 #endif
 	unsigned int polarity_mode;
+	const char *clk_src_name;
+	bool clk_pin_voting;
+	struct pinctrl *pctrl;
+	struct pinctrl_state *pctrl_state_active;
+	struct pinctrl_state *pctrl_state_suspend;
 };
 
 #define ST54SPI_CB_RESET_END 0
