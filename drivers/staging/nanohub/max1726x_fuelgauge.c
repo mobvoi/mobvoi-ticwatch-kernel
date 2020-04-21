@@ -16,7 +16,7 @@
 #include "max1726x_fuelgauge.h"
 #include "custom_app_event.h"
 
-#define MAX1726X_RSENSE		10	/* miliOhm */
+#define MAX1726X_RSENSE		20	/* miliOhm */
 
 /*  register bits */
 #define MAX1726X_STATUS_BST	(1 << 3)
@@ -166,7 +166,7 @@ static int max1726x_batt_status(union power_supply_propval *val)
 	}
 
 	if (usb_online || dc_online) {
-		if (fg_data->cache.repsoc == 100) /* TODO */
+		if ((fg_data->cache.repsoc >> 8) == 100) /* TODO */
 			status = POWER_SUPPLY_STATUS_FULL;
 		else
 			status = POWER_SUPPLY_STATUS_CHARGING;
@@ -185,11 +185,11 @@ static inline int max1726x_lsb_to_uv(int lsb)
 
 static int max1726x_curr_to_ua(uint32_t curr)
 {
-	int res = curr;
+	int res;
 
-	/* Negative */
-	if (res & 0x8000)
-		res |= 0xFFFF0000;
+	/* The value is signed. If curr & 0x8000 is true, it's negative and
+	 * 0xffff is -1 */
+	res  = (int16_t)curr;
 
 	res *= 1562500 / (MAX1726X_RSENSE * 1000);
 	return res;
@@ -210,7 +210,7 @@ static int max1726x_batt_cap_level(union power_supply_propval *val)
 	else
 		level = POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
 		*/
-	if (fg_data->cache.repsoc == 100)
+	if ((fg_data->cache.repsoc >> 8) == 100)
 		level = POWER_SUPPLY_CAPACITY_LEVEL_FULL;
 	else
 		level = POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
@@ -225,10 +225,8 @@ static int max1726x_get_temp(int *temp)
 	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
 	struct max1726x_info_cache *cache = &fg_data->cache;
 
-	*temp = cache->temp;
 	/* The value is signed. */
-	if (*temp & 0x8000)
-		*temp |= 0xFFFF0000;
+	*temp  = (int16_t)cache->temp;
 
 	/*
 	 * The value is converted into centigrade scale.
@@ -388,6 +386,11 @@ static const struct power_supply_desc batt_psy_desc = {
 	.property_is_writeable = max1726x_batt_prop_is_writeable,
 };
 
+static const struct max1726x_info_cache default_cache = {
+	.repsoc = (50 << 8),	/* Default SOC: 50% */
+	.temp = (25 << 8),	/* Default Temperatue: 25 DegreeC */
+};
+
 static int max1726x_init(void)
 {
 	struct nanohub_fuelgauge_data *fg_data;
@@ -405,6 +408,8 @@ static int max1726x_init(void)
 		goto init_data_alloc;
 	}
 	m_fg_data = fg_data;
+	memcpy(&fg_data->cache, &default_cache,
+			sizeof(struct max1726x_info_cache));
 
 	usb_psy = power_supply_get_by_name("usb");
 	if (!usb_psy) {
