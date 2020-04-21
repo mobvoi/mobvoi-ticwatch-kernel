@@ -11,6 +11,7 @@
 		interrupt-parent = <&tlmm>;
 		interrupts = <21 0>;
 		st,irq_gpio = <&tlmm 21 0x2001>;
+		st,clkreq_gpio = <&pm660_gpios 4 0x00>;
 		st,reset_gpio = <&tlmm 20 0x00>;
 		/* if use BB_CLK3, need config the clk-src as BBCLK2! */
 		qcom,clk-src = "BBCLK2";
