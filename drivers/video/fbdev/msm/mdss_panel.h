@@ -839,10 +839,12 @@ struct mdss_panel_data {
 	int (*event_handler)(struct mdss_panel_data *pdata, int e, void *arg);
 	struct device_node *(*get_fb_node)(struct platform_device *pdev);
 	bool (*get_idle)(struct mdss_panel_data *pdata);
+	void (*set_boost_mode)(struct mdss_panel_data *pdata, int enable);
 
 	struct list_head timings_list;
 	struct mdss_panel_timing *current_timing;
 	bool active;
+	bool boost;
 
 	/* To store dsc cfg name passed by bootloader */
 	char dsc_cfg_np_name[MDSS_MAX_PANEL_LEN];

@@ -911,6 +911,69 @@ static ssize_t mdss_fb_idle_pc_notify(struct device *dev,
 	return scnprintf(buf, PAGE_SIZE, "idle power collapsed\n");
 }
 
+static ssize_t mdss_fb_change_boost_mode(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t len)
+{
+	struct fb_info *fbi = dev_get_drvdata(dev);
+	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
+	struct mdss_panel_data *pdata;
+	u32 boost_mode;
+
+	if (!mfd) {
+		pr_err("%s: mfd is NULL!\n", __func__);
+		return len;
+	}
+
+	if (kstrtouint(buf, 0, &boost_mode)) {
+		pr_err("kstrtouint buf error!\n");
+		return len;
+	}
+
+	pdata = dev_get_platdata(&mfd->pdev->dev);
+	if (!pdata) {
+		pr_err("%s: no panel connected!\n", __func__);
+		return -EINVAL;
+	}
+
+	mutex_lock(&mfd->mdss_sysfs_lock);
+	if (mdss_panel_is_power_off(mfd->panel_power_state)) {
+		pdata->boost = boost_mode;
+		goto end;
+	}
+
+	mutex_lock(&mfd->bl_lock);
+
+	if ((pdata) && (pdata->set_boost_mode))
+		pdata->set_boost_mode(pdata, boost_mode);
+
+	mutex_unlock(&mfd->bl_lock);
+
+	pr_debug("%s: Boost mode %d\n", __func__, boost_mode);
+	pdata->boost = boost_mode;
+
+end:
+	mutex_unlock(&mfd->mdss_sysfs_lock);
+	return len;
+}
+
+static ssize_t mdss_fb_get_boost_mode(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct fb_info *fbi = dev_get_drvdata(dev);
+	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
+	struct mdss_panel_data *pdata;
+	int ret;
+
+	pdata = dev_get_platdata(&mfd->pdev->dev);
+	if (!pdata) {
+		pr_err("%s: no panel connected!\n", __func__);
+		return -EINVAL;
+	}
+	ret = scnprintf(buf, PAGE_SIZE, "%d\n", pdata->boost);
+
+	return ret;
+}
+
 static DEVICE_ATTR(msm_fb_type, 0444, mdss_fb_get_type, NULL);
 static DEVICE_ATTR(msm_fb_split, 0644, mdss_fb_show_split,
 					mdss_fb_store_split);
@@ -932,6 +995,8 @@ static DEVICE_ATTR(measured_fps, 0664,
 static DEVICE_ATTR(msm_fb_persist_mode, 0644,
 	mdss_fb_get_persist_mode, mdss_fb_change_persist_mode);
 static DEVICE_ATTR(idle_power_collapse, 0444, mdss_fb_idle_pc_notify, NULL);
+static DEVICE_ATTR(hbm_mode, 0664,
+	mdss_fb_get_boost_mode, mdss_fb_change_boost_mode);
 
 static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_msm_fb_type.attr,
@@ -947,6 +1012,7 @@ static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_measured_fps.attr,
 	&dev_attr_msm_fb_persist_mode.attr,
 	&dev_attr_idle_power_collapse.attr,
+	&dev_attr_hbm_mode.attr,
 	NULL,
 };
 
