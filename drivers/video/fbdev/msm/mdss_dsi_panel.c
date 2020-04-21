@@ -299,6 +299,38 @@ static bool mdss_dsi_panel_get_idle_mode(struct mdss_panel_data *pdata)
 	return ctrl->idle;
 }
 
+static void mdss_dsi_panel_set_boost_mode(struct mdss_panel_data *pdata,
+							int enable)
+{
+	struct mdss_dsi_ctrl_pdata *ctrl = NULL;
+
+	if (pdata == NULL) {
+		pr_err("%s: Invalid input data\n", __func__);
+		return;
+	}
+
+	ctrl = container_of(pdata, struct mdss_dsi_ctrl_pdata, panel_data);
+
+	pr_info("%s: boost mode (%d->%d)\n", __func__, pdata->boost, enable);
+
+	MDSS_XLOG(pdata->boost, enable);
+	if (enable) {
+		if (ctrl->boost_mode_in_cmds.cmd_cnt) {
+			mdss_dsi_panel_cmds_send(ctrl,
+				&ctrl->boost_mode_in_cmds, CMD_REQ_COMMIT);
+			pdata->boost = true;
+			pr_debug("Boost mode on\n");
+		}
+	} else {
+		if (ctrl->boost_mode_out_cmds.cmd_cnt) {
+			mdss_dsi_panel_cmds_send(ctrl,
+				&ctrl->boost_mode_out_cmds, CMD_REQ_COMMIT);
+			pdata->boost = false;
+			pr_debug("Boost mode off\n");
+		}
+	}
+}
+
 static int mdss_dsi_request_gpios(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
 	int rc = 0;
@@ -2938,6 +2970,14 @@ static int mdss_panel_parse_dt(struct device_node *np,
 		"qcom,mdss-dsi-idle-off-command",
 		"qcom,mdss-dsi-idle-off-command-state");
 
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->boost_mode_in_cmds,
+		"qcom,mdss-dsi-boost-mode-in-command",
+		"qcom,mdss-dsi-boost-mode-in-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->boost_mode_out_cmds,
+		"qcom,mdss-dsi-boost-mode-out-command",
+		"qcom,mdss-dsi-boost-mode-out-command-state");
+
 	rc = of_property_read_u32(np, "qcom,mdss-dsi-idle-fps", &tmp);
 	pinfo->mipi.frame_rate_idle = (!rc ? tmp : 60);
 
@@ -3015,5 +3055,6 @@ int mdss_dsi_panel_init(struct device_node *node,
 			mdss_dsi_panel_apply_display_setting;
 	ctrl_pdata->switch_mode = mdss_dsi_panel_switch_mode;
 	ctrl_pdata->panel_data.get_idle = mdss_dsi_panel_get_idle_mode;
+	ctrl_pdata->panel_data.set_boost_mode = mdss_dsi_panel_set_boost_mode;
 	return 0;
 }
