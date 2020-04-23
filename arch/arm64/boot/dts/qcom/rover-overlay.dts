@@ -36,3 +36,16 @@
 		spi3 = &spi_3;
 	};
 };
+
+&firmware {
+        android {
+                fstab {
+                        vendor {
+                                fsmgr_flags = "wait,avb";
+                        };
+                        system {
+                                fsmgr_flags = "wait,avb";
+                        };
+                };
+        };
+};
