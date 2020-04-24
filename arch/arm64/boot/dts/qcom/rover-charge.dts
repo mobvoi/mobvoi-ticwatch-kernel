@@ -1,0 +1,3 @@
+&pm660_charger{
+	qcom,float-option = <1>;
+};
