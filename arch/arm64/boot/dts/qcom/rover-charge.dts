@@ -1,3 +1,14 @@
 &pm660_charger{
 	qcom,float-option = <1>;
+	qcom,fcc-max-ua = <400000>;
+	qcom,fv-max-uv = <4450000>;
+};
+
+&pm660_fg {
+	qcom,fg-rsense-sel = <0>;
+	qcom,fg-chg-term-current = <40>;
+	qcom,fg-sys-term-current = <(-50)>;
+	qcom,fg-chg-term-base-current = <30>;
+	qcom,fg-recharge-voltage = <4300>;
+	qcom,fg-recharge-soc-thr = <98>;
 };
