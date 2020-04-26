@@ -71,8 +71,10 @@ static void vibrator_work_routine(struct work_struct *work)
 
 	if (!gpio_vibra->on)
 		vibrator_start(gpio_vibra);
-	else
+	else {
 		vibrator_stop(gpio_vibra);
+		wake_unlock(&gpio_vibra->wklock);
+	}
 
 	mutex_unlock(&gpio_vibra->lock);
 }
@@ -221,6 +223,7 @@ static __maybe_unused int gpio_vibra_pwm_suspend(struct device *dev)
 	mutex_lock(&gpio_vibra->lock);
 
 	vibrator_stop(gpio_vibra);
+	wake_unlock(&gpio_vibra->wklock);
 	mutex_unlock(&gpio_vibra->lock);
 	return 0;
 }
