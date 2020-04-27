@@ -26,8 +26,8 @@
 #define MAX1726X_VOLT_MAX	4500	/* mV */
 #define MAX1726X_VMAX_TOLERANCE	50	/* 50 mV */
 
-#define MAX1726X_TEMP_MIN	0	/* DegreeC */
-#define MAX1726X_TEMP_MAX	50	/* DegreeC */
+#define MAX1726X_TEMP_MIN	0	/* 0.1 DegreeC */
+#define MAX1726X_TEMP_MAX	500	/* 0.1 DegreeC */
 
 static enum power_supply_property max1726x_battery_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
@@ -195,6 +195,16 @@ static int max1726x_curr_to_ua(uint32_t curr)
 	return res;
 }
 
+static int max1726x_capacity_to_uvh(uint32_t cap)
+{
+	int res;
+
+	/* Units of Capacity LSB is 5.0uVh / RSENSE */
+	res = (cap * 5000) / MAX1726X_RSENSE;
+
+	return res;
+}
+
 static int max1726x_batt_cap_level(union power_supply_propval *val)
 {
 	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
@@ -231,7 +241,10 @@ static int max1726x_get_temp(int *temp)
 	/*
 	 * The value is converted into centigrade scale.
 	 * Units of LSB = 1 / 256 degree Celsius.
+	 *
+	 * Return LSB = 0.1 degree Celsius.
 	 */
+	*temp *= 10;
 	*temp >>= 8;
 
 	return 0;
@@ -329,20 +342,19 @@ static int max1726x_battery_get_property(struct power_supply *psy,
 		ret = max1726x_batt_cap_level(val);
 		break;
 	case POWER_SUPPLY_PROP_TEMP:
+		/* 0.1 DegreeC LSB */
 		ret = max1726x_get_temp(&val->intval);
-		/* Convert 1DegreeC LSB to 0.1DegreeC LSB */
-		val->intval *= 10;
 		break;
 	case POWER_SUPPLY_PROP_TECHNOLOGY:
 		val->intval = POWER_SUPPLY_TECHNOLOGY_LION;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_FULL:
-		/* FullCAPRep LSB: 0.5 mAh */
-		val->intval = (cache->fullcaprep * 1000) >> 1;
+		/* uAh */
+		val->intval = max1726x_capacity_to_uvh(cache->fullcaprep);
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_NOW:
-		/* RepCAP LSB: 0.5 mAh */
-		val->intval = (cache->repcap * 1000) >> 1;
+		/* uAh */
+		val->intval = max1726x_capacity_to_uvh(cache->repcap);
 		break;
 	case POWER_SUPPLY_PROP_HEALTH:
 		ret = max1726x_get_battery_health(&val->intval);
