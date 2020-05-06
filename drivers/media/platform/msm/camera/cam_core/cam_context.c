@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -454,7 +454,7 @@ int cam_context_init(struct cam_context *ctx,
 	mutex_init(&ctx->sync_mutex);
 	spin_lock_init(&ctx->lock);
 
-	ctx->dev_name = dev_name;
+	strlcpy(ctx->dev_name, dev_name, CAM_CTX_DEV_NAME_MAX_LENGTH);
 	ctx->dev_id = dev_id;
 	ctx->ctx_id = ctx_id;
 	ctx->ctx_crm_intf = NULL;
@@ -500,7 +500,12 @@ int cam_context_deinit(struct cam_context *ctx)
 
 void cam_context_putref(struct cam_context *ctx)
 {
-	kref_put(&ctx->refcount, cam_node_put_ctxt_to_free_list);
+	if (atomic_read(&(ctx->refcount.refcount)))
+		kref_put(&ctx->refcount, cam_node_put_ctxt_to_free_list);
+	else
+		WARN(1, "ctx %s %d state %d devhdl %X\n", ctx->dev_name,
+			ctx->ctx_id, ctx->state, ctx->dev_hdl);
+
 	CAM_DBG(CAM_CORE,
 		"ctx device hdl %ld, ref count %d, dev_name %s",
 		ctx->dev_hdl, atomic_read(&(ctx->refcount.refcount)),

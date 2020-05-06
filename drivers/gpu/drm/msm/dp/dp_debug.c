@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -49,6 +49,7 @@ struct dp_debug_private {
 	struct device *dev;
 	struct work_struct sim_work;
 	struct dp_debug dp_debug;
+	struct mutex lock;
 };
 
 static int dp_debug_get_edid_buf(struct dp_debug_private *debug)
@@ -98,6 +99,8 @@ static ssize_t dp_debug_write_edid(struct file *file,
 	if (!debug)
 		return -ENODEV;
 
+	mutex_lock(&debug->lock);
+
 	if (*ppos)
 		goto bail;
 
@@ -119,8 +122,24 @@ static ssize_t dp_debug_write_edid(struct file *file,
 		goto bail;
 
 	if (edid_size != debug->edid_size) {
-		pr_debug("clearing debug edid\n");
-		goto bail;
+		pr_debug("realloc debug edid\n");
+
+		if (debug->edid) {
+			devm_kfree(debug->dev, debug->edid);
+
+			debug->edid = devm_kzalloc(debug->dev,
+						edid_size, GFP_KERNEL);
+			if (!debug->edid) {
+				rc = -ENOMEM;
+				goto bail;
+			}
+
+			debug->edid_size = edid_size;
+
+			debug->aux->set_sim_mode(debug->aux,
+					debug->dp_debug.sim_mode,
+					debug->edid, debug->dpcd);
+		}
 	}
 
 	while (edid_size--) {
@@ -148,6 +167,7 @@ bail:
 	if (!debug->dp_debug.sim_mode)
 		debug->panel->set_edid(debug->panel, edid);
 
+	mutex_unlock(&debug->lock);
 	return rc;
 }
 
@@ -166,10 +186,14 @@ static ssize_t dp_debug_write_dpcd(struct file *file,
 	if (!debug)
 		return -ENODEV;
 
+	mutex_lock(&debug->lock);
+
 	if (*ppos)
 		goto bail;
 
 	size = min_t(size_t, count, SZ_2K);
+	if (size < 4)
+		goto bail;
 
 	buf = kzalloc(size, GFP_KERNEL);
 	if (ZERO_OR_NULL_PTR(buf)) {
@@ -198,6 +222,8 @@ static ssize_t dp_debug_write_dpcd(struct file *file,
 	}
 
 	size -= 4;
+	if (size == 0)
+		goto bail;
 
 	dpcd_size = size / char_to_nib;
 	buf_t = buf + 4;
@@ -230,6 +256,7 @@ bail:
 	else
 		debug->panel->set_dpcd(debug->panel, dpcd);
 
+	mutex_unlock(&debug->lock);
 	return rc;
 }
 
@@ -248,6 +275,7 @@ static ssize_t dp_debug_read_dpcd(struct file *file,
 
 	len += snprintf(buf, SZ_8, "0x%x\n", debug->aux->reg);
 
+	len = min_t(size_t, count, len);
 	if (copy_to_user(user_buff, buf, len))
 		return -EFAULT;
 
@@ -405,7 +433,7 @@ static ssize_t dp_debug_write_exe_mode(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char *buf;
+	char buf[SZ_32];
 	size_t len = 0;
 
 	if (!debug)
@@ -414,8 +442,11 @@ static ssize_t dp_debug_write_exe_mode(struct file *file,
 	if (*ppos)
 		return 0;
 
+	/* Leave room for termination char */
 	len = min_t(size_t, count, SZ_32 - 1);
-	buf = memdup_user(user_buff, len);
+	if (copy_from_user(buf, user_buff, len))
+		goto end;
+
 	buf[len] = '\0';
 
 	if (sscanf(buf, "%3s", debug->exe_mode) != 1)
@@ -446,6 +477,7 @@ static ssize_t dp_debug_read_connected(struct file *file,
 
 	len += snprintf(buf, SZ_8, "%d\n", debug->usbpd->hpd_high);
 
+	len = min_t(size_t, count, len);
 	if (copy_to_user(user_buff, buf, len))
 		return -EFAULT;
 
@@ -509,6 +541,7 @@ static ssize_t dp_debug_read_edid_modes(struct file *file,
 	}
 	mutex_unlock(&connector->dev->mode_config.mutex);
 
+	len = min_t(size_t, count, len);
 	if (copy_to_user(user_buff, buf, len)) {
 		kfree(buf);
 		rc = -EFAULT;
@@ -598,6 +631,7 @@ static ssize_t dp_debug_read_info(struct file *file, char __user *user_buff,
 	if (dp_debug_check_buffer_overflow(rc, &max_size, &len))
 		goto error;
 
+	len = min_t(size_t, count, len);
 	if (copy_to_user(user_buff, buf, len))
 		goto error;
 
@@ -630,6 +664,7 @@ static ssize_t dp_debug_bw_code_read(struct file *file,
 	len += snprintf(buf + len, (SZ_4K - len),
 			"max_bw_code = %d\n", debug->panel->max_bw_code);
 
+	len = min_t(size_t, count, len);
 	if (copy_to_user(user_buff, buf, len)) {
 		kfree(buf);
 		return -EFAULT;
@@ -655,6 +690,7 @@ static ssize_t dp_debug_tpg_read(struct file *file,
 
 	len += snprintf(buf, SZ_8, "%d\n", debug->dp_debug.tpg_state);
 
+	len = min_t(size_t, count, len);
 	if (copy_to_user(user_buff, buf, len))
 		return -EFAULT;
 
@@ -845,6 +881,7 @@ static ssize_t dp_debug_read_hdr(struct file *file,
 			goto error;
 	}
 
+	len = min_t(size_t, count, len);
 	if (copy_to_user(user_buff, buf, len)) {
 		kfree(buf);
 		rc = -EFAULT;
@@ -872,6 +909,8 @@ static ssize_t dp_debug_write_sim(struct file *file,
 
 	if (*ppos)
 		return 0;
+
+	mutex_lock(&debug->lock);
 
 	/* Leave room for termination char */
 	len = min_t(size_t, count, SZ_8 - 1);
@@ -906,9 +945,11 @@ static ssize_t dp_debug_write_sim(struct file *file,
 	debug->aux->set_sim_mode(debug->aux, debug->dp_debug.sim_mode,
 			debug->edid, debug->dpcd);
 end:
+	mutex_unlock(&debug->lock);
 	return len;
 error:
 	devm_kfree(debug->dev, debug->edid);
+	mutex_unlock(&debug->lock);
 	return len;
 }
 
@@ -1000,6 +1041,7 @@ static ssize_t dp_debug_read_dump(struct file *file,
 	print_hex_dump(KERN_DEBUG, prefix, DUMP_PREFIX_NONE,
 		16, 4, buf, len, false);
 
+	len = min_t(size_t, count, len);
 	if (copy_to_user(user_buff, buf, len))
 		return -EFAULT;
 
@@ -1272,6 +1314,8 @@ struct dp_debug *dp_debug_get(struct device *dev, struct dp_panel *panel,
 	dp_debug->hdisplay = 0;
 	dp_debug->vrefresh = 0;
 
+	mutex_init(&debug->lock);
+
 	rc = dp_debug_init(dp_debug);
 	if (rc) {
 		devm_kfree(dev, debug);
@@ -1307,6 +1351,8 @@ void dp_debug_put(struct dp_debug *dp_debug)
 	debug = container_of(dp_debug, struct dp_debug_private, dp_debug);
 
 	dp_debug_deinit(dp_debug);
+
+	mutex_destroy(&debug->lock);
 
 	if (debug->edid)
 		devm_kfree(debug->dev, debug->edid);

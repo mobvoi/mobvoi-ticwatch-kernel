@@ -88,8 +88,6 @@ Required properties:
  - compatible : "qcom,msm-pcm-voice"
  - qcom,destroy-cvd : Flag indicating whether to destroy cvd at
                       the end of call for low memory targets
- - qcom,vote-bms: Flag indicating whether to vote for BMS during
-		  voice call or not
 
 * msm-voice-host-pcm
 
@@ -644,6 +642,11 @@ Example:
 			compatible = "qcom,msm-dai-q6-dev";
 			qcom,msm-dai-q6-dev-id = <32770>;
 		};
+
+		qcom,msm-dai-q6-incall-music-dl-rx {
+			compatible = "qcom,msm-dai-q6-dev";
+			qcom,msm-dai-q6-dev-id = <32774>;
+		};
 	};
 
 	qcom,msm-pri-auxpcm {
@@ -670,6 +673,9 @@ Example:
 		compatible = "qcom,msm-audio-apr";
 		msm_audio_apr_dummy {
 			compatible = "qcom,msm-audio-apr-dummy";
+		};
+                q6core {
+                        compatible = "qcom,q6core-audio";
 		};
 
 		qcom,subsys-name = "apr_adsp";
@@ -1602,7 +1608,8 @@ Example:
 * MSM8952 ASoC Machine driver
 
 Required properties:
-- compatible : "qcom,msm8952-audio-codec"
+- compatible : "qcom,msm8952-audio-codec" for pmic codec,
+				"qcom,msm8952-dig-asoc-snd" for digital internal codec,
 - qcom,model : The user-visible name of this sound card.
 - reg : Offset and length of the register region(s) for MI2S/PCM MUX
 - reg-names : Register region name(s) referenced in reg above
@@ -1836,6 +1843,16 @@ mclk frequency needs to be configured for internal and external PA.
 		threshold values for different codecs. First parameter is V(voltage)
 		second one is i(current), third one is r (resistance). Depending on the
 		codec set corresponding element in array and set others to 0.
+- qcom,msm-linein-det-swh: This property is used to distinguish linein jack
+	switch type on target typically the switch type will be normally open or
+	normally close, value for this property 0 for normally close and 1 for
+	normally open.
+- qcom,msm-lineout-det-swh: This property is used to distinguish lineout jack
+	switch type on target typically the switch type will be normally open or
+	normally close, value for this property 0 for normally close and 1 for
+	normally open.
+- qcom,linein-det-gpio : GPIO on which linein jack insertion/removal interrupt is received.
+- qcom,lineout-det-gpio : GPIO on which lineout jack insertion/removal interrupt is received.
 
 Example:
 	 sound {
@@ -1896,6 +1913,10 @@ Example:
 				<&wsa881x_213>, <&wsa881x_214>;
 		qcom,wsa-aux-dev-prefix = "SpkrRight", "SpkrLeft",
 					  "SpkrRight", "SpkrLeft";
+		qcom,linein-det-swh = <1>;
+		qcom,lineout-det-swh = <1>;
+		qcom,linein-det-gpio = <&tlmm 124 0>;
+		qcom,lineout-det-gpio = <&tlmm 125 0>;
 	};
 
 * MSM8952 Slimbus ASoC Machine driver
@@ -2562,7 +2583,7 @@ Example:
 				<&afe_pcm_rx>, <&afe_pcm_tx>, <&afe_proxy_rx>,
 				<&afe_proxy_tx>, <&incall_record_rx>,
 				<&incall_record_tx>, <&incall_music_rx>,
-				<&dai_sec_auxpcm>;
+				<&dai_sec_auxpcm>, <&incall_music_dl_rx>;
 		asoc-cpu-names = "msm-dai-q6-auxpcm.1",
 				"msm-dai-q6-mi2s.0", "msm-dai-q6-mi2s.1",
 				"msm-dai-stub-dev.4", "msm-dai-stub-dev.5",
@@ -2571,7 +2592,79 @@ Example:
 				"msm-dai-q6-dev.225", "msm-dai-q6-dev.241",
 				"msm-dai-q6-dev.240", "msm-dai-q6-dev.32771",
 				"msm-dai-q6-dev.32772", "msm-dai-q6-dev.32773",
-				"msm-dai-q6-auxpcm.2";
+				"msm-dai-q6-auxpcm.2", "msm-dai-q6-dev.32774";
+		qcom,msm_audio_ssr_devs = <&audio_apr>, <&q6core>;
+	};
+
+* SDX ASoC Auto Machine driver
+
+Required properties:
+- compatible : "qcom,sdx-asoc-snd-auto"
+- qcom,model : The user-visible name of this sound card.
+- qcom,prim_mi2s_aux_master : Handle to prim_master pinctrl configurations
+- qcom,prim_mi2s_aux_slave : Handle to prim_slave pinctrl configurations
+- qcom,sec_mi2s_aux_master : Handle to sec_master pinctrl configurations
+- qcom,sec_mi2s_aux_slave : Handle to sec_slave pinctrl configurations
+- asoc-platform: This is phandle list containing the references to platform device
+		nodes that are used as part of the sound card dai-links.
+- asoc-platform-names: This property contains list of platform names. The order of
+		the platform names should match to that of the phandle order
+		given in "asoc-platform".
+- asoc-cpu: This is phandle list containing the references to cpu dai device nodes
+		that are used as part of the sound card dai-links.
+- asoc-cpu-names: This property contains list of cpu dai names. The order of the
+		cpu dai names should match to that of the phandle order give
+		in "asoc-cpu". The cpu names are in the form of "%s.%d" form,
+		where the id (%d) field represents the back-end AFE port id that
+		this CPU dai is associated with.
+- asoc-codec: This is phandle list containing the references to codec dai device
+		nodes that are used as part of the sound card dai-links.
+- asoc-codec-names: This property contains list of codec dai names. The order of the
+		codec dai names should match to that of the phandle order given
+		in "asoc-codec".
+
+Example:
+
+	sound-auto {
+		compatible = "qcom,sdx-asoc-snd-auto";
+		qcom,model = "sdx-auto-i2s-snd-card";
+		qcom,prim_mi2s_aux_master = <&prim_master>;
+		qcom,prim_mi2s_aux_slave = <&prim_slave>;
+		qcom,sec_mi2s_aux_master = <&sec_master>;
+		qcom,sec_mi2s_aux_slave = <&sec_slave>;
+
+		asoc-platform = <&pcm0>, <&pcm1>, <&voip>, <&voice>,
+				<&loopback>, <&hostless>, <&afe>, <&routing>,
+				<&pcm_dtmf>, <&host_pcm>, <&compress>;
+		asoc-platform-names = "msm-pcm-dsp.0", "msm-pcm-dsp.1",
+				"msm-voip-dsp", "msm-pcm-voice",
+				"msm-pcm-loopback", "msm-pcm-hostless",
+				"msm-pcm-afe", "msm-pcm-routing",
+				"msm-pcm-dtmf", "msm-voice-host-pcm",
+				"msm-compress-dsp";
+		asoc-cpu = <&dai_pri_auxpcm>, <&mi2s_prim>, <&mi2s_sec>,
+				<&dtmf_tx>,
+				<&rx_capture_tx>, <&rx_playback_rx>,
+				<&tx_capture_tx>, <&tx_playback_rx>,
+				<&afe_pcm_rx>, <&afe_pcm_tx>, <&afe_proxy_rx>,
+				<&afe_proxy_tx>, <&incall_record_rx>,
+				<&incall_record_tx>, <&incall_music_rx>,
+				<&dai_pri_tdm_rx_0>, <&dai_pri_tdm_tx_0>,
+				<&dai_sec_tdm_rx_0>, <&dai_sec_tdm_tx_0>,
+				<&dai_sec_auxpcm>, <&incall_music_dl_rx>;
+		asoc-cpu-names = "msm-dai-q6-auxpcm.1",
+				"msm-dai-q6-mi2s.0", "msm-dai-q6-mi2s.1",
+				"msm-dai-stub-dev.4", "msm-dai-stub-dev.5",
+				"msm-dai-stub-dev.6", "msm-dai-stub-dev.7",
+				"msm-dai-stub-dev.8", "msm-dai-q6-dev.224",
+				"msm-dai-q6-dev.225", "msm-dai-q6-dev.241",
+				"msm-dai-q6-dev.240", "msm-dai-q6-dev.32771",
+				"msm-dai-q6-dev.32772", "msm-dai-q6-dev.32773",
+				"msm-dai-q6-tdm.36864", "msm-dai-q6-tdm.36865",
+				"msm-dai-q6-tdm.36880", "msm-dai-q6-tdm.36881",
+				"msm-dai-q6-auxpcm.2", "msm-dai-q6-dev.32774";
+		asoc-codec = <&tlv320aic3x_codec>, <&stub_codec>;
+		asoc-codec-names = "tlv320aic3x-codec", "msm-stub-codec.1";
 	};
 
 * APQ8096 Automotive ASoC Machine driver

@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2019 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -170,6 +170,7 @@ struct smb_dt_props {
 	bool	hvdcp_disable;
 	bool	auto_recharge_soc;
 	int	wd_bark_time;
+	bool	no_pd;
 };
 
 struct smb2 {
@@ -217,6 +218,9 @@ static int smb2_parse_dt(struct smb2 *chip)
 		return -EINVAL;
 	}
 
+	chg->reddragon_ipc_wa = of_property_read_bool(node,
+				"qcom,qcs605-ipc-wa");
+
 	chg->step_chg_enabled = of_property_read_bool(node,
 				"qcom,step-charging-enable");
 
@@ -230,6 +234,9 @@ static int smb2_parse_dt(struct smb2 *chip)
 
 	chip->dt.no_battery = of_property_read_bool(node,
 						"qcom,batteryless-platform");
+
+	chip->dt.no_pd = of_property_read_bool(node,
+						"qcom,pd-not-supported");
 
 	rc = of_property_read_u32(node,
 				"qcom,fcc-max-ua", &chg->batt_profile_fcc_ua);
@@ -336,6 +343,9 @@ static int smb2_parse_dt(struct smb2 *chip)
 
 	chg->fcc_stepper_enable = of_property_read_bool(node,
 					"qcom,fcc-stepping-enable");
+
+	chg->ufp_only_mode = of_property_read_bool(node,
+					"qcom,ufp-only-mode");
 
 	return 0;
 }
@@ -1115,9 +1125,13 @@ static int smb2_batt_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CHARGE_FULL:
 	case POWER_SUPPLY_PROP_CYCLE_COUNT:
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
-	case POWER_SUPPLY_PROP_CURRENT_NOW:
 	case POWER_SUPPLY_PROP_TEMP:
 		rc = smblib_get_prop_from_bms(chg, psp, val);
+		break;
+	case POWER_SUPPLY_PROP_CURRENT_NOW:
+		rc = smblib_get_prop_from_bms(chg, psp, val);
+		if (!rc)
+			val->intval *= (-1);
 		break;
 	case POWER_SUPPLY_PROP_FCC_STEPPER_ENABLE:
 		val->intval = chg->fcc_stepper_enable;
@@ -1472,6 +1486,13 @@ static int smb2_configure_typec(struct smb_charger *chg)
 		return rc;
 	}
 
+	/* Set CC threshold to 1.6 V in source mode */
+	rc = smblib_masked_write(chg, TYPE_C_CFG_2_REG, DFP_CC_1P4V_OR_1P6V_BIT,
+				 DFP_CC_1P4V_OR_1P6V_BIT);
+	if (rc < 0)
+		dev_err(chg->dev,
+			"Couldn't configure CC threshold voltage rc=%d\n", rc);
+
 	return rc;
 }
 
@@ -1630,7 +1651,8 @@ static int smb2_init_hw(struct smb2 *chip)
 			true, 0);
 	vote(chg->pd_disallowed_votable_indirect, HVDCP_TIMEOUT_VOTER,
 			true, 0);
-
+	vote(chg->pd_disallowed_votable_indirect, PD_NOT_SUPPORTED_VOTER,
+			chip->dt.no_pd, 0);
 	/*
 	 * AICL configuration:
 	 * start from min and AICL ADC disable
@@ -1877,6 +1899,7 @@ static int smb2_post_init(struct smb2 *chip)
 {
 	struct smb_charger *chg = &chip->chg;
 	int rc;
+	u8 stat;
 
 	/* In case the usb path is suspended, we would have missed disabling
 	 * the icl change interrupt because the interrupt could have been
@@ -1884,13 +1907,36 @@ static int smb2_post_init(struct smb2 *chip)
 	 */
 	rerun_election(chg->usb_icl_votable);
 
-	/* configure power role for dual-role */
-	rc = smblib_masked_write(chg, TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
-				 TYPEC_POWER_ROLE_CMD_MASK, 0);
-	if (rc < 0) {
-		dev_err(chg->dev,
-			"Couldn't configure power role for DRP rc=%d\n", rc);
-		return rc;
+	/* Force charger in Sink Only mode */
+	if (chg->ufp_only_mode) {
+		rc = smblib_read(chg, TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
+				&stat);
+		if (rc < 0) {
+			dev_err(chg->dev,
+				"Couldn't read SOFTWARE_CTRL_REG rc=%d\n", rc);
+			return rc;
+		}
+
+		if (!(stat & UFP_EN_CMD_BIT)) {
+			/* configure charger in UFP only mode */
+			rc  = smblib_force_ufp(chg);
+			if (rc < 0) {
+				dev_err(chg->dev,
+					"Couldn't force UFP mode rc=%d\n", rc);
+				return rc;
+			}
+		}
+	} else {
+		/* configure power role for dual-role */
+		rc = smblib_masked_write(chg,
+					TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
+					TYPEC_POWER_ROLE_CMD_MASK, 0);
+		if (rc < 0) {
+			dev_err(chg->dev,
+				"Couldn't configure power role for DRP rc=%d\n",
+				rc);
+			return rc;
+		}
 	}
 
 	rerun_election(chg->usb_irq_enable_votable);
@@ -2555,8 +2601,9 @@ static void smb2_shutdown(struct platform_device *pdev)
 	/* disable all interrupts */
 	smb2_disable_interrupts(chg);
 
-	/* configure power role for UFP */
-	smblib_masked_write(chg, TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
+	if (!chg->ufp_only_mode)
+		/* configure power role for UFP */
+		smblib_masked_write(chg, TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
 				TYPEC_POWER_ROLE_CMD_MASK, UFP_EN_CMD_BIT);
 
 	/* force HVDCP to 5V */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -13,6 +13,8 @@
 
 &blsp1_uart2 {
 	status = "ok";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart_console_active>;
 };
 
 #include <dt-bindings/clock/msm-clocks-8952.h>
@@ -122,7 +124,6 @@
 	qcom,clk-rates = <400000 20000000 25000000 50000000 100000000
 								200000000>;
 	qcom,bus-speed-mode = "SDR12", "SDR25", "SDR50", "DDR50", "SDR104";
-
 	status = "ok";
 };
 
@@ -188,6 +189,9 @@
 };
 
 &i2c_5 { /* BLSP2 QUP1 (NFC) */
+	#address-cells = <1>;
+	#size-cells = <0>;
+
 	status = "ok";
 	nq@28 {
 		compatible = "qcom,nq-nci";

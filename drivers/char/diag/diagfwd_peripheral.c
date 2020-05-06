@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1305,7 +1305,8 @@ static void __diag_fwd_open(struct diagfwd_info *fwd_info)
 	 * Keeping the buffers busy for Memory Device and Multi Mode.
 	 */
 
-	if (driver->logging_mode != DIAG_USB_MODE) {
+	if (driver->logging_mode != DIAG_USB_MODE &&
+		driver->logging_mode != DIAG_PCIE_MODE) {
 		if (fwd_info->buf_1) {
 			atomic_set(&fwd_info->buf_1->in_busy, 0);
 			DIAG_LOG(DIAG_DEBUG_PERIPHERALS,
@@ -1434,9 +1435,6 @@ int diagfwd_channel_close(struct diagfwd_info *fwd_info)
 
 	if (!fwd_info)
 		return -EIO;
-
-	if (fwd_info->type == TYPE_CNTL)
-		flush_workqueue(driver->cntl_wq);
 
 	mutex_lock(&driver->diagfwd_channel_mutex[fwd_info->peripheral]);
 	fwd_info->ch_open = 0;

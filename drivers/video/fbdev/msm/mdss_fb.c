@@ -2,7 +2,7 @@
  * Core MDSS framebuffer driver.
  *
  * Copyright (C) 2007 Google Incorporated
- * Copyright (c) 2008-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2008-2020, The Linux Foundation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -1716,13 +1716,14 @@ void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 	bool twm_en = false;
 
 	if ((((mdss_fb_is_power_off(mfd) && mfd->dcm_state != DCM_ENTER)
-		|| !mfd->allow_bl_update) && !IS_CALIB_MODE_BL(mfd)) ||
+		|| !mfd->allow_bl_update) && !IS_CALIB_MODE_BL(mfd) &&
+		!mfd->allow_secure_bl_update) ||
 		mfd->panel_info->cont_splash_enabled) {
 		mfd->unset_bl_level = bkl_lvl;
 		return;
 	} else if (mdss_fb_is_power_on(mfd) && mfd->panel_info->panel_dead) {
 		mfd->unset_bl_level = mfd->bl_level;
-	} else {
+	} else if (!mfd->allow_secure_bl_update) {
 		mfd->unset_bl_level = U32_MAX;
 	}
 
@@ -1734,6 +1735,9 @@ void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 							&ad_bl_notify_needed);
 		if (!IS_CALIB_MODE_BL(mfd))
 			mdss_fb_scale_bl(mfd, &temp);
+
+		if (!temp && !mfd->allow_secure_bl_update && mfd->bl_level)
+			mfd->unset_bl_level =  mfd->bl_level;
 		/*
 		 * Even though backlight has been scaled, want to show that
 		 * backlight has been set to bkl_lvl to those that read from
@@ -1910,11 +1914,15 @@ static int mdss_fb_blank_blank(struct msm_fb_data_type *mfd,
 		if (mfd->disp_thread)
 			mdss_fb_stop_disp_thread(mfd);
 		mutex_lock(&mfd->bl_lock);
-		current_bl = mfd->bl_level;
+		if (mfd->unset_bl_level != U32_MAX)
+			current_bl = mfd->unset_bl_level;
+		else
+			current_bl = mfd->bl_level;
 		mfd->allow_bl_update = true;
 		mdss_fb_set_backlight(mfd, 0);
 		mfd->allow_bl_update = false;
-		mfd->unset_bl_level = current_bl;
+		if (current_bl)
+			mfd->unset_bl_level = current_bl;
 		mutex_unlock(&mfd->bl_lock);
 	}
 	mfd->panel_power_state = req_power_state;
@@ -1959,6 +1967,8 @@ static int mdss_fb_blank_unblank(struct msm_fb_data_type *mfd)
 		pr_debug("No change in power state\n");
 		return 0;
 	}
+
+	mfd->allow_secure_bl_update = false;
 
 	if (mfd->mdp.on_fnc) {
 		struct mdss_panel_info *panel_info = mfd->panel_info;
@@ -2049,6 +2059,14 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 	 * supported for command mode panels. For all other panel, treat lp
 	 * mode as full unblank and ulp mode as full blank.
 	 */
+	if ((mfd->panel_info->type == SPI_PANEL) &&
+		((blank_mode == BLANK_FLAG_LP) ||
+		(blank_mode == BLANK_FLAG_ULP))) {
+		pr_debug("lp/ulp mode are not supported for SPI panels\n");
+		if (mdss_fb_is_power_on_interactive(mfd))
+			return 0;
+	}
+
 	if (mfd->panel_info->type != MIPI_CMD_PANEL) {
 		if (blank_mode == BLANK_FLAG_LP) {
 			pr_debug("lp mode only valid for cmd mode panels\n");
@@ -2117,7 +2135,10 @@ static int mdss_fb_blank(int blank_mode, struct fb_info *info)
 	int ret;
 	struct mdss_panel_data *pdata;
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
+	ktime_t start, end;
+	s64 actual_time;
 
+	start = ktime_get();
 	ret = mdss_fb_pan_idle(mfd);
 	if (ret) {
 		pr_warn("mdss_fb_pan_idle for fb%d failed. ret=%d\n",
@@ -2150,7 +2171,12 @@ static int mdss_fb_blank(int blank_mode, struct fb_info *info)
 	}
 
 	ret = mdss_fb_blank_sub(blank_mode, info, mfd->op_enable);
-	MDSS_XLOG(blank_mode);
+	end = ktime_get();
+	actual_time = ktime_ms_delta(end, start);
+
+	MDSS_XLOG(blank_mode, actual_time);
+	pr_debug("blank_mode: %d and transition time: %lldms\n",
+					blank_mode, actual_time);
 
 end:
 	mutex_unlock(&mfd->mdss_sysfs_lock);
@@ -3005,7 +3031,7 @@ static int __mdss_fb_wait_for_fence_sub(struct msm_sync_pt_data *sync_pt_data,
 
 		ret = mdss_wait_sync_fence(fences[i], wait_ms);
 
-		if (ret == -ETIME) {
+		if (ret == -ETIMEDOUT) {
 			wait_jf = timeout - jiffies;
 			wait_ms = jiffies_to_msecs(wait_jf);
 			if (wait_jf < 0)
@@ -3022,14 +3048,14 @@ static int __mdss_fb_wait_for_fence_sub(struct msm_sync_pt_data *sync_pt_data,
 			MDSS_XLOG_TOUT_HANDLER("mdp");
 			ret = mdss_wait_sync_fence(fences[i], wait_ms);
 
-			if (ret == -ETIME)
+			if (ret == -ETIMEDOUT)
 				break;
 		}
 		mdss_put_sync_fence(fences[i]);
 	}
 
 	if (ret < 0) {
-		pr_err("%s: sync_fence_wait failed! ret = %x\n",
+		pr_err("%s: sync_fence_wait failed! ret = %d\n",
 				sync_pt_data->fence_name, ret);
 		for (; i < fence_cnt; i++)
 			mdss_put_sync_fence(fences[i]);
@@ -3310,6 +3336,7 @@ static int mdss_fb_pan_display_ex(struct fb_info *info,
 	mfd->msm_fb_backup.info = *info;
 	mfd->msm_fb_backup.disp_commit = *disp_commit;
 
+	atomic_inc(&mfd->mdp_sync_pt_data.commit_cnt);
 	atomic_inc(&mfd->commits_pending);
 	atomic_inc(&mfd->kickoff_pending);
 	wake_up_all(&mfd->commit_wait_q);
@@ -3457,10 +3484,7 @@ int mdss_fb_atomic_commit(struct fb_info *info,
 
 	commit_v1 = &commit->commit_v1;
 	if (commit_v1->flags & MDP_VALIDATE_LAYER) {
-		ret = 0;
-		if (!mfd->skip_koff_wait)
-			ret = mdss_fb_wait_for_kickoff(mfd);
-
+		ret = mdss_fb_wait_for_kickoff(mfd);
 		if (ret) {
 			pr_err("wait for kickoff failed\n");
 		} else {
@@ -3565,6 +3589,9 @@ static int mdss_fb_pan_display_sub(struct fb_var_screeninfo *var,
 			       struct fb_info *info)
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
+
+	if (!mfd)
+		return -EPERM;
 
 	if (!mfd->op_enable)
 		return -EPERM;
@@ -4413,7 +4440,7 @@ static int mdss_fb_handle_buf_sync_ioctl(struct msm_sync_pt_data *sync_pt_data,
 	if (IS_ERR_OR_NULL(retire_fence)) {
 		val += sync_pt_data->retire_threshold;
 		retire_fence = mdss_fb_sync_get_fence(
-			sync_pt_data->timeline, "mdp-retire", val);
+			sync_pt_data->timeline_retire, "mdp-retire", val);
 	}
 
 	if (IS_ERR_OR_NULL(retire_fence)) {

@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2019, The Linux Foundation. All rights reserved
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -156,6 +156,12 @@ static int cam_jpeg_mgr_process_irq(void *priv, void *data)
 
 	cmd_buf_kaddr = (uint32_t *)kaddr;
 
+	if ((p_cfg_req->hw_cfg_args.hw_update_entries[CAM_JPEG_PARAM].offset /
+			sizeof(uint32_t)) >= cmd_buf_len) {
+		CAM_ERR(CAM_JPEG, "Not enough buf");
+		return -EINVAL;
+	}
+
 	cmd_buf_kaddr =
 		(cmd_buf_kaddr +
 		(p_cfg_req->hw_cfg_args.hw_update_entries[CAM_JPEG_PARAM].offset
@@ -258,7 +264,7 @@ static int cam_jpeg_insert_cdm_change_base(
 	struct cam_jpeg_hw_ctx_data *ctx_data,
 	struct cam_jpeg_hw_mgr *hw_mgr)
 {
-	int rc;
+	int rc = 0;
 	uint32_t dev_type;
 	struct cam_cdm_bl_request *cdm_cmd;
 	uint32_t size;
@@ -274,6 +280,12 @@ static int cam_jpeg_insert_cdm_change_base(
 		CAM_ERR(CAM_JPEG,
 			"unable to get src buf info for cmd buf: %d", rc);
 		return rc;
+	}
+
+	if (config_args->hw_update_entries[CAM_JPEG_CHBASE].offset >=
+		ch_base_len) {
+		CAM_ERR(CAM_JPEG, "Not enough buf");
+		return -EINVAL;
 	}
 	CAM_DBG(CAM_JPEG, "iova %pK len %zu offset %d",
 		(void *)iova_addr, ch_base_len,
@@ -622,8 +634,13 @@ static void cam_jpeg_mgr_print_io_bufs(struct cam_packet *packet,
 
 	for (i = 0; i < packet->num_io_configs; i++) {
 		for (j = 0; j < CAM_PACKET_MAX_PLANES; j++) {
-			if (!io_cfg[i].mem_handle[j])
+			if (!io_cfg[i].mem_handle[j]) {
+				CAM_ERR(CAM_JPEG,
+					"Mem Handle %d is NULL for %d io config",
+					j, i);
 				break;
+			}
+
 
 			if (GET_FD_FROM_HANDLE(io_cfg[i].mem_handle[j]) ==
 				GET_FD_FROM_HANDLE(pf_buf_info)) {
@@ -713,7 +730,7 @@ static int cam_jpeg_mgr_prepare_hw_update(void *hw_mgr_priv,
 		return -EINVAL;
 	}
 
-	rc = cam_packet_util_validate_packet(packet);
+	rc = cam_packet_util_validate_packet(packet, prepare_args->remain_len);
 	if (rc) {
 		CAM_ERR(CAM_JPEG, "invalid packet %d", rc);
 		return rc;
@@ -734,7 +751,7 @@ static int cam_jpeg_mgr_prepare_hw_update(void *hw_mgr_priv,
 		(void *)packet, (void *)cmd_desc,
 		sizeof(struct cam_cmd_buf_desc));
 
-	rc = cam_packet_util_process_patches(packet, hw_mgr->iommu_hdl, -1);
+	rc = cam_packet_util_process_patches(packet, hw_mgr->iommu_hdl, -1, 0);
 	if (rc) {
 		CAM_ERR(CAM_JPEG, "Patch processing failed %d", rc);
 		return rc;

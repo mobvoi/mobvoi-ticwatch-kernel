@@ -1206,6 +1206,7 @@ void *msm_vidc_open(int core_id, int session_type)
 	INIT_MSM_VIDC_LIST(&inst->pending_getpropq);
 	INIT_MSM_VIDC_LIST(&inst->outputbufs);
 	INIT_MSM_VIDC_LIST(&inst->registeredbufs);
+	INIT_MSM_VIDC_LIST(&inst->eosbufs);
 
 	kref_init(&inst->kref);
 
@@ -1291,6 +1292,7 @@ fail_bufq_capture:
 	msm_comm_ctrl_deinit(inst);
 	msm_smem_delete_client(inst->mem_client);
 fail_mem_client:
+	DEINIT_MSM_VIDC_LIST(&inst->eosbufs);
 	kfree(inst);
 	inst = NULL;
 err_invalid_core:
@@ -1321,6 +1323,8 @@ static void cleanup_instance(struct msm_vidc_inst *inst)
 			dprintk(VIDC_ERR,
 				"Failed to release persist buffers\n");
 		}
+
+		msm_comm_release_eos_buffers(inst);
 
 		if (msm_comm_release_output_buffers(inst)) {
 			dprintk(VIDC_ERR,
@@ -1363,6 +1367,8 @@ int msm_vidc_destroy(struct msm_vidc_inst *inst)
 	for (i = 0; i < MAX_PORT_NUM; i++)
 		vb2_queue_release(&inst->bufq[i].vb2_bufq);
 
+	DEINIT_MSM_VIDC_LIST(&inst->eosbufs);
+
 	mutex_destroy(&inst->sync_lock);
 	mutex_destroy(&inst->bufq[CAPTURE_PORT].lock);
 	mutex_destroy(&inst->bufq[OUTPUT_PORT].lock);
@@ -1375,16 +1381,16 @@ int msm_vidc_destroy(struct msm_vidc_inst *inst)
 	return 0;
 }
 
+static void close_helper(struct kref *kref)
+{
+	struct msm_vidc_inst *inst = container_of(kref,
+			struct msm_vidc_inst, kref);
+
+	msm_vidc_destroy(inst);
+}
+
 int msm_vidc_close(void *instance)
 {
-	void close_helper(struct kref *kref)
-	{
-		struct msm_vidc_inst *inst = container_of(kref,
-				struct msm_vidc_inst, kref);
-
-		msm_vidc_destroy(inst);
-	}
-
 	struct msm_vidc_inst *inst = instance;
 	struct buffer_info *bi, *dummy;
 	int rc = 0;

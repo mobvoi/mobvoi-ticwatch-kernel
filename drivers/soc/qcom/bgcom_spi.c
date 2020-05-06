@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -49,7 +49,7 @@
 #define HED_EVENT_DATA_STRT_LEN (0x05)
 #define CMA_BFFR_POOL_SIZE (128*1024)
 
-#define MAX_RETRY 500
+#define MAX_RETRY 100
 
 enum bgcom_state {
 	/*BGCOM Staus ready*/
@@ -106,6 +106,7 @@ static uint32_t g_slav_status_reg;
 static void send_input_events(struct work_struct *work);
 static struct list_head cb_head = LIST_HEAD_INIT(cb_head);
 static struct list_head pr_lst_hd = LIST_HEAD_INIT(pr_lst_hd);
+static DEFINE_SPINLOCK(lst_setup_lock);
 static enum bgcom_spi_state spi_state;
 
 
@@ -148,7 +149,9 @@ static void send_input_events(struct work_struct *work)
 		evnt = node->evnt;
 		bgrsb_send_input(evnt);
 		kfree(evnt);
+		spin_lock(&lst_setup_lock);
 		list_del(&node->list);
+		spin_unlock(&lst_setup_lock);
 		kfree(node);
 	}
 }
@@ -323,8 +326,9 @@ static void parse_fifo(uint8_t *data, union bgcom_event_data_type *event_data)
 
 			data_list = kmalloc(sizeof(*data_list), GFP_KERNEL);
 			data_list->evnt = evnt;
+			spin_lock(&lst_setup_lock);
 			list_add_tail(&data_list->list, &pr_lst_hd);
-
+			spin_unlock(&lst_setup_lock);
 		} else if (event_id == 0x0001) {
 			evnt_data = kmalloc(p_len, GFP_KERNEL);
 			if (evnt_data != NULL) {
@@ -839,12 +843,13 @@ int bgcom_resume(void *handle)
 	mutex_lock(&bg_resume_mutex);
 	if (bg_spi->bg_state == BGCOM_STATE_ACTIVE)
 		goto unlock;
+	enable_irq(bg_irq);
 	do {
 		if (is_bg_resume(handle)) {
 			bg_spi->bg_state = BGCOM_STATE_ACTIVE;
 			break;
 		}
-		udelay(10);
+		udelay(1000);
 		++retry;
 	} while (retry < MAX_RETRY);
 
@@ -853,6 +858,11 @@ unlock:
 	if (retry == MAX_RETRY) {
 		/* BG failed to resume. Trigger BG soft reset. */
 		pr_err("BG failed to resume\n");
+		pr_err("%s: gpio#95 value is: %d\n",
+				__func__, gpio_get_value(95));
+		pr_err("%s: gpio#97 value is: %d\n",
+				__func__, gpio_get_value(97));
+		BUG();
 		bg_soft_reset();
 		return -ETIMEDOUT;
 	}
@@ -932,6 +942,7 @@ EXPORT_SYMBOL(bgcom_close);
 static irqreturn_t bg_irq_tasklet_hndlr(int irq, void *device)
 {
 	struct bg_spi_priv *bg_spi = device;
+
 	/* check if call-back exists */
 	if (!atomic_read(&bg_is_spi_active)) {
 		pr_debug("Interrupt received in suspend state\n");
@@ -1018,7 +1029,7 @@ static int bg_spi_probe(struct spi_device *spi)
 
 	bg_irq = gpio_to_irq(irq_gpio);
 	ret = request_threaded_irq(bg_irq, NULL, bg_irq_tasklet_hndlr,
-		IRQF_TRIGGER_HIGH | IRQF_ONESHOT, "qcom,bg_spi", bg_spi);
+		IRQF_TRIGGER_HIGH | IRQF_ONESHOT, "qcom-bg_spi", bg_spi);
 
 	if (ret)
 		goto err_ret;
@@ -1084,8 +1095,6 @@ static int bgcom_pm_resume(struct device *dev)
 	clnt_handle.bg_spi = spi;
 	atomic_set(&bg_is_spi_active, 1);
 	ret = bgcom_resume(&clnt_handle);
-	if (ret == 0)
-		enable_irq(bg_irq);
 	pr_info("Bgcom resumed with : %d\n", ret);
 	return ret;
 }

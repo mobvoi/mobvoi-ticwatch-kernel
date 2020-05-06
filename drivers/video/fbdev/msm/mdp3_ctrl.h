@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2014, 2016-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2014, 2016-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -48,7 +48,6 @@ struct mdp3_session_data {
 	struct msm_fb_data_type *mfd;
 	ktime_t vsync_time;
 	struct timer_list vsync_timer;
-	int vsync_period;
 	struct kernfs_node *vsync_event_sd;
 	struct kernfs_node *bl_event_sd;
 	struct mdp_overlay overlay;
@@ -60,10 +59,6 @@ struct mdp3_session_data {
 	struct kthread_work dma_done_work;
 	struct kthread_worker worker;
 	struct task_struct *thread;
-
-	struct kthread_work retire_work;
-	struct kthread_worker retire_worker;
-	struct task_struct *retire_thread;
 
 	atomic_t dma_done_cnt;
 	int histo_status;
@@ -88,6 +83,7 @@ struct mdp3_session_data {
 	/* For retire fence */
 	struct mdss_timeline *vsync_timeline;
 	int retire_cnt;
+	struct work_struct retire_work;
 };
 
 void mdp3_bufq_deinit(struct mdp3_buffer_queue *bufq, int client);

@@ -1177,7 +1177,7 @@ static int dsi_panel_parse_dfps_caps(struct dsi_dfps_capabilities *dfps_caps,
 	int rc = 0;
 	bool supported = false;
 	const char *type;
-	u32 val = 0, i;
+	u32 i;
 
 	supported = of_property_read_bool(of_node,
 					"qcom,mdss-dsi-pan-enable-dynamic-fps");
@@ -1237,11 +1237,10 @@ static int dsi_panel_parse_dfps_caps(struct dsi_dfps_capabilities *dfps_caps,
 	dfps_caps->dfps_support = true;
 
 	/* calculate max and min fps */
-	of_property_read_u32(of_node, "qcom,mdss-dsi-panel-framerate", &val);
-	dfps_caps->max_refresh_rate = val;
-	dfps_caps->min_refresh_rate = val;
+	dfps_caps->max_refresh_rate = dfps_caps->dfps_list[0];
+	dfps_caps->min_refresh_rate = dfps_caps->dfps_list[0];
 
-	for (i = 0; i < dfps_caps->dfps_list_len; i++) {
+	for (i = 1; i < dfps_caps->dfps_list_len; i++) {
 		if (dfps_caps->dfps_list[i] < dfps_caps->min_refresh_rate)
 			dfps_caps->min_refresh_rate = dfps_caps->dfps_list[i];
 		else if (dfps_caps->dfps_list[i] > dfps_caps->max_refresh_rate)
@@ -1998,6 +1997,7 @@ static int dsi_panel_parse_bl_config(struct dsi_panel *panel,
 {
 	int rc = 0;
 	const char *bl_type;
+	const char *data;
 	u32 val = 0;
 
 	bl_type = of_get_property(of_node,
@@ -2015,6 +2015,17 @@ static int dsi_panel_parse_bl_config(struct dsi_panel *panel,
 		pr_debug("[%s] bl-pmic-control-type unknown-%s\n",
 			 panel->name, bl_type);
 		panel->bl_config.type = DSI_BACKLIGHT_UNKNOWN;
+	}
+
+	data = of_get_property(of_node, "qcom,bl-update-flag", NULL);
+	if (!data) {
+		panel->bl_config.bl_update = BL_UPDATE_NONE;
+	} else if (!strcmp(data, "delay_until_first_frame")) {
+		panel->bl_config.bl_update = BL_UPDATE_DELAY_UNTIL_FIRST_FRAME;
+	} else {
+		pr_debug("[%s] No valid bl-update-flag: %s\n",
+						panel->name, data);
+		panel->bl_config.bl_update = BL_UPDATE_NONE;
 	}
 
 	panel->bl_config.bl_scale = MAX_BL_SCALE_LEVEL;
@@ -2115,7 +2126,7 @@ int dsi_dsc_populate_static_param(struct msm_display_dsc_info *dsc)
 	int target_bpp_x16;
 	int data;
 	int final_value, final_scale;
-	int ratio_index;
+	int ratio_index, mod_offset;
 
 	dsc->rc_model_size = 8192;
 
@@ -2187,7 +2198,20 @@ int dsi_dsc_populate_static_param(struct msm_display_dsc_info *dsc)
 		dsc->quant_incr_limit1 = 19;
 	}
 
-	dsc->slice_last_group_size = 3 - (dsc->slice_width % 3);
+	mod_offset = dsc->slice_width % 3;
+	switch (mod_offset) {
+	case 0:
+		dsc->slice_last_group_size = 2;
+		break;
+	case 1:
+		dsc->slice_last_group_size = 0;
+		break;
+	case 2:
+		dsc->slice_last_group_size = 1;
+		break;
+	default:
+		break;
+	}
 
 	dsc->det_thresh_flatness = 7 + 2*(bpc - 8);
 

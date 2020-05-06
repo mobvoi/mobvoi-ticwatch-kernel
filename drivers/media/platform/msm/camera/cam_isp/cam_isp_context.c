@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -27,7 +27,7 @@
 #include "cam_context_utils.h"
 #include "cam_common_util.h"
 
-static const char isp_dev_name[] = "isp";
+static const char isp_dev_name[] = "cam-isp";
 
 static int cam_isp_context_dump_active_request(void *data, unsigned long iova,
 	uint32_t buf_info);
@@ -448,6 +448,7 @@ static int __cam_isp_ctx_handle_buf_done_in_activated_state(
 		req_isp->bubble_detected = false;
 		list_del_init(&req->list);
 		list_add(&req->list, &ctx->pending_req_list);
+		atomic_set(&ctx_isp->process_bubble, 0);
 
 		CAM_DBG(CAM_REQ,
 			"Move active request %lld to pending list(cnt = %d) [bubble recovery]",
@@ -765,6 +766,7 @@ static int __cam_isp_ctx_epoch_in_applied(struct cam_isp_context *ctx_isp,
 		notify.req_id = req->request_id;
 		notify.error = CRM_KMD_ERR_BUBBLE;
 		ctx->ctx_crm_intf->notify_err(&notify);
+		atomic_set(&ctx_isp->process_bubble, 1);
 		CAM_DBG(CAM_ISP, "Notify CRM about Bubble frame %lld",
 			ctx_isp->frame_id);
 	} else {
@@ -1198,6 +1200,14 @@ static int __cam_isp_ctx_apply_req_in_activated_state(
 	 *
 	 */
 	ctx_isp = (struct cam_isp_context *) ctx->ctx_priv;
+	if (atomic_read(&ctx_isp->process_bubble)) {
+		CAM_ERR_RATE_LIMIT(CAM_ISP,
+			"Processing bubble cannot apply Request Id %llu",
+			apply->request_id);
+		rc = -EAGAIN;
+		goto end;
+	}
+
 	spin_lock_bh(&ctx->lock);
 	req = list_first_entry(&ctx->pending_req_list, struct cam_ctx_request,
 		list);
@@ -1219,7 +1229,7 @@ static int __cam_isp_ctx_apply_req_in_activated_state(
 		ctx_isp->substate_activated);
 	req_isp = (struct cam_isp_ctx_req *) req->req_priv;
 
-	if (ctx_isp->active_req_cnt >=  2) {
+	if (ctx_isp->active_req_cnt >=  4) {
 		CAM_ERR_RATE_LIMIT(CAM_ISP,
 			"Reject apply request (id %lld) due to congestion(cnt = %d)",
 			req->request_id,
@@ -1399,20 +1409,25 @@ static int __cam_isp_ctx_flush_req_in_top_state(
 	struct cam_isp_stop_args          stop_isp;
 	struct cam_hw_stop_args           stop_args;
 	struct cam_isp_start_args         start_isp;
+	struct cam_hw_reset_args          reset_args;
 	int rc = 0;
 
-	CAM_DBG(CAM_ISP, "try to flush pending list");
+	CAM_DBG(CAM_ISP, "ctx id:%d try to flush pending list",
+		ctx->ctx_id);
 	spin_lock_bh(&ctx->lock);
 	rc = __cam_isp_ctx_flush_req(ctx, &ctx->pending_req_list, flush_req);
 	spin_unlock_bh(&ctx->lock);
 
+	atomic_set(&ctx_isp->process_bubble, 0);
 	if (flush_req->type == CAM_REQ_MGR_FLUSH_TYPE_ALL) {
 		/* if active and wait list are empty, return */
 		spin_lock_bh(&ctx->lock);
 		if ((list_empty(&ctx->wait_req_list)) &&
 			(list_empty(&ctx->active_req_list))) {
 			spin_unlock_bh(&ctx->lock);
-			CAM_DBG(CAM_ISP, "active and wait list are empty");
+			CAM_DBG(CAM_ISP,
+				"ctx id:%d active and wait list are empty",
+				ctx->ctx_id);
 			goto end;
 		}
 		spin_unlock_bh(&ctx->lock);
@@ -1424,12 +1439,21 @@ static int __cam_isp_ctx_flush_req_in_top_state(
 		stop_args.args = (void *)&stop_isp;
 		ctx->hw_mgr_intf->hw_stop(ctx->hw_mgr_intf->hw_mgr_priv,
 				&stop_args);
+		CAM_DBG(CAM_ISP, "try to reset hw");
+		/* Reset hw */
+		reset_args.ctxt_to_hw_map = ctx_isp->hw_ctx;
+		rc = ctx->hw_mgr_intf->hw_reset(ctx->hw_mgr_intf->hw_mgr_priv,
+			&reset_args);
+		if (rc)
+			goto end;
 
 		spin_lock_bh(&ctx->lock);
-		CAM_DBG(CAM_ISP, "try to flush wait list");
+		CAM_DBG(CAM_ISP, "ctx id:%d try to flush wait list",
+			ctx->ctx_id);
 		rc = __cam_isp_ctx_flush_req(ctx, &ctx->wait_req_list,
 		flush_req);
-		CAM_DBG(CAM_ISP, "try to flush active list");
+		CAM_DBG(CAM_ISP, "ctx id:%d try to flush active list",
+			ctx->ctx_id);
 		rc = __cam_isp_ctx_flush_req(ctx, &ctx->active_req_list,
 		flush_req);
 		ctx_isp->active_req_cnt = 0;
@@ -1445,8 +1469,9 @@ static int __cam_isp_ctx_flush_req_in_top_state(
 	}
 
 end:
-	CAM_DBG(CAM_ISP, "Flush request in top state %d",
-		 ctx->state);
+	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_SOF;
+	CAM_DBG(CAM_ISP, "ctx id:%d Flush request in top state %d",
+		 ctx->ctx_id, ctx->state);
 	return rc;
 }
 
@@ -2035,6 +2060,7 @@ static int __cam_isp_ctx_config_dev_in_top_state(
 	uintptr_t                         packet_addr;
 	struct cam_packet                *packet;
 	size_t                            len = 0;
+	size_t                            remain_len = 0;
 	struct cam_hw_prepare_update_args cfg;
 	struct cam_req_mgr_add_request    add_req;
 	struct cam_isp_context           *ctx_isp =
@@ -2069,6 +2095,14 @@ static int __cam_isp_ctx_config_dev_in_top_state(
 		goto free_req;
 	}
 
+	remain_len = len;
+	if ((len < sizeof(struct cam_packet)) ||
+		((size_t)cmd->offset >= len - sizeof(struct cam_packet))) {
+		CAM_ERR(CAM_ISP, "invalid buff length: %zu or offset", len);
+		return -EINVAL;
+	}
+
+	remain_len -= (size_t)cmd->offset;
 	packet = (struct cam_packet *)(packet_addr + (uint32_t)cmd->offset);
 	CAM_DBG(CAM_ISP, "pack_handle %llx", cmd->packet_handle);
 	CAM_DBG(CAM_ISP, "packet address is 0x%zx", packet_addr);
@@ -2082,6 +2116,7 @@ static int __cam_isp_ctx_config_dev_in_top_state(
 	/* preprocess the configuration */
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.packet = packet;
+	cfg.remain_len = remain_len;
 	cfg.ctxt_to_hw_map = ctx_isp->hw_ctx;
 	cfg.max_hw_update_entries = CAM_ISP_CTX_CFG_MAX;
 	cfg.hw_update_entries = req_isp->cfg;
@@ -2426,6 +2461,7 @@ static int __cam_isp_ctx_start_dev_in_ready(struct cam_context *ctx,
 	start_isp.hw_config.init_packet = 1;
 	start_isp.start_only = false;
 
+	atomic_set(&ctx_isp->process_bubble, 0);
 	ctx_isp->frame_id = 0;
 	ctx_isp->active_req_cnt = 0;
 	ctx_isp->reported_req_id = 0;
@@ -2561,6 +2597,7 @@ static int __cam_isp_ctx_stop_dev_in_activated_unlock(
 	ctx_isp->frame_id = 0;
 	ctx_isp->active_req_cnt = 0;
 	ctx_isp->reported_req_id = 0;
+	atomic_set(&ctx_isp->process_bubble, 0);
 
 	CAM_DBG(CAM_ISP, "Stop device success next state %d on ctx %u",
 		ctx->state, ctx->ctx_id);

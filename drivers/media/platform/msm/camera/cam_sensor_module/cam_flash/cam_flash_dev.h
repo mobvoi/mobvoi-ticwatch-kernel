@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -35,6 +35,7 @@
 #include "cam_debug_util.h"
 #include "cam_sensor_io.h"
 #include "cam_flash_core.h"
+#include "cam_context.h"
 
 #define CAMX_FLASH_DEV_NAME "cam-flash-dev"
 
@@ -135,6 +136,9 @@ struct cam_flash_frame_setting {
  * @torch_trigger_name  : Torch trigger name array
  * @torch_op_current    : Torch operational current
  * @torch_max_current   : Max supported current for LED in torch mode
+ * @gpio_data           : GPIO info
+ * @gpio_delay_tbl      : Sleep times after enabling/disabling GPIOs
+ * @gpio_delay_tbl_size : Number of elements in cam_gpio_delay_tbl
  */
 
 struct cam_flash_private_soc {
@@ -146,6 +150,9 @@ struct cam_flash_private_soc {
 	const char   *torch_trigger_name[CAM_FLASH_MAX_LED_TRIGGERS];
 	uint32_t     torch_op_current[CAM_FLASH_MAX_LED_TRIGGERS];
 	uint32_t     torch_max_current[CAM_FLASH_MAX_LED_TRIGGERS];
+	struct cam_soc_gpio_data *gpio_data;
+	uint32_t     *gpio_delay_tbl;
+	uint8_t      gpio_delay_tbl_size;
 };
 
 struct cam_flash_func_tbl {
@@ -158,6 +165,7 @@ struct cam_flash_func_tbl {
 
 /**
  *  struct cam_flash_ctrl
+ * @device_name         : Device name
  * @soc_info            : Soc related information
  * @pdev                : Platform device
  * @per_frame[]         : Per_frame setting array
@@ -182,6 +190,7 @@ struct cam_flash_func_tbl {
  * @i2c_data            : I2C register settings
  */
 struct cam_flash_ctrl {
+	char device_name[CAM_CTX_DEV_NAME_MAX_LENGTH];
 	struct cam_hw_soc_info              soc_info;
 	struct platform_device             *pdev;
 	struct cam_sensor_power_ctrl_t      power_info;
