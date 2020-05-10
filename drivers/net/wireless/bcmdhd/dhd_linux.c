@@ -1699,7 +1699,6 @@ dhd_enable_packet_filter(int value, dhd_pub_t *dhd)
 {
 	int i;
 
-	DHD_ERROR(("%s: enter, value = %d\n", __FUNCTION__, value));
 	if ((dhd->op_mode & DHD_FLAG_HOSTAP_MODE) && value &&
 			!dhd_conf_get_insuspend(dhd, AP_FILTER_IN_SUSPEND)) {
 		DHD_ERROR(("%s: DHD_FLAG_HOSTAP_MODE\n", __FUNCTION__));
@@ -1881,7 +1880,6 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 			dhd->early_suspended = 1;
 #endif // endif
 			/* Kernel suspended */
-			DHD_ERROR(("%s: force extra Suspend setting\n", __FUNCTION__));
 
 			if (dhd->conf->pm_in_suspend >= 0)
 				power_mode = dhd->conf->pm_in_suspend;
@@ -2094,7 +2092,6 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 			dhd->early_suspended = 0;
 #endif // endif
 			/* Kernel resumed  */
-			DHD_ERROR(("%s: Remove extra suspend setting \n", __FUNCTION__));
 #ifdef DYNAMIC_SWOOB_DURATION
 			intr_width = 0;
 			ret = dhd_iovar(dhd, 0, "bus:intr_width", (char *)&intr_width,

@@ -228,7 +228,6 @@ static int bcmsdh_sdmmc_suspend(struct device *pdev)
 	struct sdio_func *func = dev_to_sdio_func(pdev);
 	mmc_pm_flag_t sdio_flags;
 
-	printf("%s Enter func->num=%d\n", __FUNCTION__, func->num);
 	if (func->num != 2)
 		return 0;
 
@@ -257,7 +256,6 @@ static int bcmsdh_sdmmc_suspend(struct device *pdev)
 	}
 	smp_mb();
 
-	printf("%s Exit\n", __FUNCTION__);
 	return 0;
 }
 
@@ -266,7 +264,6 @@ static int bcmsdh_sdmmc_resume(struct device *pdev)
 	sdioh_info_t *sdioh;
 	struct sdio_func *func = dev_to_sdio_func(pdev);
 
-	printf("%s Enter func->num=%d\n", __FUNCTION__, func->num);
 	if (func->num != 2)
 		return 0;
 
@@ -275,7 +272,6 @@ static int bcmsdh_sdmmc_resume(struct device *pdev)
 	bcmsdh_resume(sdioh->bcmsdh);
 
 	smp_mb();
-	printf("%s Exit\n", __FUNCTION__);
 	return 0;
 }
 
