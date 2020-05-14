@@ -58,3 +58,12 @@
 		no-map;
 	};
 };
+
+&pm660_pon {
+        qcom,pon_1 {
+                qcom,support-reset = <1>;
+                qcom,s1-timer = <6720>;
+                qcom,s2-timer = <1000>;
+                qcom,s2-type = <7>;
+        };
+};
