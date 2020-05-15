@@ -54,6 +54,7 @@
 #include "mdss_mdp.h"
 #include "mdp3_ctrl.h"
 #include "mdss_sync.h"
+#include "mdss_dsi.h"
 
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
 #define MDSS_FB_NUM 3
@@ -83,6 +84,7 @@
 
 static struct fb_info *fbi_list[MAX_FBI_LIST];
 static int fbi_list_index;
+static int lcd_loadswitch_flag;
 
 static u32 mdss_fb_pseudo_palette[16] = {
 	0x00000000, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -905,6 +907,63 @@ static ssize_t mdss_fb_get_persist_mode(struct device *dev,
 	return ret;
 }
 
+static ssize_t msm_fb_lcd_loadswitch_off(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t len)
+{
+	struct fb_info *fbi = dev_get_drvdata(dev);
+	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
+	struct mdss_panel_data *pdata;
+	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
+	int disp_en_gpio = -1;
+	u32 enable;
+
+	if (!mfd) {
+		pr_err("%s: mfd is NULL!\n", __func__);
+		return len;
+	}
+
+	if (kstrtouint(buf, 0, &enable)) {
+		pr_err("kstrtouint buf error!\n");
+		return len;
+	}
+
+	pr_warn("%s: enable: %d\n", __func__, enable);
+	pdata = dev_get_platdata(&mfd->pdev->dev);
+	if (pdata) {
+		ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
+					panel_data);
+		disp_en_gpio = ctrl_pdata->disp_en_gpio;
+	} else {
+		pr_err("no panel connected\n");
+		return -EINVAL;
+	}
+
+	if (gpio_is_valid(disp_en_gpio)) {
+		if (enable) {
+			if (gpio_direction_output(disp_en_gpio, 1)) {
+				pr_err("%s: disp_en_gpio set error\n",
+						__func__);
+				return -EINVAL;
+			} else {
+				gpio_set_value(disp_en_gpio, 1);
+				pr_debug("%s: set disp_en_gpio 1\n", __func__);
+			}
+		} else {
+			gpio_set_value(disp_en_gpio, 0);
+			pr_debug("%s: set disp_en_gpio 0\n", __func__);
+		}
+	} else {
+		pr_err("%s: disp_en_gpio invalid(%d)\n", __func__,
+				disp_en_gpio);
+	}
+
+	lcd_loadswitch_flag = !enable;
+	pr_debug("%s: lcd_loadswitch_flag: %d\n", __func__,
+			lcd_loadswitch_flag);
+
+	return len;
+}
+
 static ssize_t mdss_fb_idle_pc_notify(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -974,6 +1033,8 @@ static ssize_t mdss_fb_get_boost_mode(struct device *dev,
 	return ret;
 }
 
+static DEVICE_ATTR(msm_fb_lcd_loadswitch, S_IRUGO | S_IWUSR, NULL,
+					msm_fb_lcd_loadswitch_off);
 static DEVICE_ATTR(msm_fb_type, 0444, mdss_fb_get_type, NULL);
 static DEVICE_ATTR(msm_fb_split, 0644, mdss_fb_show_split,
 					mdss_fb_store_split);
@@ -999,6 +1060,7 @@ static DEVICE_ATTR(hbm_mode, 0664,
 	mdss_fb_get_boost_mode, mdss_fb_change_boost_mode);
 
 static struct attribute *mdss_fb_attrs[] = {
+	&dev_attr_msm_fb_lcd_loadswitch.attr,
 	&dev_attr_msm_fb_type.attr,
 	&dev_attr_msm_fb_split.attr,
 	&dev_attr_show_blank_event.attr,
@@ -2104,12 +2166,24 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 	int ret = 0;
 	int cur_power_state, req_power_state = MDSS_PANEL_POWER_OFF;
 	char trace_buffer[32];
+	struct mdss_panel_data *pdata;
+	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
+	int disp_en_gpio = -1;
 
 	if (!mfd || !op_enable)
 		return -EPERM;
 
 	if (mfd->dcm_state == DCM_ENTER)
 		return -EPERM;
+
+	pdata = dev_get_platdata(&mfd->pdev->dev);
+	if (pdata) {
+		ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
+					panel_data);
+		disp_en_gpio = ctrl_pdata->disp_en_gpio;
+	} else {
+		pr_err("no panel connected\n");
+	}
 
 	pr_debug("%pS mode:%d\n", __builtin_return_address(0),
 		blank_mode);
@@ -2149,6 +2223,23 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 
 	switch (blank_mode) {
 	case FB_BLANK_UNBLANK:
+		if (!lcd_loadswitch_flag) {
+			if (gpio_is_valid(disp_en_gpio)) {
+				if (gpio_direction_output(disp_en_gpio, 1)) {
+					pr_err("%s: disp_en_gpio set error\n",
+							__func__);
+				} else {
+					gpio_set_value(disp_en_gpio, 1);
+					pr_debug("%s: set disp_en_gpio 1\n",
+							__func__);
+				}
+			 } else {
+				pr_err("%s: disp_en_gpio invalid(%d)\n",
+						__func__, disp_en_gpio);
+			 }
+		} else {
+			return -EPERM;
+		}
 		pr_debug("unblank called. cur pwr state=%d\n", cur_power_state);
 		ret = mdss_fb_blank_unblank(mfd);
 		break;
@@ -2165,6 +2256,24 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 	case BLANK_FLAG_LP:
 		req_power_state = MDSS_PANEL_POWER_LP1;
 		pr_debug(" power mode requested\n");
+
+		if (!lcd_loadswitch_flag) {
+			if (gpio_is_valid(disp_en_gpio)) {
+				if (gpio_direction_output(disp_en_gpio, 1)) {
+					pr_err("%s: disp_en_gpio set error\n",
+							__func__);
+				} else {
+					gpio_set_value(disp_en_gpio, 1);
+					pr_debug("%s: set disp_en_gpio 1\n",
+							__func__);
+				}
+			 } else {
+				pr_err("%s: disp_en_gpio invalid(%d)\n",
+						__func__, disp_en_gpio);
+			 }
+		} else {
+			return -EPERM;
+		}
 
 		/*
 		 * If low power mode is requested when panel is already off,
@@ -2185,6 +2294,16 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 		req_power_state = MDSS_PANEL_POWER_OFF;
 		pr_debug("blank powerdown called\n");
 		ret = mdss_fb_blank_blank(mfd, req_power_state);
+		if (gpio_is_valid(disp_en_gpio)) {
+			gpio_set_value(disp_en_gpio, 0);
+			pr_debug("%s: set disp_en_gpio 0\n", __func__);
+			/* Cowork with gpio_request(ctrl_pdata->disp_en_gpio) in
+			 * mdss_dsi_panel.c:mdss_dsi_request_gpios() */
+			gpio_free(ctrl_pdata->disp_en_gpio);
+		} else {
+			pr_err("%s: disp_en_gpio invalid(%d)\n", __func__,
+					disp_en_gpio);
+		}
 		break;
 	}
 
