@@ -927,7 +927,7 @@ static ssize_t msm_fb_lcd_loadswitch_off(struct device *dev,
 		return len;
 	}
 
-	pr_debug("%s: enable: %d\n", __func__, enable);
+	pr_warn("%s: enable: %d\n", __func__, enable);
 	pdata = dev_get_platdata(&mfd->pdev->dev);
 	if (pdata) {
 		ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
@@ -939,18 +939,28 @@ static ssize_t msm_fb_lcd_loadswitch_off(struct device *dev,
 	}
 
 	if (gpio_is_valid(disp_en_gpio)) {
-		if (gpio_direction_output(disp_en_gpio, !!enable))
-			pr_err("%s: disp_en_gpio set error\n", __func__);
-		else
-			pr_debug("%s: set disp_en_gpio %d\n", __func__, !!enable);
+		if (enable) {
+			if (gpio_direction_output(disp_en_gpio, 1)) {
+				pr_err("%s: disp_en_gpio set error\n",
+						__func__);
+				return -EINVAL;
+			} else {
+				gpio_set_value(disp_en_gpio, 1);
+				pr_debug("%s: set disp_en_gpio 1\n", __func__);
+			}
+		} else {
+			gpio_set_value(disp_en_gpio, 0);
+			pr_debug("%s: set disp_en_gpio 0\n", __func__);
+		}
 	} else {
 		pr_err("%s: disp_en_gpio invalid(%d)\n", __func__,
 				disp_en_gpio);
 	}
 
 	lcd_loadswitch_flag = !enable;
+	pr_debug("%s: lcd_loadswitch_flag: %d\n", __func__,
+			lcd_loadswitch_flag);
 
-	pr_debug("%s: lcd_loadswitch_flag: %d\n", __func__, lcd_loadswitch_flag);
 	return len;
 }
 
@@ -2215,16 +2225,20 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 	case FB_BLANK_UNBLANK:
 		if (!lcd_loadswitch_flag) {
 			if (gpio_is_valid(disp_en_gpio)) {
-				if (gpio_direction_output(disp_en_gpio, 1))
+				if (gpio_direction_output(disp_en_gpio, 1)) {
 					pr_err("%s: disp_en_gpio set error\n",
 							__func__);
-				else
+				} else {
+					gpio_set_value(disp_en_gpio, 1);
 					pr_debug("%s: set disp_en_gpio 1\n",
 							__func__);
+				}
 			 } else {
 				pr_err("%s: disp_en_gpio invalid(%d)\n",
 						__func__, disp_en_gpio);
 			 }
+		} else {
+			return -EPERM;
 		}
 		pr_debug("unblank called. cur pwr state=%d\n", cur_power_state);
 		ret = mdss_fb_blank_unblank(mfd);
@@ -2245,16 +2259,20 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 
 		if (!lcd_loadswitch_flag) {
 			if (gpio_is_valid(disp_en_gpio)) {
-				if (gpio_direction_output(disp_en_gpio, 1))
+				if (gpio_direction_output(disp_en_gpio, 1)) {
 					pr_err("%s: disp_en_gpio set error\n",
 							__func__);
-				else
-					pr_err("%s: set disp_en_gpio 1\n",
+				} else {
+					gpio_set_value(disp_en_gpio, 1);
+					pr_debug("%s: set disp_en_gpio 1\n",
 							__func__);
+				}
 			 } else {
 				pr_err("%s: disp_en_gpio invalid(%d)\n",
 						__func__, disp_en_gpio);
 			 }
+		} else {
+			return -EPERM;
 		}
 
 		/*
@@ -2277,11 +2295,11 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 		pr_debug("blank powerdown called\n");
 		ret = mdss_fb_blank_blank(mfd, req_power_state);
 		if (gpio_is_valid(disp_en_gpio)) {
-			if (gpio_direction_output(disp_en_gpio, 0))
-				pr_err("%s: disp_en_gpio set error\n",
-						__func__);
-			else
-				pr_err("%s: set disp_en_gpio 0\n", __func__);
+			gpio_set_value(disp_en_gpio, 0);
+			pr_debug("%s: set disp_en_gpio 0\n", __func__);
+			/* Cowork with gpio_request(ctrl_pdata->disp_en_gpio) in
+			 * mdss_dsi_panel.c:mdss_dsi_request_gpios() */
+			gpio_free(ctrl_pdata->disp_en_gpio);
 		} else {
 			pr_err("%s: disp_en_gpio invalid(%d)\n", __func__,
 					disp_en_gpio);
