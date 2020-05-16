@@ -50,3 +50,11 @@
                 };
         };
 };
+
+&reserved_memory {
+	ramoops_mem: ramoops_region@0 {
+		reg = <0x0 0x9ff00000 0x0 0x00100000>;
+		compatible = "removed-dma-pool";
+		no-map;
+	};
+};
