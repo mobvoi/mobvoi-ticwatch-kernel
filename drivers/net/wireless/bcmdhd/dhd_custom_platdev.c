@@ -350,6 +350,7 @@ int dhd_wlan_power(int on)
 {
         struct sdio_func * gp = NULL;
         gpio_export(72,1);
+        gp = get_func_pointer();
 
 	if (on) {
 		if (gpio_direction_output(gpio_wl_reg_on, 0)) {
@@ -364,14 +365,19 @@ int dhd_wlan_power(int on)
 		}
 		if (!gpio_get_value(gpio_wl_reg_on))
 			pr_err("[%s] gpio didn't set high.\n", __func__);
+                if(gp!= NULL)
+                {
+                    mmc_power_restore_host(gp->card->host);
+                }
 	} else {
 		if (gpio_direction_output(gpio_wl_reg_on, 0)) {
 			pr_err("%s: WL_REG_ON didn't output low\n", __func__);
 			return -EIO;
 		}
-                
-                gp = get_func_pointer(); 
-                mmc_power_save_host(gp->card->host);
+                if(gp!= NULL)
+                {
+                    mmc_power_save_host(gp->card->host);
+                }
 	}
 	return 0;
 }
