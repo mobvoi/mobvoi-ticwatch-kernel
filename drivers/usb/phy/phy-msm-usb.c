@@ -4803,8 +4803,8 @@ static int msm_otg_runtime_idle(struct device *dev)
 	dev_dbg(dev, "OTG runtime idle\n");
 	msm_otg_dbg_log_event(phy, "RUNTIME IDLE", phy->otg->state, 0);
 
-	if (phy->otg->state == OTG_STATE_UNDEFINED)
-		return -EAGAIN;
+//	if (phy->otg->state == OTG_STATE_UNDEFINED)
+//		return -EAGAIN;
 
 	return 0;
 }
