@@ -16,6 +16,8 @@
 #include "max1726x_fuelgauge.h"
 #include "custom_app_event.h"
 
+#define MAX1726X_INFO_DEBUG	1
+
 #define MAX1726X_RSENSE		20	/* miliOhm */
 
 /*  register bits */
@@ -45,6 +47,9 @@ static enum power_supply_property max1726x_battery_props[] = {
 
 struct nanohub_fuelgauge_data *m_fg_data;
 
+#if MAX1726X_INFO_DEBUG
+static void max1726x_info_debug_show(void);
+#endif
 static int store_fuelguage_cache(struct max1726x_info_cache *cache)
 {
 	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
@@ -54,6 +59,10 @@ static int store_fuelguage_cache(struct max1726x_info_cache *cache)
 
 	memcpy(&fg_data->cache, cache, sizeof(struct max1726x_info_cache));
 	complete(&fg_data->updated);
+
+#if MAX1726X_INFO_DEBUG
+	max1726x_info_debug_show();
+#endif
 
 	pr_debug("nanohub: [FG] max1726x cache updated\n");
 
@@ -292,6 +301,30 @@ static int max1726x_get_battery_health(int *health)
 
 	return 0;
 }
+
+#if MAX1726X_INFO_DEBUG
+static void max1726x_info_debug_show(void)
+{
+	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
+	struct max1726x_info_cache *cache = &fg_data->cache;
+	int temp = 0;
+	uint32_t para_version = 0;
+
+	para_version = (cache->paraverh << 16) | cache->paraverl;
+	max1726x_get_temp(&temp);
+
+	pr_info("nanohub: [FG] (%d%%) V: %d/%dmV, C: %d/%dmA, Cap: %d/%dmAh, "
+			"T: %d, Cyc: %d, ParaV: 0x%x\n",
+			cache->repsoc >> 8,
+			max1726x_lsb_to_uv(cache->vcell) / 1000,
+			max1726x_lsb_to_uv(cache->avgvcell) / 1000,
+			max1726x_curr_to_ua(cache->curr) / 1000,
+			max1726x_curr_to_ua(cache->avgcurr) / 1000,
+			max1726x_capacity_to_uvh(cache->repcap) / 1000,
+			max1726x_capacity_to_uvh(cache->fullcaprep) / 1000,
+			temp, cache->cycles, para_version);
+}
+#endif
 
 static int max1726x_battery_get_property(struct power_supply *psy,
 					enum power_supply_property psp,

@@ -35,6 +35,9 @@ struct max1726x_info_cache {
 	uint16_t avgcurr;
 	uint16_t tte;
 	uint16_t ttf;
+	uint16_t paraverh;
+	uint16_t paraverl;
+	uint16_t reserved[3];
 } __packed;
 
 struct nanohub_fuelgauge_data {
