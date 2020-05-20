@@ -18,8 +18,12 @@
 #include <linux/semaphore.h>
 #include <../../../drivers/staging/android/timed_output.h>
 #include <linux/hrtimer.h>
-#include <linux/wakelock.h>
 #include <linux/mutex.h>
+#ifdef CONFIG_HAS_WAKELOCK
+#include <linux/wakelock.h>
+#else
+#include <linux/pm_wakeup.h>
+#endif
 
 #define LOG_TAG "[GPIO_VIBRA]"
 
@@ -29,26 +33,42 @@ struct gpio_vibra_pwm {
 	struct hrtimer timer;
 	struct mutex lock;
 	struct work_struct vibrator_work;
-	struct wake_lock wklock;
 	int gpio_enable;
 	int gpio_trigger;
 	bool on;
+#ifdef CONFIG_HAS_WAKELOCK
+	struct wake_lock wakelock;
+#else
+	struct wakeup_source wakelock;
+#endif
 };
-
 
 static void vibrator_start(struct gpio_vibra_pwm *gpio_vibra)
 {
-	gpio_vibra->on = true;
-	gpio_direction_output(gpio_vibra->gpio_enable, 1);
-	gpio_direction_output(gpio_vibra->gpio_trigger, 1);
-
+	if (!gpio_vibra->on) {
+#ifdef CONFIG_HAS_WAKELOCK
+		wake_lock(&gpio_vibra->wakelock);
+#else
+		__pm_stay_awake(&gpio_vibra->wakelock);
+#endif
+		gpio_vibra->on = true;
+		gpio_direction_output(gpio_vibra->gpio_enable, 1);
+		gpio_direction_output(gpio_vibra->gpio_trigger, 1);
+	}
 }
 
 static void vibrator_stop(struct gpio_vibra_pwm *gpio_vibra)
 {
-	gpio_vibra->on = false;
-	gpio_direction_output(gpio_vibra->gpio_enable, 0);
-	gpio_direction_output(gpio_vibra->gpio_trigger, 0);
+	if (gpio_vibra->on) {
+		gpio_vibra->on = false;
+		gpio_direction_output(gpio_vibra->gpio_enable, 0);
+		gpio_direction_output(gpio_vibra->gpio_trigger, 0);
+#ifdef CONFIG_HAS_WAKELOCK
+		wake_unlock(&gpio_vibra->wakelock);
+#else
+		__pm_relax(&gpio_vibra->wakelock);
+#endif
+	}
 }
 
 static enum hrtimer_restart vibrator_timer_func(struct hrtimer *timer)
@@ -68,14 +88,7 @@ static void vibrator_work_routine(struct work_struct *work)
 					vibrator_work);
 
 	mutex_lock(&gpio_vibra->lock);
-
-	if (!gpio_vibra->on)
-		vibrator_start(gpio_vibra);
-	else {
-		vibrator_stop(gpio_vibra);
-		wake_unlock(&gpio_vibra->wklock);
-	}
-
+	vibrator_stop(gpio_vibra);
 	mutex_unlock(&gpio_vibra->lock);
 }
 
@@ -98,21 +111,19 @@ static void vibrator_enable(struct timed_output_dev *dev, int value)
 	struct gpio_vibra_pwm *gpio_vibra =
 			container_of(dev, struct gpio_vibra_pwm, to_dev);
 
-	hrtimer_cancel(&gpio_vibra->timer);
-	cancel_work_sync(&gpio_vibra->vibrator_work);
-
 	mutex_lock(&gpio_vibra->lock);
-
 	if (value < 0) {
 		pr_err(LOG_TAG"Error enable value: %d.\n", value);
+		mutex_unlock(&gpio_vibra->lock);
 		return;
 	}
+	hrtimer_cancel(&gpio_vibra->timer);
+	cancel_work_sync(&gpio_vibra->vibrator_work);
 	vibrator_stop(gpio_vibra);
 
 	if (value > 0) {
-		wake_lock(&gpio_vibra->wklock);
 		vibrator_start(gpio_vibra);
-		pr_info(LOG_TAG"vibrator_enable hr timer start.\n");
+		pr_debug(LOG_TAG"vibrator_enable hr timer start.\n");
 		hrtimer_start(&gpio_vibra->timer,
 				ns_to_ktime((u64)value * NSEC_PER_MSEC),
 				HRTIMER_MODE_REL);
@@ -197,9 +208,14 @@ static int gpio_vibra_pwm_probe(struct platform_device *pdev)
 	gpio_vibra->timer.function = vibrator_timer_func;
 	INIT_WORK(&gpio_vibra->vibrator_work, vibrator_work_routine);
 
-	wake_lock_init(&gpio_vibra->wklock, WAKE_LOCK_SUSPEND, "vibrator");
 	mutex_init(&gpio_vibra->lock);
 
+#ifdef CONFIG_HAS_WAKELOCK
+	wake_lock_init(&gpio_vibra->wakelock, WAKE_LOCK_SUSPEND,
+		       "vibrator_wake_lock");
+#else
+	wakeup_source_init(&gpio_vibra->wakelock, "vibrator_wakeup_source");
+#endif
 	return 0;
 
 exit_timed_output_dev_failed:
@@ -210,6 +226,9 @@ exit_gpio_request_failed:
 	if (gpio_vibra->gpio_enable)
 		gpio_free(gpio_vibra->gpio_enable);
 
+	if (gpio_vibra)
+		devm_kfree(gpio_vibra->dev, gpio_vibra);
+
 	return err;
 }
 
@@ -217,23 +236,16 @@ static __maybe_unused int gpio_vibra_pwm_suspend(struct device *dev)
 {
 	struct gpio_vibra_pwm *gpio_vibra = dev_get_drvdata(dev);
 
+	mutex_lock(&gpio_vibra->lock);
 	hrtimer_cancel(&gpio_vibra->timer);
 	cancel_work_sync(&gpio_vibra->vibrator_work);
-
-	mutex_lock(&gpio_vibra->lock);
-
 	vibrator_stop(gpio_vibra);
-	wake_unlock(&gpio_vibra->wklock);
 	mutex_unlock(&gpio_vibra->lock);
 	return 0;
 }
 
 static __maybe_unused int gpio_vibra_pwm_resume(struct device *dev)
 {
-	struct gpio_vibra_pwm *gpio_vibra = dev_get_drvdata(dev);
-
-	mutex_lock(&gpio_vibra->lock);
-	mutex_unlock(&gpio_vibra->lock);
 	return 0;
 }
 
@@ -241,13 +253,21 @@ static int gpio_vibra_pwm_remove(struct platform_device *pdev)
 {
 	struct gpio_vibra_pwm *gpio_vibra = platform_get_drvdata(pdev);
 
+#ifdef CONFIG_HAS_WAKELOCK
+	wake_lock_destroy(&gpio_vibra->wakelock);
+#else
+	wakeup_source_trash(&gpio_vibra->wakelock);
+#endif
+
 	if (gpio_vibra->gpio_trigger)
 		gpio_free(gpio_vibra->gpio_trigger);
 
 	if (gpio_vibra->gpio_enable)
 		gpio_free(gpio_vibra->gpio_enable);
 
-	devm_kfree(gpio_vibra->dev, gpio_vibra);
+	if (gpio_vibra)
+		devm_kfree(gpio_vibra->dev, gpio_vibra);
+
 	return 0;
 }
 
