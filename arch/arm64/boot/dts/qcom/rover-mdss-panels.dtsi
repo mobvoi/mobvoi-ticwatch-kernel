@@ -1,0 +1,82 @@
+#include "dsi-panel-rm69330-cmd.dtsi"
+
+&dsi_rm69330_cmd {
+	/delete-property/ qcom,mdss-dsi-panel-timings;
+	qcom,mdss-dsi-panel-timings-phy-12nm = [04 04 01 08 00 03 01 0D];
+	qcom,panel-supply-entries = <&dsi_pm660_panel_pwr_supply>;
+	qcom,partial-update-enabled;
+	qcom,partial-update-addr-offset = <0x10 0>;
+	qcom,panel-roi-alignment = <2 2 4 2 20 2>;
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "te_signal_check";
+};
+
+&mdss_dsi_active {
+	mux {
+		pins = "gpio55";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio55";
+		drive-strength = <8>; /* 8 mA */
+		bias-disable = <0>; /* no pull */
+		output-high;
+	};
+};
+
+&mdss_dsi_suspend {
+	mux {
+		pins = "gpio55";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio55";
+		drive-strength = <2>; /* 2 mA */
+		bias-pull-down; /* pull down */
+		input-enable;
+	};
+};
+
+&pmx_mdss {
+	mdss_dsi_reset_active: mdss_dsi_reset_active {
+		mux {
+			pins = "gpio56";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio56";
+			drive-strength = <8>; /* 8 mA */
+			bias-disable = <0>; /* no pull */
+			output-low;
+		};
+	};
+
+	mdss_dsi_reset_suspend: mdss_dsi_reset_suspend {
+		mux {
+			pins = "gpio56";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio56";
+			drive-strength = <8>; /* 8 mA */
+			bias-disable = <0>; /* no pull */
+			output-low;
+		};
+	};
+};
+
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&dsi_rm69330_cmd>;
+	pinctrl-names = "mdss_default", "mdss_sleep";
+	pinctrl-0 = <&mdss_dsi_active &mdss_te_active &mdss_dsi_reset_active>;
+	pinctrl-1 = <&mdss_dsi_suspend &mdss_te_suspend &mdss_dsi_reset_suspend>;
+	/delete-property/ vdd-supply;
+	/delete-property/ vddio-supply;
+	qcom,platform-te-gpio = <&tlmm 24 0>;
+	qcom,platform-reset-gpio = <&tlmm 56 0>;
+	qcom,platform-enable-gpio = <&tlmm 55 0>;
+};
