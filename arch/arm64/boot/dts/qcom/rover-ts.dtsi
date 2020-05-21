@@ -1,0 +1,94 @@
+&i2c_4 {
+	status = "ok";
+	bt541_ts_device@20 {
+		compatible = "zinitix,bt541_ts_device";
+		reg = <0x20>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <44 0x2002>;
+
+		/* pins used by touchscreen */
+		pinctrl-names = "pmx_ts_active","pmx_ts_suspend",
+			"pmx_ts_release";
+		pinctrl-0 = <&ts_int_active &ts_reset_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		pinctrl-2 = <&ts_release>;
+
+		zinitix,switch-gpio = <&tlmm 46 0x00>;
+		zinitix,reset-gpio = <&tlmm 45 0x00>;
+		zinitix,irq-gpio = <&tlmm 44 0x2002>;
+		zinitix,x_resolution = <454>;
+		zinitix,y_resolution = <454>;
+		zinitix,page_size = <128>;
+		zinitix,orientation = <0>;
+		zinitix,tsp_vdd_supply_type = <1>;
+		zinitix,pname = "SM-G5308W";
+	};
+	raydium_ts@39 {
+		status = "disabled";
+	};
+};
+
+&ts_int_active {
+	mux {
+		pins = "gpio44";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio44";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+};
+
+&ts_int_suspend {
+	mux {
+		pins = "gpio44";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio44";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+};
+
+&ts_reset_active {
+	mux {
+		pins = "gpio45";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio45";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+};
+
+&ts_reset_suspend {
+	mux {
+		pins = "gpio45";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio45";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+};
+
+&ts_release {
+	mux {
+		pins = "gpio44", "gpio45";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio44", "gpio45";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+};
