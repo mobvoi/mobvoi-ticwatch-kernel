@@ -1,0 +1,51 @@
+&i2c_6 {
+	status = "ok";
+	st-nfc@08 {
+		compatible ="st,st21nfc";
+		reg = <0x08>;
+
+		pinctrl-names = "nfc_active", "nfc_suspend";
+		pinctrl-0 = <&gpio_nfc_rst_active &gpio_nfc_irq_active &nfc_clk_default>;
+		pinctrl-1 = <&gpio_nfc_rst_sleep &gpio_nfc_irq_sleep>;
+
+		interrupt-parent = <&tlmm>;
+		interrupts = <21 0>;
+		st,irq_gpio = <&tlmm 21 0x2001>;
+		st,clkreq_gpio = <&pm660_gpios 4 0x00>;
+		st,reset_gpio = <&tlmm 20 0x00>;
+		/* if use BB_CLK3, need config the clk-src as BBCLK2! */
+		qcom,clk-src = "BBCLK2";
+		clocks = <&clock_gcc clk_bb_clk2_pin>;
+		clock-names = "ref_clk";
+		status ="ok";
+	};
+};
+
+&spi_1 {
+	status = "ok";
+	st54@0 {
+		compatible = "st,st54spi";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		gpio-power = <&tlmm 71 0x0>;
+		status = "ok";
+	};
+};
+
+/* Same as config in sdm429-spyro-qrd-evt.dtsi
+&pm660_gpios {
+	nfc_clk {
+		nfc_clk_default: nfc_clk_default {
+			pins = "gpio4";
+			function = "normal";
+			input-enable;
+			power-source = <1>;
+		};
+	};
+};
+*/
+
+/* Disable NFC config in sdm429-spyro-qrd-evt.dtsi */
+&i2c_5 { /* BLSP2 QUP1 (NFC) */
+	status = "disabled";
+};
