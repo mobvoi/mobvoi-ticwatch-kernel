@@ -2736,6 +2736,7 @@ static void wl_scan_timeout(unsigned long data)
 	 */
 	dhdp->scan_timeout_occurred = FALSE;
 #endif /* DHD_FW_COREDUMP */
+	dhdp->scan_timeout_occurred = FALSE;
 	msg.event_type = hton32(WLC_E_ESCAN_RESULT);
 	msg.status = hton32(WLC_E_STATUS_TIMEOUT);
 	msg.reason = 0xFFFFFFFF;

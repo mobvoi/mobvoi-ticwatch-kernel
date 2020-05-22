@@ -346,9 +346,27 @@ int dhd_wifi_init_gpio(void)
 	return 0;
 }
 
+extern void sdhci_msm_set_carddetect(bool val);
+
+int dhd_wlan_set_carddetect(int val)
+{
+#if 0
+
+	g_wifi_detect = val;
+
+	if (sdc_status_cb)
+		sdc_status_cb(val, sdc_dev);
+	else
+		pr_warn("%s: There is no callback for notify\n", __func__);
+#endif
+        if(val)
+	    sdhci_msm_set_carddetect(TRUE);
+        else
+	    sdhci_msm_set_carddetect(FALSE);
+	return 0;
+}
 int dhd_wlan_power(int on)
 {
-        struct sdio_func * gp = NULL;
         gpio_export(72,1);
 
 	if (on) {
@@ -364,14 +382,15 @@ int dhd_wlan_power(int on)
 		}
 		if (!gpio_get_value(gpio_wl_reg_on))
 			pr_err("[%s] gpio didn't set high.\n", __func__);
+		mdelay(200);
+		dhd_wlan_set_carddetect(1);
 	} else {
 		if (gpio_direction_output(gpio_wl_reg_on, 0)) {
 			pr_err("%s: WL_REG_ON didn't output low\n", __func__);
 			return -EIO;
 		}
-                
-                gp = get_func_pointer(); 
-                mmc_power_save_host(gp->card->host);
+		mdelay(200);
+		dhd_wlan_set_carddetect(0);
 	}
 	return 0;
 }
@@ -381,23 +400,7 @@ static int dhd_wlan_reset(int onoff)
 {
 	return 0;
 }
-extern void sdhci_msm_set_carddetect(bool val);
 
-static int dhd_wlan_set_carddetect(int val)
-{
-#if 0
-
-	g_wifi_detect = val;
-
-	if (sdc_status_cb)
-		sdc_status_cb(val, sdc_dev);
-	else
-		pr_warn("%s: There is no callback for notify\n", __func__);
-#endif
-	sdhci_msm_set_carddetect(val);
-
-	return 0;
-}
 
 /* Customized Locale table : OPTIONAL feature */
 /*#define WLC_CNTRY_BUF_SZ        4
