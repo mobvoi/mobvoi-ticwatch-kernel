@@ -141,6 +141,10 @@ struct nanohub_data {
 #endif
 	struct mutex hub_mode_set_lock;
 	struct mutex nanohub_write_lock;
+
+#if defined(CONFIG_NANOHUB_MAX1726X)
+	struct nanohub_fuelgauge_data *fg_data;
+#endif
 	uint32_t nanohub_variant_version;
 	uint16_t nanohub_hw_type;
 };

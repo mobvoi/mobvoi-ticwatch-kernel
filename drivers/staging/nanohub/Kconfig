@@ -30,4 +30,15 @@ config NANOHUB_I2C
 
 	  If in doubt, say N here.
 
+config NANOHUB_MAX1726X
+	bool "Nanohub max1726x fuelgauge"
+	default Y
+	help
+	  Enable nanohub max1726x fuelgauge support.
+
+	  SOC inbuilt fuelgauge would be replaced.
+
+	  If in doubt, say Y here.
+
+
 endif # NANOHUB
