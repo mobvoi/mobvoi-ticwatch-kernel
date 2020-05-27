@@ -4179,6 +4179,8 @@ static int mdss_dsi_parse_gpio_params(struct platform_device *ctrl_pdev,
 {
 	struct mdss_panel_info *pinfo = &(ctrl_pdata->panel_data.panel_info);
 	struct mdss_panel_data *pdata = &ctrl_pdata->panel_data;
+	int ret = 0;
+	u32 temp;
 
 	/*
 	 * If disp_en_gpio has been set previously (disp_en_gpio > 0)
@@ -4194,6 +4196,25 @@ static int mdss_dsi_parse_gpio_params(struct platform_device *ctrl_pdev,
 					__func__, __LINE__);
 		pdata->panel_en_gpio = ctrl_pdata->disp_en_gpio;
 	}
+
+	ctrl_pdata->disp_mutex_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
+		"qcom,platform-mutex-gpio", 0);
+	if (!gpio_is_valid(ctrl_pdata->disp_mutex_gpio))
+		pr_err("%s:%d, MUTEX gpio not specified\n", __func__, __LINE__);
+
+	ret = of_property_read_u32(ctrl_pdev->dev.of_node,
+			"qcom,platform-mutex-cnt", &temp);
+	if (!ret)
+		ctrl_pdata->disp_mutex_cnt = (int)temp;
+	else
+		ctrl_pdata->disp_mutex_cnt = 5;
+
+	ret = of_property_read_u32(ctrl_pdev->dev.of_node,
+			"qcom,platform-mutex-timeout", &temp);
+	if (!ret)
+		ctrl_pdata->disp_mutex_timeout = (int)temp;
+	else
+		ctrl_pdata->disp_mutex_timeout = 100;
 
 	ctrl_pdata->disp_te_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
 		"qcom,platform-te-gpio", 0);
