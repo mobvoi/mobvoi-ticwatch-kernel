@@ -283,6 +283,7 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 				      enum led_brightness value)
 {
 	struct msm_fb_data_type *mfd = dev_get_drvdata(led_cdev->dev->parent);
+	struct mdss_panel_data *pdata;
 	u64 bl_lvl;
 
 	if (mfd->boot_notification_led) {
@@ -292,6 +293,20 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 
 	if (value > mfd->panel_info->brightness_max)
 		value = mfd->panel_info->brightness_max;
+
+	pdata = dev_get_platdata(&mfd->pdev->dev);
+	if (pdata && pdata->set_boost_mode) {
+		if (value == mfd->panel_info->brightness_max && !pdata->boost) {
+			pdata->set_boost_mode(pdata, 1);
+			pdata->boost = 1;
+			pr_debug("%s: Boost mode %d\n", __func__, pdata->boost);
+		} else if (value != mfd->panel_info->brightness_max &&
+			   pdata->boost) {
+			pdata->set_boost_mode(pdata, 0);
+			pdata->boost = 0;
+			pr_debug("%s: Boost mode %d\n", __func__, pdata->boost);
+		}
+	}
 
 	/* This maps android backlight level 0 to 255 into
 	 * driver backlight level 0 to bl_max with rounding
@@ -1002,7 +1017,7 @@ static ssize_t mdss_fb_change_boost_mode(struct device *dev,
 
 	mutex_lock(&mfd->bl_lock);
 
-	if ((pdata) && (pdata->set_boost_mode))
+	if (pdata->set_boost_mode)
 		pdata->set_boost_mode(pdata, boost_mode);
 
 	mutex_unlock(&mfd->bl_lock);
