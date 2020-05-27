@@ -3537,16 +3537,48 @@ static ssize_t store_debug_status(struct device *dev, struct device_attribute
 	return count;
 }
 
+static ssize_t show_fw_version(struct device *dev, struct device_attribute
+			       *devattr, char *buf)
+{
+	struct bt541_ts_info *info = dev_get_drvdata(dev);
+	struct i2c_client *client = info->client;
+	u16 fw_ver;
+	u16 fw_m_ver;
+	u16 reg_d_ver;
+	u16 hw_id = 0;
+
+	/* get chip firmware version */
+	if (read_data(client, BT541_FIRMWARE_VERSION, (u8 *)&fw_ver, 2) < 0)
+		goto fail_read_fw_version;
+
+	if (read_data(client, BT541_MINOR_FW_VERSION, (u8 *)&fw_m_ver, 2) < 0)
+		goto fail_read_fw_version;
+
+	if (read_data(client, BT541_DATA_VERSION_REG, (u8 *)&reg_d_ver, 2) < 0)
+		goto fail_read_fw_version;
+
+	if (read_data(client, BT541_HW_ID, (u8 *)&hw_id, 2) < 0)
+		zinitix_err("%s: failed to read hw id\n", __func__);
+
+	return snprintf(buf, PAGE_SIZE, "V%02x%02x%02x HWID:%x\n", fw_ver,
+			fw_m_ver, reg_d_ver, hw_id);
+
+fail_read_fw_version:
+	return snprintf(buf, PAGE_SIZE, "%s\n", "Failed to read fw version!");
+}
+
 static DEVICE_ATTR(cmd, 0220, NULL, store_cmd);
 static DEVICE_ATTR(cmd_status, 0444, show_cmd_status, NULL);
 static DEVICE_ATTR(cmd_result, 0444, show_cmd_result, NULL);
 static DEVICE_ATTR(debug_log, 0664, show_debug_status, store_debug_status);
+static DEVICE_ATTR(fw_version, 0444, show_fw_version, NULL);
 
 static struct attribute *touchscreen_attributes[] = {
 	&dev_attr_cmd.attr,
 	&dev_attr_cmd_status.attr,
 	&dev_attr_cmd_result.attr,
 	&dev_attr_debug_log.attr,
+	&dev_attr_fw_version.attr,
 	NULL,
 };
 
