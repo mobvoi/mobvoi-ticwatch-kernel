@@ -67,16 +67,49 @@
 			output-low;
 		};
 	};
+
+	mdss_dsi_mutex_active: mdss_dsi_mutex_active {
+		mux {
+			pins = "gpio133";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio133";
+			drive-strength = <2>; /* 2 mA */
+			bias-pull-down; /* pull down */
+			input-enable;
+		};
+	};
+
+	mdss_dsi_mutex_suspend: mdss_dsi_mutex_suspend {
+		mux {
+			pins = "gpio133";
+			function = "gpio133";
+		};
+
+		config {
+			pins = "gpio133";
+			drive-strength = <2>; /* 2 mA */
+			bias-pull-down; /* pull down */
+			input-enable;
+		};
+	};
 };
 
 &mdss_dsi0 {
 	qcom,dsi-pref-prim-pan = <&dsi_rm69330_cmd>;
 	pinctrl-names = "mdss_default", "mdss_sleep";
-	pinctrl-0 = <&mdss_dsi_active &mdss_te_active &mdss_dsi_reset_active>;
-	pinctrl-1 = <&mdss_dsi_suspend &mdss_te_suspend &mdss_dsi_reset_suspend>;
+	pinctrl-0 = <&mdss_dsi_active &mdss_te_active
+			&mdss_dsi_reset_active &mdss_dsi_mutex_active>;
+	pinctrl-1 = <&mdss_dsi_suspend &mdss_te_suspend
+			&mdss_dsi_reset_suspend &mdss_dsi_mutex_suspend>;
 	/delete-property/ vdd-supply;
 	/delete-property/ vddio-supply;
 	qcom,platform-te-gpio = <&tlmm 24 0>;
 	qcom,platform-reset-gpio = <&tlmm 56 0>;
 	qcom,platform-enable-gpio = <&tlmm 55 0>;
+	qcom,platform-mutex-gpio = <&tlmm 133 0>;
+	qcom,platform-mutex-count = <5>;
+	qcom,platform-mutex-timeout= <100>;
 };
