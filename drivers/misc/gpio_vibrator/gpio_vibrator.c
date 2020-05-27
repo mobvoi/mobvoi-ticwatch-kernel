@@ -87,9 +87,7 @@ static void vibrator_work_routine(struct work_struct *work)
 			container_of(work, struct gpio_vibra_pwm,
 					vibrator_work);
 
-	mutex_lock(&gpio_vibra->lock);
 	vibrator_stop(gpio_vibra);
-	mutex_unlock(&gpio_vibra->lock);
 }
 
 static int vibrator_get_time(struct timed_output_dev *dev)
