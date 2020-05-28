@@ -1,1 +1,1 @@
-obj-$(CONFIG_CNSS_CRYPTO) += cnss_secif.o
+obj-n += cnss_secif.o
