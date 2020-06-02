@@ -44,6 +44,8 @@
 #endif
 
 #define MAX_BUFFER_SIZE 260
+/* wake up for the duration of a typical transaction */
+#define WAKEUP_SRC_TIMEOUT (500)
 
 #define DRIVER_VERSION "2.0.4"
 
@@ -206,12 +208,16 @@ static void st21nfc_disable_irq(struct st21nfc_dev *st21nfc_dev)
 static irqreturn_t st21nfc_dev_irq_handler(int irq, void *dev_id)
 {
 	struct st21nfc_dev *st21nfc_dev = dev_id;
+	struct i2c_client *client = st21nfc_dev->platform_data.client;
 
 	pr_debug("%s : enter\n", __func__);
 	st21nfc_disable_irq(st21nfc_dev);
 
 	/* Wake up waiting readers */
 	wake_up(&st21nfc_dev->read_wq);
+
+	if (device_may_wakeup(&client->dev))
+		pm_wakeup_event(&client->dev, WAKEUP_SRC_TIMEOUT);
 
 	return IRQ_HANDLED;
 }
@@ -581,7 +587,6 @@ static ssize_t st21nfc_version(struct device *dev,
 
 static DEVICE_ATTR(i2c_addr, S_IRUGO | S_IWUSR, st21nfc_show_i2c_addr,
 		   st21nfc_change_i2c_addr);
-
 static DEVICE_ATTR(version, S_IRUGO, st21nfc_version, NULL);
 
 static struct attribute *st21nfc_attrs[] = {
@@ -714,6 +719,8 @@ static int st21nfc_probe(struct i2c_client *client,
 	st21nfc_dev->platform_data.polarity_mode = platform_data->polarity_mode;
 	st21nfc_dev->platform_data.client = client;
 
+	device_init_wakeup(&client->dev, true);
+
 	ret = gpio_request(platform_data->irq_gpio, "irq_gpio");
 	if (ret) {
 		pr_err("%s : gpio_request failed\n", __FILE__);
@@ -743,7 +750,7 @@ static int st21nfc_probe(struct i2c_client *client,
 
 	platform_data->pctrl_state_suspend =
 		pinctrl_lookup_state(platform_data->pctrl, "nfc_suspend");
-	if (IS_ERR(platform_data->pctrl_state_active))
+	if (IS_ERR(platform_data->pctrl_state_suspend))
 		dev_err(&client->dev, "pinctrl lookup suspend failed\n");
 
 	/* select "nfc_active" */
@@ -872,12 +879,46 @@ static const struct of_device_id st21nfc_of_match[] = {
 	{}
 };
 
+#ifdef CONFIG_PM
+static int st21nfc_suspend(struct device *dev)
+{
+	int ret = 0;
+	struct i2c_client *client;
+
+	client = to_i2c_client(dev);
+	if (device_may_wakeup(&client->dev))
+		enable_irq_wake(client->irq);
+
+	return ret;
+}
+
+static int st21nfc_resume(struct device *dev)
+{
+	int ret = 0;
+	struct i2c_client *client;
+
+	client = to_i2c_client(dev);
+	if (device_may_wakeup(&client->dev))
+		disable_irq_wake(client->irq);
+
+	return ret;
+}
+
+static const struct dev_pm_ops st21nfc_dev_pm_ops = {
+	.suspend = st21nfc_suspend,
+	.resume = st21nfc_resume,
+};
+#endif /* CONFIG_PM */
+
 static struct i2c_driver st21nfc_driver = {
 	.id_table = st21nfc_id,
 	.driver = {
 		   .name = "st21nfc",
 		   .owner = THIS_MODULE,
 		   .of_match_table = st21nfc_of_match,
+#ifdef CONFIG_PM
+		   .pm = &st21nfc_dev_pm_ops,
+#endif
 		   },
 	.probe = st21nfc_probe,
 	.remove = st21nfc_remove,
