@@ -238,14 +238,6 @@
 		};
 	};
 
-	qcom,avtimer@c0a300c {
-		compatible = "qcom,avtimer";
-		reg = <0x0c0a300c 0x4>,
-			<0x0c0a3010 0x4>;
-		reg-names = "avtimer_lsb_addr", "avtimer_msb_addr";
-		qcom,clk-div = <27>;
-	};
-
 	sound {
 		compatible = "qcom,msm8952-audio-codec";
 		qcom,model = "msm8909-skub-snd-card";
@@ -514,12 +506,24 @@
 
 &pm8909_gpios {
 	/* GPIO 2 (NFC_CLK_REQ) */
-	gpio@c100 {
-		qcom,mode = <0>;
-		qcom,vin-sel = <1>;
-		qcom,src-sel = <0>;
-		qcom,master-en = <1>;
-		status = "okay";
+	nfc-clk {
+		nfc_clk_default: nfc_clk_default {
+			pins = "gpio2";
+			function = "normal";
+			input-enable;
+			power-source = <1>;
+		};
+	};
+
+	/* GPIO 4 (FLASH ENABLE GPIO CONFIG) */
+	flash_en {
+		flash_en_default: flash_en_default{
+			pins = "gpio4";
+			function = "normal";
+			input-disable;
+			output-enable;
+			status = "okay";
+		};
 	};
 };
 
@@ -538,7 +542,8 @@
 		interrupts = <21 0>;
 		interrupt-names = "nfc_irq";
 		pinctrl-names = "nfc_active", "nfc_suspend";
-		pinctrl-0 = <&nfc_int_active &nfc_disable_active>;
+		pinctrl-0 = <&nfc_int_active &nfc_disable_active
+				&nfc_clk_default>;
 		pinctrl-1 = <&nfc_int_suspend &nfc_disable_suspend>;
 		clocks = <&clock_rpm clk_bb_clk2_pin>;
 		clock-names = "ref_clk";
@@ -571,4 +576,13 @@
 
 &pm8909_conga_analog {
 	status = "disabled";
+};
+
+&mdss_dsi {
+	vdda-supply = <&pm8909_l2>;
+	vddio-supply = <&pm8909_l6>;
+	qcom,mdss_dsi_ctrl0@1ac8000 {
+		vdd-supply = <&pm8909_l17>;
+		vddio-supply = <&pm8909_l6>;
+	};
 };
