@@ -38,7 +38,7 @@ DHDOFILES = aiutils.o siutils.o sbutils.o bcmutils.o bcmwifi_channels.o   \
 	dhd_debug_linux.o dhd_debug.o dhd_mschdbg.o dhd_dbg_ring.o            \
 	hnd_pktq.o hnd_pktpool.o bcmxtlv.o linux_pkt.o bcmstdlib_s.o frag.o   \
 	dhd_linux_exportfs.o dhd_linux_pktdump.o \
-	dhd_config.o wl_event.o wl_android_ext.o
+	dhd_config.o wl_event.o wl_android_ext.o bcm_app_utils.o
 
 #BCMDHD_SDIO
 ifneq ($(CONFIG_BCMDHD_SDIO),)
@@ -154,6 +154,9 @@ DHDCFLAGS += -DCUSTOM_RXF_CPUCORE=2
 DHDCFLAGS += -DDHD_TXBOUND=64
 
 DHDCFLAGS += -DBUILD_IN_KERNEL
+DHDCFLAGS += -DGSCAN_SUPPORT
+DHDCFLAGS += -DLINKSTAT_SUPPORT
+DHDCFLAGS += -DWL_VENDOR_EXT_SUPPORT
 
 # MESH support for kernel 3.10 later
 ifeq ($(CONFIG_WL_MESH),y)
