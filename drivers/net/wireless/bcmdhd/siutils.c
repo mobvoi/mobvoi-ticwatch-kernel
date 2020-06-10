@@ -298,7 +298,7 @@ si_buscore_prep(si_info_t *sii, uint bustype, uint devid, void *sdh)
 		}
 
 		/* Also, disable the extra SDIO pull-ups */
-		bcmsdh_cfg_write(sdh, SDIO_FUNC_1, SBSDIO_FUNC1_SDIOPULLUP, 0, NULL);
+		bcmsdh_cfg_write(sdh, SDIO_FUNC_1, SBSDIO_FUNC1_SDIOPULLUP, 1, NULL);
 	}
 
 #ifdef BCMSPI
