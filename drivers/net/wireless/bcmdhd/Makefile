@@ -27,18 +27,18 @@ DHDCFLAGS = -Wall -Wstrict-prototypes -Dlinux -DBCMDRIVER                 \
 	-DDHD_DONOT_FORWARD_BCMEVENT_AS_NETWORK_PKT                           \
 	-DMULTIPLE_SUPPLICANT -DTSQ_MULTIPLIER -DMFP                          \
 	-DPOWERUP_MAX_RETRY=0 -DIFACE_HANG_FORCE_DEV_CLOSE -DWAIT_DEQUEUE     \
-	-DWL_EXT_IAPSTA -DWL_SCHED_SCAN                                                     \
+	-DWL_EXT_IAPSTA -DWL_SCHED_SCAN                                       \
 	-DENABLE_INSMOD_NO_FW_LOAD                                            \
 	-Idrivers/net/wireless/bcmdhd -Idrivers/net/wireless/bcmdhd/include
 
-DHDOFILES = aiutils.o siutils.o sbutils.o bcmutils.o bcmwifi_channels.o   \
-	dhd_linux.o dhd_linux_platdev.o dhd_linux_sched.o dhd_pno.o           \
-	dhd_common.o dhd_ip.o dhd_linux_wq.o dhd_custom_gpio.o dhd_custom_platdev.o               \
-	bcmevent.o hndpmu.o linux_osl.o wldev_common.o wl_android.o           \
+DHDOFILES = aiutils.o siutils.o sbutils.o bcmutils.o bcmwifi_channels.o \
+	dhd_linux.o dhd_linux_platdev.o dhd_linux_sched.o dhd_pno.o dhd_common.o \
+	dhd_ip.o dhd_linux_wq.o dhd_custom_gpio.o dhd_custom_platdev.o  \
+	bcmevent.o hndpmu.o linux_osl.o wldev_common.o wl_android.o wl_roam.o \
 	dhd_debug_linux.o dhd_debug.o dhd_mschdbg.o dhd_dbg_ring.o            \
 	hnd_pktq.o hnd_pktpool.o bcmxtlv.o linux_pkt.o bcmstdlib_s.o frag.o   \
 	dhd_linux_exportfs.o dhd_linux_pktdump.o \
-	dhd_config.o wl_event.o wl_android_ext.o
+	dhd_config.o wl_event.o wl_android_ext.o bcm_app_utils.o
 
 #BCMDHD_SDIO
 ifneq ($(CONFIG_BCMDHD_SDIO),)
@@ -99,6 +99,7 @@ endif
 
 ifeq ($(CONFIG_64BIT),y)
     DHDCFLAGS := $(filter-out -DBCMDMA32,$(DHDCFLAGS))
+
     DHDCFLAGS += -DBCMDMA64OSL
 endif
 
@@ -125,6 +126,38 @@ ifneq ($(CONFIG_BCMDHD_PCIE),)
 	DHDCFLAGS += -DDHD_SSSR_DUMP
 endif
 endif
+
+
+DHDCFLAGS += -DCUSTOM_MAX_TXGLOM_SIZE=36
+DHDCFLAGS += -DMAX_HDR_READ=256
+DHDCFLAGS += -DDHD_FIRSTREAD=256
+DHDCFLAGS += -DCUSTOM_TXINRX_THRES=128
+
+DHDCFLAGS += -DROAM_AP_ENV_DETECTION
+DHDCFLAGS += -DROAM_ENABLE -DROAM_CHANNEL_CACHE -DROAM_API
+DHDCFLAGS += -DENABLE_FW_ROAM_SUSPEND
+DHDCFLAGS += -DCUSTOM_ROAM_TRIGGER_SETTING=-75
+DHDCFLAGS += -DCUSTOM_ROAM_DELTA_SETTING=10
+DHDCFLAGS += -DCUSTOM_KEEP_ALIVE_SETTING=28000
+DHDCFLAGS += -DGET_CUSTOM_MAC_ENABLE
+
+ifneq ($(CONFIG_WAKELOCK),)
+DHDCFLAGS += -DCONFIG_HAS_WAKELOCK
+endif
+
+DHDCFLAGS += -DWL_VENDOR_EXT_SUPPORT
+DHDCFLAGS += -DUSE_DYNAMIC_F2_BLKSIZE
+DHDCFLAGS += -DDYNAMIC_F2_BLKSIZE_FOR_NONLEGACY=256
+DHDCFLAGS += -DPKT_STATICS
+DHDCFLAGS += -DDCUSTOM_DPC_PRIO_SETTING=-1
+DHDCFLAGS += -DCUSTOM_DPC_CPUCORE=3
+DHDCFLAGS += -DCUSTOM_RXF_CPUCORE=2
+DHDCFLAGS += -DDHD_TXBOUND=64
+
+DHDCFLAGS += -DBUILD_IN_KERNEL
+DHDCFLAGS += -DGSCAN_SUPPORT
+DHDCFLAGS += -DLINKSTAT_SUPPORT
+DHDCFLAGS += -DWL_VENDOR_EXT_SUPPORT
 
 # MESH support for kernel 3.10 later
 ifeq ($(CONFIG_WL_MESH),y)
