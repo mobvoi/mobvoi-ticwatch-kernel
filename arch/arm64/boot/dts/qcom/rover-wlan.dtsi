@@ -38,7 +38,7 @@
                 sdc2_clk_on: sdc2_clk_on {
                         config {
                                 pins = "sdc2_clk";
-                                drive-strength = <8>; /* 8 MA */
+                                drive-strength = <4>; /* 4 MA */
                                 bias-disable; /* NO pull */
                                };
                         };
@@ -55,7 +55,7 @@
                         config {
                                 pins = "sdc2_cmd";
                                 bias-pull-up; /* pull up */
-                                drive-strength = <8>; /* 8 MA */
+                                drive-strength = <4>; /* 4 MA */
                                 };
                         };
                 sdc2_cmd_off: sdc2_cmd_off {
@@ -71,7 +71,7 @@
                         config {
                                 pins = "sdc2_data";
                                 bias-pull-up; /* pull up */
-                                drive-strength = <8>; /* 8 MA */
+                                drive-strength = <4>; /* 4 MA */
                                 };
                         };
                 sdc2_data_off: sdc2_data_off {
