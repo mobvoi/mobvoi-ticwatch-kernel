@@ -3942,7 +3942,7 @@ static void smblib_force_legacy_icl(struct smb_charger *chg, int pst)
 		break;
 	case POWER_SUPPLY_TYPE_USB_FLOAT:
 		/*
-		 * limit ICL to 100mA, the USB driver will enumerate to check
+		 * limit ICL to 500mA, the USB driver will enumerate to check
 		 * if this is a SDP and appropriately set the current
 		 */
 		vote(chg->usb_icl_votable, LEGACY_UNKNOWN_VOTER, true, 500000);
@@ -4381,7 +4381,7 @@ static void smblib_handle_typec_removal(struct smb_charger *chg)
 
 	/* enable APSD CC trigger for next insertion */
 	rc = smblib_masked_write(chg, TYPE_C_CFG_REG,
-				APSD_START_ON_CC_BIT, 0);
+				APSD_START_ON_CC_BIT, APSD_START_ON_CC_BIT);
 	if (rc < 0)
 		smblib_err(chg, "Couldn't enable APSD_START_ON_CC rc=%d\n", rc);
 
