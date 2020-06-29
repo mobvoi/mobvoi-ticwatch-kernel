@@ -1,3 +1,7 @@
+config SENSORS_SSP_BBD
+    bool "support SSP BBD"
+    default n
+
 choice
     depends on SENSORS_SSP_BBD
     prompt "Choose serial connection with chip"
@@ -11,15 +15,13 @@ config BCM_GPS_TTY_DRIVER
 
 config BCM_GPS_I2C_DRIVER
      bool "I2C"
-     default n
      depends on I2C
      help
         Support for BRCM GPS I2C driver.
-endchoice
 
 config BCM_GPS_SPI_DRIVER
-    tristate "BCM_GPS_SPI_DRIVER"
-    default y
+    bool "BCM_GPS_SPI_DRIVER"
+    depends on SPI
     help
         Support for BRCM GPS SPI driver.
-
+endchoice
