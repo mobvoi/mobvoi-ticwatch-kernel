@@ -1,7 +1,6 @@
 #
 # Makefile for the kernel character device drivers.
 #
-obj-$(CONFIG_BCM_GPS_SPI_DRIVER)  += brcm/bbdpl/
 obj-y				+= mem.o random.o
 obj-$(CONFIG_TTY_PRINTK)	+= ttyprintk.o
 obj-y				+= misc.o
@@ -60,6 +59,7 @@ js-rtc-y = rtc.o
 
 obj-$(CONFIG_TILE_SROM)		+= tile-srom.o
 obj-$(CONFIG_DIAG_CHAR)		+= diag/
+obj-$(CONFIG_SENSORS_SSP_BBD)	+= brcm/bbdpl/
 obj-$(CONFIG_XILLYBUS)		+= xillybus/
 obj-$(CONFIG_POWERNV_OP_PANEL)	+= powernv-op-panel.o
 obj-$(CONFIG_MSM_ADSPRPC)       += adsprpc.o
