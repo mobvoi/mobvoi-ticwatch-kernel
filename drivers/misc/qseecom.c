@@ -1522,6 +1522,14 @@ static int __qseecom_decrease_clk_ref_count(enum qseecom_ce_hw_instance ce)
 
 	if (qclk->clk_access_cnt > 0) {
 		qclk->clk_access_cnt--;
+		if(qclk->clk_access_cnt == 0){
+			if (qclk->ce_clk != NULL)
+				clk_disable_unprepare(qclk->ce_clk);
+			if (qclk->ce_core_clk != NULL)
+				clk_disable_unprepare(qclk->ce_core_clk);
+			if (qclk->ce_bus_clk != NULL)
+				clk_disable_unprepare(qclk->ce_bus_clk);
+		}
 	} else {
 		pr_err("Invalid clock ref count %d\n", qclk->clk_access_cnt);
 		ret = -EINVAL;
