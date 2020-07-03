@@ -1,7 +1,6 @@
 config NANOHUB
 	tristate "Nanohub"
 	default N
-	select IIO
 	help
 	  Enable support for the nanohub sensorhub driver.
 
