@@ -117,3 +117,9 @@
 		status="ok";
 	};
 };
+
+&spi3_default{
+	config{
+		drive-strength = <2>;
+	};
+};

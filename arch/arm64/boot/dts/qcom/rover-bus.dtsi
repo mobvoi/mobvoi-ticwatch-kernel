@@ -89,7 +89,7 @@
 			};
 			config {
 				pins = "gpio96", "gpio97", "gpio99";
-				drive-strength = <12>; /* 12 MA */
+				drive-strength = <2>;
 				bias-disable = <0>; /* No PULL */
 			};
 		};
@@ -216,7 +216,7 @@
 			};
 			config {
 				pins = "gpio0", "gpio1", "gpio3";
-				drive-strength = <12>; /* 12 MA */
+				drive-strength = <2>;
 				bias-disable = <0>; /* No PULL */
 			};
 		};
