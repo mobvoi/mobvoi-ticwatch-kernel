@@ -9,6 +9,7 @@
 	qcom,fg-chg-term-current = <40>;
 	qcom,fg-sys-term-current = <(-50)>;
 	qcom,fg-chg-term-base-current = <30>;
-	qcom,fg-recharge-voltage = <4300>;
-	qcom,fg-recharge-soc-thr = <98>;
+	qcom,hold-soc-while-full;
+	qcom,fg-recharge-voltage = <4420>;
+	qcom,fg-recharge-soc-thr = <90>;
 };
