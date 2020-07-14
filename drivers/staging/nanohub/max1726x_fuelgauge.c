@@ -53,9 +53,23 @@ static void max1726x_info_debug_show(void);
 static int store_fuelguage_cache(struct max1726x_info_cache *cache)
 {
 	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
+	unsigned int soc;
 
 	if (!(fg_data && cache))
 		return -EINVAL;
+
+	/* Check if the info is valid */
+	soc = cache->repsoc >> 8;
+	if (soc > 100) {
+		pr_warn("nanohub: [FG] info's soc is invalid(%d, 0x%x)\n",
+			__LINE__, cache->repsoc);
+		return 0;
+	}
+	if (cache->status & MAX1726X_STATUS_BST) {
+		pr_warn("nanohub: [FG] info's status is invalid(%d, 0x%x)\n",
+			__LINE__, cache->status);
+		return 0;
+	}
 
 	memcpy(&fg_data->cache, cache, sizeof(struct max1726x_info_cache));
 	complete(&fg_data->updated);
@@ -357,10 +371,7 @@ static int max1726x_battery_get_property(struct power_supply *psy,
 		ret = max1726x_batt_status(val);
 		break;
 	case POWER_SUPPLY_PROP_PRESENT:
-		if (cache->status & MAX1726X_STATUS_BST)
-			val->intval = 0;
-		else
-			val->intval = 1;
+		val->intval = 1;
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
 		val->intval = max1726x_lsb_to_uv(cache->vcell);
@@ -395,7 +406,6 @@ static int max1726x_battery_get_property(struct power_supply *psy,
 	default:
 		break;
 	}
-
 	return ret;
 }
 
