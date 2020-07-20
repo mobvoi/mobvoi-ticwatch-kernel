@@ -5,7 +5,14 @@ qcom,4580597_mobvoi_rover_lishen_595mah_pwm3100_averaged_masterslave_may25th2020
 	qcom,max-voltage-uv = <4450000>;
 	qcom,fg-cc-cv-threshold-mv = <4440>;
 	qcom,nom-batt-capacity-mah = <595>;
+	qcom,fastchg-current-ma = <400>;
 	qcom,batt-id-kohm = <33>;
+	qcom,jeita-fcc-ranges = <0   100  160000
+				101  200  260000
+				201  450  400000>;
+	qcom,jeita-fv-ranges = <0   100  4450000
+				101 200  4450000
+				201 450  4450000>;
 	qcom,battery-beta = <3380>;
 	qcom,battery-type = "4580597_mobvoi_rover_lishen_595mah_pwm3100_averaged_masterslave_may25th2020";
 	qcom,checksum = <0x7B97>;

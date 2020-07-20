@@ -47,6 +47,10 @@
 	};
 };
 
+&pm660_charger {
+       /delete-property/qcom,auto-recharge-soc;
+};
+
 &pm660_fg {
        /delete-property/qcom,fg-auto-recharge-soc;
        /delete-property/qcom,fg-recharge-soc-thr;
