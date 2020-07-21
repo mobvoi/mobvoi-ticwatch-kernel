@@ -1028,6 +1028,7 @@ static enum power_supply_property smb2_batt_props[] = {
 	POWER_SUPPLY_PROP_CYCLE_COUNT,
 	POWER_SUPPLY_PROP_FCC_STEPPER_ENABLE,
 };
+#endif /* CONFIG_NANOHUB_MAX1726X */
 
 static int smb2_batt_get_prop(struct power_supply *psy,
 		enum power_supply_property psp,
@@ -1161,6 +1162,15 @@ static int smb2_batt_get_prop(struct power_supply *psy,
 	return 0;
 }
 
+#if defined(CONFIG_NANOHUB_MAX1726X)
+int max1726x_get_smb2_batt_prop(struct power_supply *psy,
+		enum power_supply_property psp,
+		union power_supply_propval *val)
+{
+	return smb2_batt_get_prop(psy, psp, val);
+}
+EXPORT_SYMBOL_GPL(max1726x_get_smb2_batt_prop);
+#else /* CONFIG_NANOHUB_MAX1726X */
 static int smb2_batt_set_prop(struct power_supply *psy,
 		enum power_supply_property prop,
 		const union power_supply_propval *val)
