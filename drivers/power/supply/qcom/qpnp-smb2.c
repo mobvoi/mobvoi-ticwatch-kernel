@@ -983,14 +983,14 @@ static int smb2_init_dc_psy(struct smb2 *chip)
  *************************/
 
 #if defined(CONFIG_NANOHUB_MAX1726X)
-extern int max1726x_powersupply_init(struct device *dev,
+extern int max1726x_powersupply_init(struct smb_charger *chg,
 				     struct power_supply **pp);
 static int smb2_init_batt_psy(struct smb2 *chip)
 {
 	struct smb_charger *chg = &chip->chg;
 	int rc = 0;
 
-	rc = max1726x_powersupply_init(chg->dev, &chg->batt_psy);
+	rc = max1726x_powersupply_init(chg, &chg->batt_psy);
 	return rc;
 }
 #else /* CONFIG_NANOHUB_MAX1726X */

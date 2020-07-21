@@ -15,6 +15,7 @@
 #include <linux/power_supply.h>
 #include "max1726x_fuelgauge.h"
 #include "custom_app_event.h"
+#include "../../power/supply/qcom/smb-lib.h"
 
 #define MAX1726X_INFO_DEBUG	1
 
@@ -516,7 +517,7 @@ int max1726x_nanohub_init(struct device *dev, struct nanohub_data *hub_data)
 }
 EXPORT_SYMBOL_GPL(max1726x_nanohub_init);
 
-int max1726x_powersupply_init(struct device *dev, struct power_supply **pp)
+int max1726x_powersupply_init(struct smb_charger *chg, struct power_supply **pp)
 {
 	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
 	struct power_supply_config batt_cfg = {};
@@ -531,9 +532,9 @@ int max1726x_powersupply_init(struct device *dev, struct power_supply **pp)
 			return rc;
 	}
 
-	batt_cfg.drv_data = NULL;
-	batt_cfg.of_node = dev->of_node; /* TODO */
-	batt_psy = power_supply_register(dev, &batt_psy_desc, &batt_cfg);
+	batt_cfg.drv_data = chg;
+	batt_cfg.of_node = chg->dev->of_node;
+	batt_psy = power_supply_register(chg->dev, &batt_psy_desc, &batt_cfg);
 	if (IS_ERR(batt_psy)) {
 		pr_err("Couldn't register battery power supply\n");
 		rc = PTR_ERR(batt_psy);
