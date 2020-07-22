@@ -2134,7 +2134,7 @@ static void clear_report_data(struct bt541_ts_info *info)
 			input_mt_report_slot_state(info->input_dev,
 						   MT_TOOL_FINGER, 0);
 			reported = true;
-			if (!m_ts_debug_mode && TSP_NORMAL_EVENT_MSG)
+			if (m_ts_debug_mode & TSP_NORMAL_EVENT_MSG)
 				zinitix_info("[TSP] R %02d\n", i);
 		}
 		info->reported_touch_info.coord[i].sub_status = 0;
@@ -2496,19 +2496,22 @@ static int bt541_ts_resume(struct device *dev)
 
 	for (i = 0; i < 3; i++) {
 		if (write_cmd(client, BT541_WAKEUP_CMD) < 0) {
-			zinitix_info("tpd_resume fail to send wakeup_cmd(%d)\n",
-				i);
+			zinitix_err("tpd_resume fail to send wakeup_cmd(%d)\n",
+				    i);
 			msleep(20);
 			continue;
 		} else
 			break;
 	}
 
+	if (m_ts_debug_mode & 0x02)
+		zinitix_info("BT541_WAKEUP_CMD sent(%d)\n", i);
+
 	if (i == 3) {
 		bt541_power_control(info, POWER_ON_SEQUENCE);
 		err = mini_init_touch(info);
 		if (err < 0)
-			zinitix_info("resume_reset: zinitix_resume_proc error\n");
+			zinitix_err("resume_reset: zinitix_resume_proc err\n");
 		goto reset_exit;
 	}
 
@@ -2516,8 +2519,7 @@ static int bt541_ts_resume(struct device *dev)
 	msleep(20);
 	for (i = 0; i < 3; i++) {
 		if (write_cmd(client, BT541_CLEAR_INT_STATUS_CMD) < 0) {
-			zinitix_info("tpd_resume fail to send wakeup_cmd(%d)\n",
-				i);
+			zinitix_err("fail to send clear int cmd(%d)\n", i);
 			msleep(20);
 			continue;
 		} else
@@ -2599,12 +2601,15 @@ static int bt541_ts_suspend(struct device *dev)
 	for (i = 0; i < 3; i++) {
 		if (write_cmd(client, BT541_IDLE_CMD) < 0) {
 			zinitix_err("tpd_suspend fail to send sleep cmd(%d)\n",
-				i);
+				    i);
 			msleep(20);
 			continue;
 		} else
 			break;
 	}
+
+	if (m_ts_debug_mode & 0x02)
+		zinitix_err("BT541_IDLE_CMD sent(%d)\n", i);
 
 	if (!info->enable_wakeup) {
 		if (pdata->gpio_switch > 0) {
