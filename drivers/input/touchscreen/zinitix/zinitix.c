@@ -2450,7 +2450,6 @@ out:
 static int bt541_ts_resume(struct device *dev)
 {
 	int err = 0;
-	int i = 0;
 	struct i2c_client *client = to_i2c_client(dev);
 	struct bt541_ts_info *info = i2c_get_clientdata(client);
 	struct bt541_ts_platform_data *pdata = info->pdata;
@@ -2481,64 +2480,61 @@ static int bt541_ts_resume(struct device *dev)
 				return -EIO;
 			}
 			bt541_power_control(info, POWER_ON_SEQUENCE);
-			/* init touch mode */
+
 			info->touch_mode = TOUCH_POINT_MODE;
 			init_touch(info);
+			goto reset_exit;
 		} else {
 			zinitix_info("gpio switch is not valid %d\n",
 					pdata->gpio_switch);
 		}
 	}
 
-	/* Close low enery to avoid write failure */
-	write_cmd(client, 0x000a);
-	msleep(20);
+	/***********Link modify here on 2020/7/23 ***************/
+	disable_irq(info->irq);
 
-	for (i = 0; i < 3; i++) {
-		if (write_cmd(client, BT541_WAKEUP_CMD) < 0) {
-			zinitix_err("tpd_resume fail to send wakeup_cmd(%d)\n",
-				    i);
-			msleep(20);
-			continue;
-		} else
-			break;
+	//resume reset init
+	if (gpio_is_valid(pdata->gpio_reset)) {
+		gpio_direction_output(pdata->gpio_reset, 1);
+		udelay(1000);
+		gpio_direction_output(pdata->gpio_reset, 0);
+		msleep(100);
+		gpio_direction_output(pdata->gpio_reset, 1);
+		usleep_range(10000, 15000);
 	}
 
-	if (m_ts_debug_mode & 0x02)
-		zinitix_info("BT541_WAKEUP_CMD sent(%d)\n", i);
+	//power sequence process
+	if (write_reg(client, 0xc000, 0x0001) != I2C_SUCCESS)
+		zinitix_err("Failed to send power sequence(vendor cmd enable)\n");
+	udelay(1000);
 
-	if (i == 3) {
-		bt541_power_control(info, POWER_ON_SEQUENCE);
-		err = mini_init_touch(info);
-		if (err < 0)
-			zinitix_err("resume_reset: zinitix_resume_proc err\n");
+	if (write_cmd(client, 0xc004) != I2C_SUCCESS)
+		zinitix_err("Failed to send power sequence(intn clear)\n");
+	udelay(1000);
+
+	if (write_reg(client, 0xc002, 0x0001) != I2C_SUCCESS)
+		zinitix_err("Failed to send power sequence(nvm init)\n");
+	udelay(1000);
+
+	if (write_reg(client, 0xc001, 0x0001) != I2C_SUCCESS)
+		zinitix_err("Failed to send power sequence(program start)\n");
+	msleep(50);
+
+	if (mini_init_touch(info) != I2C_SUCCESS) {
+		zinitix_err("resume_reset: zinitix_resume_proc err\n");
 		goto reset_exit;
 	}
+	/***********End of moidfy ***************/
 
-	write_cmd(client, BT541_SWRESET_CMD);
-	msleep(20);
-	for (i = 0; i < 3; i++) {
-		if (write_cmd(client, BT541_CLEAR_INT_STATUS_CMD) < 0) {
-			zinitix_err("fail to send clear int cmd(%d)\n", i);
-			msleep(20);
-			continue;
-		} else
-			break;
-	}
 #if ESD_TIMER_INTERVAL
 	esd_timer_start(CHECK_ESD_TIMER, info);
 #endif
-
-	write_cmd(client, 0x000b);
-	msleep(20);
 
 reset_exit:
 
 	info->work_state = NOTHING;
 
-#if !USE_WAKEUP_GESTURE		/* eric add 20170208 */
 	enable_irq(info->irq);
-#endif
 
 	tpd_halt = 0;
 	up(&info->work_lock);
@@ -3624,6 +3620,10 @@ static ssize_t store_enable_wakeup(struct device *dev, struct device_attribute
 
 	if (kstrtoint(buf, 0, &ret))
 		return -EINVAL;
+
+	if (info->work_state == SUSPEND)
+		zinitix_info("%s: set enable_wakeup (%d) in SUSPEND\n",
+			     __func__, !!ret);
 
 	if (ret)
 		info->enable_wakeup = true;
