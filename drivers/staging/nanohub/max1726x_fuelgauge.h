@@ -55,6 +55,7 @@ struct nanohub_fuelgauge_data {
 	struct completion updated;
 	struct delayed_work work_init_request;
 	struct max1726x_info_cache cache;
+	bool info_cache_updated;
 };
 
 int max1726x_nanohub_init(struct device *dev, struct nanohub_data *hub_data);

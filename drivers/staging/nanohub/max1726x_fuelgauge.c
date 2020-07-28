@@ -15,6 +15,7 @@
 #include <linux/power_supply.h>
 #include "max1726x_fuelgauge.h"
 #include "custom_app_event.h"
+#include "../../power/supply/qcom/smb-lib.h"
 
 #define MAX1726X_INFO_DEBUG	1
 
@@ -47,18 +48,39 @@ static enum power_supply_property max1726x_battery_props[] = {
 
 struct nanohub_fuelgauge_data *m_fg_data;
 
+extern int max1726x_get_smb2_batt_prop(struct power_supply *psy,
+				       enum power_supply_property psp,
+				       union power_supply_propval *val);
+
 #if MAX1726X_INFO_DEBUG
 static void max1726x_info_debug_show(void);
 #endif
 static int store_fuelguage_cache(struct max1726x_info_cache *cache)
 {
 	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
+	unsigned int soc;
 
 	if (!(fg_data && cache))
 		return -EINVAL;
 
+	/* Check if the info is valid */
+	soc = cache->repsoc >> 8;
+	if (soc > 100) {
+		pr_warn("nanohub: [FG] info's soc is invalid(%d, 0x%x)\n",
+			__LINE__, cache->repsoc);
+		return 0;
+	}
+	if (cache->status & MAX1726X_STATUS_BST) {
+		pr_warn("nanohub: [FG] info's status is invalid(%d, 0x%x)\n",
+			__LINE__, cache->status);
+		return 0;
+	}
+
 	memcpy(&fg_data->cache, cache, sizeof(struct max1726x_info_cache));
 	complete(&fg_data->updated);
+
+	if (!fg_data->info_cache_updated)
+		fg_data->info_cache_updated = true;
 
 #if MAX1726X_INFO_DEBUG
 	max1726x_info_debug_show();
@@ -71,7 +93,6 @@ static int store_fuelguage_cache(struct max1726x_info_cache *cache)
 
 int is_fuel_gauge_data(struct nanohub_buf *buf, int len)
 {
-
 	uint64_t app_id = MakeAppId(kAppIdVendorMobvoi, kAppIdFuelGauge);
 
 	struct HostHubRawPacket *p;
@@ -143,48 +164,17 @@ static int max1726x_request_data(void)
 	return 0;
 }
 
-
 static int max1726x_batt_status(union power_supply_propval *val)
 {
 	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
-	union power_supply_propval prop = {0,};
-	bool usb_online = false, dc_online = false;
-	int status, rc = 0;
 
 	if (!fg_data) {
 		val->intval = POWER_SUPPLY_STATUS_UNKNOWN;
 		return -EINVAL;
 	}
 
-	if (fg_data->usb_psy) {
-		rc = fg_data->usb_psy->desc->get_property(fg_data->usb_psy,
-					POWER_SUPPLY_PROP_ONLINE, &prop);
-		if (rc)
-			pr_err("nanohub: [FG] Failed to get USB online prop\n");
-		else
-			usb_online = (bool)prop.intval;
-	}
-
-	if (fg_data->dc_psy) {
-		rc = fg_data->dc_psy->desc->get_property(fg_data->dc_psy,
-					POWER_SUPPLY_PROP_ONLINE, &prop);
-		if (rc)
-			pr_err("nanohub: [FG] Failed to get DC online prop\n");
-		else
-			dc_online = (bool)prop.intval;
-	}
-
-	if (usb_online || dc_online) {
-		if ((fg_data->cache.repsoc >> 8) == 100) /* TODO */
-			status = POWER_SUPPLY_STATUS_FULL;
-		else
-			status = POWER_SUPPLY_STATUS_CHARGING;
-	} else
-		status = POWER_SUPPLY_STATUS_DISCHARGING;
-
-	val->intval = status;
-
-	return 0;
+	return max1726x_get_smb2_batt_prop(fg_data->batt_psy,
+					   POWER_SUPPLY_PROP_STATUS, val);
 }
 
 static inline int max1726x_lsb_to_uv(int lsb)
@@ -219,16 +209,6 @@ static int max1726x_batt_cap_level(union power_supply_propval *val)
 	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
 	int level;
 
-	/* TODO
-	if (fg_info->cache.flags & BQ27XXX_FLAG_FC)
-		level = POWER_SUPPLY_CAPACITY_LEVEL_FULL;
-	else if (fg_info->cache.flags & BQ27XXX_FLAG_SOC1)
-		level = POWER_SUPPLY_CAPACITY_LEVEL_LOW;
-	else if (fg_info->cache.flags & BQ27XXX_FLAG_SOCF)
-		level = POWER_SUPPLY_CAPACITY_LEVEL_CRITICAL;
-	else
-		level = POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
-		*/
 	if ((fg_data->cache.repsoc >> 8) == 100)
 		level = POWER_SUPPLY_CAPACITY_LEVEL_FULL;
 	else
@@ -309,26 +289,54 @@ static void max1726x_info_debug_show(void)
 	struct max1726x_info_cache *cache = &fg_data->cache;
 	int temp = 0;
 	uint32_t para_version = 0;
+	union power_supply_propval val;
+	int smb2_batt_soc;
+	int smb2_batt_volt;
+	int smb2_batt_curr;
+	int smb2_batt_capfull;
+	int smb2_batt_temp;
 
 	para_version = (cache->paraverh << 16) | cache->paraverl;
 	max1726x_get_temp(&temp);
 
-	pr_info("nanohub: [FG] (%d%%) V: %d/%dmV, C: %d/%dmA, Cap: %d/%dmAh, "
-			"T: %d, Cyc: %d, ParaV: 0x%x\n",
-			cache->repsoc >> 8,
-			max1726x_lsb_to_uv(cache->vcell) / 1000,
+	max1726x_get_smb2_batt_prop(fg_data->batt_psy,
+				    POWER_SUPPLY_PROP_CAPACITY, &val);
+	smb2_batt_soc = val.intval;
+
+	max1726x_get_smb2_batt_prop(fg_data->batt_psy,
+				    POWER_SUPPLY_PROP_VOLTAGE_NOW, &val);
+	smb2_batt_volt = val.intval;
+
+	max1726x_get_smb2_batt_prop(fg_data->batt_psy,
+				    POWER_SUPPLY_PROP_CURRENT_NOW, &val);
+	smb2_batt_curr = val.intval;
+
+	max1726x_get_smb2_batt_prop(fg_data->batt_psy,
+				    POWER_SUPPLY_PROP_CHARGE_FULL, &val);
+	smb2_batt_capfull = val.intval;
+
+	max1726x_get_smb2_batt_prop(fg_data->batt_psy,
+				    POWER_SUPPLY_PROP_TEMP, &val);
+	smb2_batt_temp = val.intval;
+
+	pr_warn("nanohub: [FG] (%d%%/%d%%) V:%d/%dmV, C:%d/%dmA, "
+			"Cap:%d(%d/%d)mAh, T:%d/%d, Cyc:%d, ParaV:0x%x\n",
+			cache->repsoc >> 8, smb2_batt_soc,
 			max1726x_lsb_to_uv(cache->avgvcell) / 1000,
-			max1726x_curr_to_ua(cache->curr) / 1000,
+			smb2_batt_volt / 1000,
 			max1726x_curr_to_ua(cache->avgcurr) / 1000,
+			smb2_batt_curr / 1000,
 			max1726x_capacity_to_uvh(cache->repcap) / 1000,
 			max1726x_capacity_to_uvh(cache->fullcaprep) / 1000,
-			temp, cache->cycles, para_version);
+			smb2_batt_capfull / 1000,
+			temp / 10, smb2_batt_temp / 10, cache->cycles,
+			para_version);
 }
 #endif
 
 static int max1726x_battery_get_property(struct power_supply *psy,
-					enum power_supply_property psp,
-					union power_supply_propval *val)
+					 enum power_supply_property psp,
+					 union power_supply_propval *val)
 {
 	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
 	struct max1726x_info_cache *cache;
@@ -350,6 +358,11 @@ static int max1726x_battery_get_property(struct power_supply *psy,
 		wait_for_completion_timeout(&fg_data->updated,
 				msecs_to_jiffies(200));
 
+	if (!fg_data->info_cache_updated) {
+		/* pr_info("nanohub: [FG] max1726x info is not updated!\n"); */
+		return max1726x_get_smb2_batt_prop(psy, psp, val);
+	}
+
 	cache = &fg_data->cache;
 
 	switch (psp) {
@@ -357,16 +370,13 @@ static int max1726x_battery_get_property(struct power_supply *psy,
 		ret = max1726x_batt_status(val);
 		break;
 	case POWER_SUPPLY_PROP_PRESENT:
-		if (cache->status & MAX1726X_STATUS_BST)
-			val->intval = 0;
-		else
-			val->intval = 1;
+		val->intval = 1;
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
-		val->intval = max1726x_lsb_to_uv(cache->vcell);
+		val->intval = max1726x_lsb_to_uv(cache->avgvcell);
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
-		val->intval = max1726x_curr_to_ua(cache->curr);
+		val->intval = max1726x_curr_to_ua(cache->avgcurr);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
 		val->intval = cache->repsoc >> 8; /* REPSOC LSB: 1/256 % */
@@ -400,7 +410,7 @@ static int max1726x_battery_get_property(struct power_supply *psy,
 }
 
 static int max1726x_batt_prop_is_writeable(struct power_supply *psy,
-		enum power_supply_property psp)
+					   enum power_supply_property psp)
 {
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
@@ -454,7 +464,7 @@ static int max1726x_init(void)
 	}
 	m_fg_data = fg_data;
 	memcpy(&fg_data->cache, &default_cache,
-			sizeof(struct max1726x_info_cache));
+	       sizeof(struct max1726x_info_cache));
 
 	usb_psy = power_supply_get_by_name("usb");
 	if (!usb_psy) {
@@ -476,6 +486,8 @@ static int max1726x_init(void)
 
 	mutex_init(&fg_data->lock);
 	init_completion(&fg_data->updated);
+
+	fg_data->info_cache_updated = false;
 
 init_data_alloc:
 init_usb_psy:
@@ -506,7 +518,7 @@ int max1726x_nanohub_init(struct device *dev, struct nanohub_data *hub_data)
 }
 EXPORT_SYMBOL_GPL(max1726x_nanohub_init);
 
-int max1726x_powersupply_init(struct device *dev, struct power_supply **pp)
+int max1726x_powersupply_init(struct smb_charger *chg, struct power_supply **pp)
 {
 	struct nanohub_fuelgauge_data *fg_data = m_fg_data;
 	struct power_supply_config batt_cfg = {};
@@ -521,9 +533,9 @@ int max1726x_powersupply_init(struct device *dev, struct power_supply **pp)
 			return rc;
 	}
 
-	batt_cfg.drv_data = NULL;
-	batt_cfg.of_node = dev->of_node; /* TODO */
-	batt_psy = power_supply_register(dev, &batt_psy_desc, &batt_cfg);
+	batt_cfg.drv_data = chg;
+	batt_cfg.of_node = chg->dev->of_node;
+	batt_psy = power_supply_register(chg->dev, &batt_psy_desc, &batt_cfg);
 	if (IS_ERR(batt_psy)) {
 		pr_err("Couldn't register battery power supply\n");
 		rc = PTR_ERR(batt_psy);

@@ -762,7 +762,7 @@ int __nanohub_send_AP_cmd(struct nanohub_data *data, enum AP_GPIO_CMD mode)
 	case GPIO_CMD_POWEROFF: /*0000*/
 	case GPIO_CMD_BAND:     /*0001*/
 		atomic_set(&data->hub_mode_ap_pwr_down, mode);
-			/* Only remember the state after AP pwr off */
+		/* Only remember the state after AP pwr off */
 		atomic_set(&data->hub_mode_ap_active, mode);
 		ret = __nanohub_set_mode_pin(data, mode);
 		break;
@@ -1761,7 +1761,7 @@ static int nanohub_kthread(void *arg)
 						__func__, ret);
 				}
 				if (DOWNLOAD_BL_SUCCESS ==
-					atomic_read(&data->download_bl_status))
+				    atomic_read(&data->download_bl_status))
 					atomic_set(&data->download_bl_status,
 						DOWNLOAD_BL_FAILED);
 			}
