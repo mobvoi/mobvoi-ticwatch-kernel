@@ -344,6 +344,13 @@ static int mdss_dsi_request_gpios(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 			goto disp_en_gpio_err;
 		}
 	}
+	if (gpio_is_valid(ctrl_pdata->disp_mutex_gpio)) {
+		rc = gpio_request(ctrl_pdata->disp_mutex_gpio, "disp_mutex");
+		if (rc) {
+			pr_err("request disp_mutex gpio failed, rc=%d\n", rc);
+			goto disp_mutex_gpio_err;
+		}
+	}
 	rc = gpio_request(ctrl_pdata->rst_gpio, "disp_rst_n");
 	if (rc) {
 		pr_err("request reset gpio failed, rc=%d\n",
@@ -387,6 +394,9 @@ vdd_en_gpio_err:
 bklt_en_gpio_err:
 	gpio_free(ctrl_pdata->rst_gpio);
 rst_gpio_err:
+	if (gpio_is_valid(ctrl_pdata->disp_mutex_gpio))
+		gpio_free(ctrl_pdata->disp_mutex_gpio);
+disp_mutex_gpio_err:
 	if (gpio_is_valid(ctrl_pdata->disp_en_gpio))
 		gpio_free(ctrl_pdata->disp_en_gpio);
 disp_en_gpio_err:
@@ -558,6 +568,8 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			usleep_range(100, 110);
 			gpio_free(ctrl_pdata->disp_en_gpio);
 		} */
+		if (gpio_is_valid(ctrl_pdata->disp_mutex_gpio))
+			gpio_free(ctrl_pdata->disp_mutex_gpio);
 
 		gpio_set_value((ctrl_pdata->rst_gpio), 0);
 		gpio_free(ctrl_pdata->rst_gpio);

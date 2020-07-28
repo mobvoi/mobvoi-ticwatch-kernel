@@ -283,6 +283,7 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 				      enum led_brightness value)
 {
 	struct msm_fb_data_type *mfd = dev_get_drvdata(led_cdev->dev->parent);
+	struct mdss_panel_data *pdata;
 	u64 bl_lvl;
 
 	if (mfd->boot_notification_led) {
@@ -292,6 +293,20 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 
 	if (value > mfd->panel_info->brightness_max)
 		value = mfd->panel_info->brightness_max;
+
+	pdata = dev_get_platdata(&mfd->pdev->dev);
+	if (pdata && pdata->set_boost_mode) {
+		if (value == mfd->panel_info->brightness_max && !pdata->boost) {
+			pdata->set_boost_mode(pdata, 1);
+			pdata->boost = 1;
+			pr_debug("%s: Boost mode %d\n", __func__, pdata->boost);
+		} else if (value != mfd->panel_info->brightness_max &&
+			   pdata->boost) {
+			pdata->set_boost_mode(pdata, 0);
+			pdata->boost = 0;
+			pr_debug("%s: Boost mode %d\n", __func__, pdata->boost);
+		}
+	}
 
 	/* This maps android backlight level 0 to 255 into
 	 * driver backlight level 0 to bl_max with rounding
@@ -1002,7 +1017,7 @@ static ssize_t mdss_fb_change_boost_mode(struct device *dev,
 
 	mutex_lock(&mfd->bl_lock);
 
-	if ((pdata) && (pdata->set_boost_mode))
+	if (pdata->set_boost_mode)
 		pdata->set_boost_mode(pdata, boost_mode);
 
 	mutex_unlock(&mfd->bl_lock);
@@ -2159,6 +2174,42 @@ error:
 	return ret;
 }
 
+static int mdss_fb_mutex_with_ext_ctrl(struct msm_fb_data_type *mfd)
+{
+	struct mdss_panel_data *pdata;
+	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
+	int disp_mutex_gpio = -1;
+	int mutex_timeout, mutex_cnt;
+	int value;
+	int cnt;
+
+	pdata = dev_get_platdata(&mfd->pdev->dev);
+	if (pdata) {
+		ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
+				panel_data);
+		disp_mutex_gpio = ctrl_pdata->disp_mutex_gpio;
+	} else {
+		pr_err("no panel connected\n");
+	}
+
+	mutex_timeout = ctrl_pdata->disp_mutex_timeout;
+	mutex_cnt = ctrl_pdata->disp_mutex_cnt;
+	if (gpio_is_valid(disp_mutex_gpio)) {
+		gpio_direction_input(disp_mutex_gpio);
+		for (cnt = 0; cnt < mutex_cnt; cnt++) {
+			value = gpio_get_value(disp_mutex_gpio);
+			if (value)
+				msleep(mutex_timeout);
+			else
+				break;
+		}
+		if (cnt >= mutex_cnt) {
+			pr_err("disp mutex waiting failed!\n");
+		}
+	}
+
+	return 0;
+}
 static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 			     int op_enable)
 {
@@ -2240,6 +2291,14 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 		} else {
 			return -EPERM;
 		}
+
+		/*
+		 * if ext gpio is high, block unblank hundreds miliseconds. Do not
+		 * return false here to void that ext gpio is alway high unexpectedly
+		 * which cause the disp cannot be unblanked.
+		 */
+		mdss_fb_mutex_with_ext_ctrl(mfd);
+
 		pr_debug("unblank called. cur pwr state=%d\n", cur_power_state);
 		ret = mdss_fb_blank_unblank(mfd);
 		break;
@@ -2274,6 +2333,8 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 		} else {
 			return -EPERM;
 		}
+
+		mdss_fb_mutex_with_ext_ctrl(mfd);
 
 		/*
 		 * If low power mode is requested when panel is already off,
