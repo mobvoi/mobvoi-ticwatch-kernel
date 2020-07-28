@@ -26,6 +26,14 @@
 	qcom,pmic-id = <0x0002001b 0x0 0x0 0x0>;
 };
 
+/{
+	/delete-node/ mtp_batterydata;
+	mtp_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "fg-gen3-batterydata-Mobvoi-Rover-lishen-595mAH.dtsi"
+	};
+};
+
 &msm_gpu {
 	/delete-property/qcom,enable-ca-jump;
 	/delete-property/qcom,ca-busy-penalty;
@@ -37,4 +45,13 @@
 		/delete-node/qcom,gpu-pwrlevel@4;
 		/delete-node/qcom,gpu-pwrlevel@5;
 	};
+};
+
+&pm660_charger {
+	/delete-property/qcom,auto-recharge-soc;
+};
+
+&pm660_fg {
+	/delete-property/qcom,fg-auto-recharge-soc;
+	/delete-property/qcom,fg-recharge-soc-thr;
 };
