@@ -512,7 +512,7 @@ struct bt541_ts_info {
 	int palm_detected_flag;
 	bool device_enabled;
 	bool checkUMSmode;
-	bool inputdev_opened;
+	bool enable_wakeup;
 };
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
@@ -2134,7 +2134,7 @@ static void clear_report_data(struct bt541_ts_info *info)
 			input_mt_report_slot_state(info->input_dev,
 						   MT_TOOL_FINGER, 0);
 			reported = true;
-			if (!m_ts_debug_mode && TSP_NORMAL_EVENT_MSG)
+			if (m_ts_debug_mode & TSP_NORMAL_EVENT_MSG)
 				zinitix_info("[TSP] R %02d\n", i);
 		}
 		info->reported_touch_info.coord[i].sub_status = 0;
@@ -2450,9 +2450,9 @@ out:
 static int bt541_ts_resume(struct device *dev)
 {
 	int err = 0;
-	int i = 0;
 	struct i2c_client *client = to_i2c_client(dev);
 	struct bt541_ts_info *info = i2c_get_clientdata(client);
+	struct bt541_ts_platform_data *pdata = info->pdata;
 
 	zinitix_debug("resume start\n");
 
@@ -2470,53 +2470,71 @@ static int bt541_ts_resume(struct device *dev)
 		return 0;
 	}
 	info->work_state = RESUME;
-	/* Close low enery to avoid write failure */
-	write_cmd(client, 0x000a);
-	msleep(20);
 
-	for (i = 0; i < 3; i++) {
-		if (write_cmd(client, BT541_WAKEUP_CMD) < 0) {
-			zinitix_info("tpd_resume fail to send wakeup_cmd(%d)\n",
-				i);
-			msleep(20);
-			continue;
-		} else
-			break;
+	if (!info->enable_wakeup) {
+		if (pdata->gpio_switch > 0) {
+			err = gpio_direction_output(pdata->gpio_switch, 1);
+			if (err) {
+				zinitix_err("unable to set switch gpio %d\n",
+						pdata->gpio_switch);
+				return -EIO;
+			}
+			bt541_power_control(info, POWER_ON_SEQUENCE);
+
+			info->touch_mode = TOUCH_POINT_MODE;
+			init_touch(info);
+			goto reset_exit;
+		} else {
+			zinitix_info("gpio switch is not valid %d\n",
+					pdata->gpio_switch);
+		}
 	}
 
-	if (i == 3) {
-		bt541_power_control(info, POWER_ON_SEQUENCE);
-		err = mini_init_touch(info);
-		if (err < 0)
-			zinitix_info("resume_reset: zinitix_resume_proc error\n");
+	/***********Link modify here on 2020/7/23 ***************/
+	disable_irq(info->irq);
+
+	//resume reset init
+	if (gpio_is_valid(pdata->gpio_reset)) {
+		gpio_direction_output(pdata->gpio_reset, 1);
+		udelay(1000);
+		gpio_direction_output(pdata->gpio_reset, 0);
+		msleep(100);
+		gpio_direction_output(pdata->gpio_reset, 1);
+		usleep_range(10000, 15000);
+	}
+
+	//power sequence process
+	if (write_reg(client, 0xc000, 0x0001) != I2C_SUCCESS)
+		zinitix_err("Failed to send power sequence(vendor cmd enable)\n");
+	udelay(1000);
+
+	if (write_cmd(client, 0xc004) != I2C_SUCCESS)
+		zinitix_err("Failed to send power sequence(intn clear)\n");
+	udelay(1000);
+
+	if (write_reg(client, 0xc002, 0x0001) != I2C_SUCCESS)
+		zinitix_err("Failed to send power sequence(nvm init)\n");
+	udelay(1000);
+
+	if (write_reg(client, 0xc001, 0x0001) != I2C_SUCCESS)
+		zinitix_err("Failed to send power sequence(program start)\n");
+	msleep(50);
+
+	if (mini_init_touch(info) != I2C_SUCCESS) {
+		zinitix_err("resume_reset: zinitix_resume_proc err\n");
 		goto reset_exit;
 	}
+	/***********End of moidfy ***************/
 
-	write_cmd(client, BT541_SWRESET_CMD);
-	msleep(20);
-	for (i = 0; i < 3; i++) {
-		if (write_cmd(client, BT541_CLEAR_INT_STATUS_CMD) < 0) {
-			zinitix_info("tpd_resume fail to send wakeup_cmd(%d)\n",
-				i);
-			msleep(20);
-			continue;
-		} else
-			break;
-	}
 #if ESD_TIMER_INTERVAL
 	esd_timer_start(CHECK_ESD_TIMER, info);
 #endif
-
-	write_cmd(client, 0x000b);
-	msleep(20);
 
 reset_exit:
 
 	info->work_state = NOTHING;
 
-#if !USE_WAKEUP_GESTURE		/* eric add 20170208 */
 	enable_irq(info->irq);
-#endif
 
 	tpd_halt = 0;
 	up(&info->work_lock);
@@ -2527,9 +2545,10 @@ reset_exit:
 
 static int bt541_ts_suspend(struct device *dev)
 {
-	int i = 0;
+	int i = 0, err = 0;
 	struct i2c_client *client = to_i2c_client(dev);
 	struct bt541_ts_info *info = i2c_get_clientdata(client);
+	struct bt541_ts_platform_data *pdata = info->pdata;
 
 	zinitix_debug("suspend start\n");
 
@@ -2578,11 +2597,28 @@ static int bt541_ts_suspend(struct device *dev)
 	for (i = 0; i < 3; i++) {
 		if (write_cmd(client, BT541_IDLE_CMD) < 0) {
 			zinitix_err("tpd_suspend fail to send sleep cmd(%d)\n",
-				i);
+				    i);
 			msleep(20);
 			continue;
 		} else
 			break;
+	}
+
+	if (m_ts_debug_mode & 0x02)
+		zinitix_err("BT541_IDLE_CMD sent(%d)\n", i);
+
+	if (!info->enable_wakeup) {
+		if (pdata->gpio_switch > 0) {
+			err = gpio_direction_output(pdata->gpio_switch, 0);
+			if (err) {
+				zinitix_err("unable to clear switch gpio %d\n",
+						pdata->gpio_switch);
+				return -EIO;
+			}
+		} else {
+			zinitix_info("gpio switch is not valid %d\n",
+					pdata->gpio_switch);
+		}
 	}
 
 	info->work_state = SUSPEND;
@@ -3216,7 +3252,7 @@ static void run_self_data_read(void *device_data)
 			 "% 6d\n", (s16) raw_data->pref_data[i]);
 	}
 
-	finfo->cmd_buff[offset * 7] = '\0';
+	finfo->cmd_buff[offset * 7 + 1] = '\0';
 
 	set_cmd_result(info, finfo->cmd_buff,
 		       strnlen(finfo->cmd_buff, sizeof(finfo->cmd_buff)));
@@ -3537,16 +3573,81 @@ static ssize_t store_debug_status(struct device *dev, struct device_attribute
 	return count;
 }
 
+static ssize_t show_fw_version(struct device *dev, struct device_attribute
+			       *devattr, char *buf)
+{
+	struct bt541_ts_info *info = dev_get_drvdata(dev);
+	struct i2c_client *client = info->client;
+	u16 fw_ver;
+	u16 fw_m_ver;
+	u16 reg_d_ver;
+	u16 hw_id = 0;
+
+	/* get chip firmware version */
+	if (read_data(client, BT541_FIRMWARE_VERSION, (u8 *)&fw_ver, 2) < 0)
+		goto fail_read_fw_version;
+
+	if (read_data(client, BT541_MINOR_FW_VERSION, (u8 *)&fw_m_ver, 2) < 0)
+		goto fail_read_fw_version;
+
+	if (read_data(client, BT541_DATA_VERSION_REG, (u8 *)&reg_d_ver, 2) < 0)
+		goto fail_read_fw_version;
+
+	if (read_data(client, BT541_HW_ID, (u8 *)&hw_id, 2) < 0)
+		zinitix_err("%s: failed to read hw id\n", __func__);
+
+	return snprintf(buf, PAGE_SIZE, "V%02x%02x%02x HWID:%x\n", fw_ver,
+			fw_m_ver, reg_d_ver, hw_id);
+
+fail_read_fw_version:
+	return snprintf(buf, PAGE_SIZE, "%s\n", "Failed to read fw version!");
+}
+
+static ssize_t show_enable_wakeup(struct device *dev, struct device_attribute
+			       *devattr, char *buf)
+{
+	struct bt541_ts_info *info = dev_get_drvdata(dev);
+
+	return snprintf(buf, 4, "%d\n", info->enable_wakeup);
+}
+
+
+static ssize_t store_enable_wakeup(struct device *dev, struct device_attribute
+			 *devattr, const char *buf, size_t count)
+{
+	int ret;
+	struct bt541_ts_info *info = dev_get_drvdata(dev);
+
+	if (kstrtoint(buf, 0, &ret))
+		return -EINVAL;
+
+	if (info->work_state == SUSPEND)
+		zinitix_info("%s: set enable_wakeup (%d) in SUSPEND\n",
+			     __func__, !!ret);
+
+	if (ret)
+		info->enable_wakeup = true;
+	else
+		info->enable_wakeup = false;
+
+	return count;
+}
+
 static DEVICE_ATTR(cmd, 0220, NULL, store_cmd);
 static DEVICE_ATTR(cmd_status, 0444, show_cmd_status, NULL);
 static DEVICE_ATTR(cmd_result, 0444, show_cmd_result, NULL);
 static DEVICE_ATTR(debug_log, 0664, show_debug_status, store_debug_status);
+static DEVICE_ATTR(fw_version, 0444, show_fw_version, NULL);
+static DEVICE_ATTR(enable_wakeup, 0664, show_enable_wakeup,
+		   store_enable_wakeup);
 
 static struct attribute *touchscreen_attributes[] = {
 	&dev_attr_cmd.attr,
 	&dev_attr_cmd_status.attr,
 	&dev_attr_cmd_result.attr,
 	&dev_attr_debug_log.attr,
+	&dev_attr_fw_version.attr,
+	&dev_attr_enable_wakeup.attr,
 	NULL,
 };
 
@@ -4457,85 +4558,6 @@ void bt541_register_callback(struct tsp_callbacks *cb)
 }
 #endif
 
-int bt541_ts_inputdev_open(struct input_dev *dev)
-{
-	struct bt541_ts_info *info = input_get_drvdata(dev);
-	const struct bt541_ts_platform_data *pdata = info->pdata;
-	int err;
-
-	zinitix_info("users = %d\n", dev->users);
-
-	if (info == NULL) {
-		zinitix_err("info is NULL, return\n");
-		return -EIO;
-	}
-	if (info->inputdev_opened) {
-		zinitix_info("input_dev already opened.\n");
-		return 0;
-	}
-
-	if (pdata->gpio_switch < 0) {
-		zinitix_info("gpio switch is not valid %d\n",
-				pdata->gpio_switch);
-		return -EIO;
-	}
-
-	err = gpio_direction_output(pdata->gpio_switch, 1);
-	if (err) {
-		zinitix_err("unable to set direction for switch gpio %d\n",
-			pdata->gpio_switch);
-		return -EIO;
-	}
-
-	bt541_power_control(info, POWER_ON_SEQUENCE);
-	/* init touch mode */
-	info->touch_mode = TOUCH_POINT_MODE;
-
-	init_touch(info);
-	info->inputdev_opened = true;
-	return 0;
-}
-
-void bt541_ts_inputdev_close(struct input_dev *dev)
-{
-	struct bt541_ts_info *info = input_get_drvdata(dev);
-	const struct bt541_ts_platform_data *pdata = info->pdata;
-	int err;
-
-	zinitix_info("users = %d\n", dev->users);
-
-	bt541_power_control(info, POWER_OFF);
-
-	if (!(info->inputdev_opened)) {
-		zinitix_err("input_dev already closed.\n");
-		return;
-	}
-	if (pdata->gpio_switch < 0) {
-		zinitix_err("gpio switch is not valid %d\n",
-				pdata->gpio_switch);
-		return;
-	}
-
-	err = gpio_direction_output(pdata->gpio_switch, 0);
-	if (err) {
-		zinitix_err("unable to set direction for switch gpio %d\n",
-				pdata->gpio_switch);
-		return;
-	}
-	info->inputdev_opened = false;
-}
-
-int bt541_ts_inputdev_flush(struct input_dev *dev, struct file *file)
-{
-	return 0;
-}
-
-int bt541_ts_inputdev_event(struct input_dev *dev, unsigned int type,
-		unsigned int code, int value)
-{
-	return 0;
-}
-
 static int bt541_ts_probe(struct i2c_client *client,
 			  const struct i2c_device_id *i2c_id)
 {
@@ -4635,13 +4657,9 @@ static int bt541_ts_probe(struct i2c_client *client,
 	info->register_cb = info->pdata->register_cb;
 #endif
 
-	input_dev->open = bt541_ts_inputdev_open;
-	input_dev->close = bt541_ts_inputdev_close;
-	input_dev->flush = bt541_ts_inputdev_flush;
-	input_dev->event = bt541_ts_inputdev_event;
-
 	info->input_dev = input_dev;
 	info->work_state = PROBE;
+	info->enable_wakeup = true;
 
 	ret = zinitix_power_init(info, true);
 	if (ret) {
@@ -4655,7 +4673,6 @@ static int bt541_ts_probe(struct i2c_client *client,
 		goto err_power_sequence;
 	}
 
-	info->inputdev_opened = true;
 	/* To Do */
 	/* FW version read from tsp */
 	memset(&info->reported_touch_info, 0x0, sizeof(struct point_info));
