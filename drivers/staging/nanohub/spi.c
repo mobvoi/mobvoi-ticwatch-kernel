@@ -456,7 +456,8 @@ static int fb_notifier_callback(struct notifier_block *self,
 		ret = __nanohub_send_AP_cmd(&spi_data->data, GPIO_CMD_AMBIENT);
 
 	if (event == FB_EARLY_EVENT_BLANK &&
-	    (*blank == FB_BLANK_UNBLANK || *blank == FB_BLANK_VSYNC_SUSPEND))
+	    (*blank == FB_BLANK_UNBLANK || *blank == FB_BLANK_NORMAL ||
+	     *blank == FB_BLANK_VSYNC_SUSPEND))
 		ret = __nanohub_send_AP_cmd(&spi_data->data, GPIO_CMD_NORMAL);
 
 	return ret;
@@ -547,7 +548,6 @@ static void nanohub_spi_shutdown(struct spi_device *spi)
 
 	nanohub_shutdown(iio_dev);
 }
-
 
 static int nanohub_spi_suspend(struct device *dev)
 {
