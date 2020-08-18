@@ -50,12 +50,15 @@ struct nanohub_fuelgauge_data {
 	struct power_supply *batt_psy;
 	struct power_supply *usb_psy;
 	struct power_supply *dc_psy;
+	struct power_supply *bms_psy;
 
 	struct mutex lock;
 	struct completion updated;
 	struct delayed_work work_init_request;
+	struct delayed_work recal_ws;
 	struct max1726x_info_cache cache;
 	bool info_cache_updated;
+	int ui_soc;
 };
 
 int max1726x_nanohub_init(struct device *dev, struct nanohub_data *hub_data);
