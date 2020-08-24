@@ -36,6 +36,8 @@
 #define kAppIdCustomFlash   25
 
 #define SENS_TYPE_HEARTRATE_PPG   16
+#define SENS_TYPE_STATIC_PPG      105
+#define SENS_TYPE_BG_HEART_RATE   106
 #define SENS_TYPE_FUELGAUGE       68
 #define SENS_TYPE_CUSTOM_FLASH    89
 

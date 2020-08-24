@@ -55,7 +55,9 @@ int is_hr_log_data(struct nanohub_buf *buf, int len)
 		return -EINVAL;
 	}
 	if (p_SensorAppEventHeader->msgId != SENSOR_APP_MSG_ID_CUSTOM_USE ||
-		p_SensorAppEventHeader->sensorType != SENS_TYPE_HEARTRATE_PPG ||
+		!(p_SensorAppEventHeader->sensorType == SENS_TYPE_HEARTRATE_PPG ||
+		  p_SensorAppEventHeader->sensorType == SENS_TYPE_STATIC_PPG ||
+		  p_SensorAppEventHeader->sensorType == SENS_TYPE_BG_HEART_RATE) ||
 		p_SensorAppEventHeader->status !=
 			SENSOR_APP_EVT_STATUS_SUCCESS) {
 		pr_err("nanohub: [HR] bad SensorAppEventHeader");
