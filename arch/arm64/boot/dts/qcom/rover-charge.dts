@@ -3,6 +3,7 @@
 	qcom,float-option = <1>;
 	qcom,fcc-max-ua = <400000>;
 	qcom,fv-max-uv = <4450000>;
+	qcom,usb-icl-ua = <500000>;
 	qcom,step-charging-enable;
 	qcom,sw-jeita-enable;
 };
