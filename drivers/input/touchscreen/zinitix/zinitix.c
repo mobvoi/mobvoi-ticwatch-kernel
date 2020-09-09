@@ -454,6 +454,17 @@ enum {
 	REQ_FW,
 };
 
+enum {
+	MOTION_INVALID		= 0,
+	MOTION_CLICK		= 1,
+	MOTION_DOUBLE_CLICK	= 2,
+	MOTION_LONG_PRESS	= 3,
+	MOTION_UP_ARROW		= 4,
+	MOTION_DOWN_ARROW	= 5,
+	MOTION_LEFT_ARROW	= 6,
+	MOTION_RIGHT_ARROW	= 7,
+};
+
 struct bt541_ts_info {
 	struct i2c_client *client;
 	struct input_dev *input_dev;
@@ -2165,7 +2176,7 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 	u32 tmp;
 	u8 palm = 0;
 #if USE_WAKEUP_GESTURE
-	u16 gesture_flag = 1;
+	u16 gesture_flag = MOTION_CLICK;
 	int ret = 0;
 #endif
 	ktime_t cur_time;
@@ -2202,7 +2213,12 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 			/* wake up */
 			zinitix_debug(" gesture_flag: %d\n", gesture_flag);
 			write_reg(client, 0x3da, gesture_flag);
-			if (gesture_flag == 1) { /* 1 double click */
+			if (gesture_flag == MOTION_CLICK ||
+			    gesture_flag == MOTION_DOUBLE_CLICK ||
+			    gesture_flag == MOTION_UP_ARROW ||
+			    gesture_flag == MOTION_DOWN_ARROW ||
+			    gesture_flag == MOTION_LEFT_ARROW ||
+			    gesture_flag == MOTION_RIGHT_ARROW) {
 				input_report_key(info->input_dev, KEY_WAKEUP,
 						 1);
 				input_sync(info->input_dev);
@@ -2210,7 +2226,8 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 						 0);
 				input_sync(info->input_dev);
 
-				zinitix_info("report wakeup key\n");
+				zinitix_info("report wakeup key(%d)\n",
+					     gesture_flag);
 				if (write_reg(client, 0x126, 0) != 0) {
 					zinitix_err("gesture write reg err!\n");
 					ret = 0;
