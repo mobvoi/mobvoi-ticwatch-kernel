@@ -505,6 +505,7 @@ struct bt541_ts_info {
 
 #if defined(CONFIG_FB)
 	struct notifier_block fb_notif;
+	struct work_struct resume_work;
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	struct early_suspend early_suspend;
 #endif
@@ -2656,7 +2657,7 @@ static int fb_notifier_callback(struct notifier_block *self,
 	    misc_touch_dev && misc_touch_dev->client) {
 		blank = evdata->data;
 		if (*blank == FB_BLANK_UNBLANK) {
-			bt541_ts_resume(&misc_touch_dev->client->dev);
+			schedule_work(&misc_touch_dev->resume_work);
 		} else if (*blank == FB_BLANK_POWERDOWN ||
 				*blank == FB_BLANK_NORMAL) {
 			bt541_ts_suspend(&misc_touch_dev->client->dev);
@@ -4575,6 +4576,16 @@ void bt541_register_callback(struct tsp_callbacks *cb)
 }
 #endif
 
+#if defined(CONFIG_FB)
+static void ts_resume_work(struct work_struct *work)
+{
+	struct bt541_ts_info *info =
+		container_of(work, struct bt541_ts_info, resume_work);
+
+	bt541_ts_resume(&info->client->dev);
+}
+#endif
+
 static int bt541_ts_probe(struct i2c_client *client,
 			  const struct i2c_device_id *i2c_id)
 {
@@ -4830,6 +4841,8 @@ static int bt541_ts_probe(struct i2c_client *client,
 	ret = fb_register_client(&info->fb_notif);
 	if (ret)
 		zinitix_err("Unable to register fb_notifier: %d\n", ret);
+
+	INIT_WORK(&info->resume_work, ts_resume_work);
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	info->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
 	info->early_suspend.suspend = zinitix_early_suspend;
@@ -4974,6 +4987,10 @@ static int bt541_ts_remove(struct i2c_client *client)
 	input_free_device(info->input_dev);
 	up(&info->work_lock);
 	kfree(info);
+
+#if defined(CONFIG_FB)
+	flush_work(&info->resume_work);
+#endif
 
 	return 0;
 }
