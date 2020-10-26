@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "rover-sdm429-bg-wtp-overlay.dtsi"
+#include "rover-mdss-panels.dtsi"
+#include "rover-ts.dtsi"
+#include "rover-bluetooth.dtsi"
+#include "rover-wlan.dtsi"
+#include "rover-audio.dtsi"
+#include "rover-gps.dtsi"
+#include "rover-nanohub.dtsi"
+#include "rover-vibrator.dtsi"
+#include "rover-nfc.dtsi"
+#include "rover-keys.dtsi"
+#include "rover-charge.dts"
+
+/ {
+	model = "Qualcomm Technologies, Inc. SDA429 QRD BG WTP Overlay";
+	compatible = "qcom,sdm429w-qrd", "qcom,sda429w", "qcom,qrd";
+	qcom,msm-id = <437 0x0>;
+	qcom,board-id = <0x00010b 8>;
+	qcom,pmic-id = <0x0002001b 0x0 0x0 0x0>;
+	aliases {
+		spi3 = &spi_3;
+	};
+};
+
+&firmware {
+	android {
+		fstab {
+			vendor {
+				fsmgr_flags = "wait,avb";
+			};
+			system {
+				fsmgr_flags = "wait,avb";
+			};
+		};
+	};
+};
+
+&reserved_memory {
+	ramoops_mem: ramoops_region@0 {
+		reg = <0x0 0x9ff00000 0x0 0x00100000>;
+		compatible = "removed-dma-pool";
+		no-map;
+	};
+};
+
+&pm660_pon {
+	qcom,pon_1 {
+		qcom,support-reset = <1>;
+		qcom,s1-timer = <6720>;
+		qcom,s2-timer = <1000>;
+		qcom,s2-type = <7>;
+	};
+};
