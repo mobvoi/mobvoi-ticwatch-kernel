@@ -23,10 +23,10 @@
 #include <linux/input/mt.h>
 #include <linux/interrupt.h>
 #include <linux/slab.h>
-#include <linux/regulator/consumer.h>
 #include <linux/gpio.h>
 #include <linux/string.h>
 #include <linux/of_gpio.h>
+#include <linux/workqueue.h>
 //#include <linux/hwinfo.h>
 #ifdef CONFIG_FB
 #include <linux/notifier.h>
@@ -43,14 +43,6 @@
 #define MXT_CFG_MAGIC   "OBP_RAW V1"
 
 #define REV_D            0x32
-
-/* Regulator voltages */
-#define MXT_VDDIO_MIN_UV    1800000
-#define MXT_VDDIO_MAX_UV    1800000
-#define MXT_VDD_MIN_UV      2850000
-#define MXT_VDD_MAX_UV      2850000
-//#define MXT_VDD_MIN_UV    3100000
-//#define MXT_VDD_MAX_UV    3100000
 
 /* Registers */
 #define MXT_FAMILY_ID       0x00
@@ -580,6 +572,8 @@
 #define MXT_MAX_FINGER_NUM	16
 #define BOOTLOADER_1664_1188	1
 
+#define MXT_ESD_TIMER_INTERVAL	2
+
 struct mxt_info {
 	u8 family_id;
 	u8 variant_id;
@@ -650,8 +644,6 @@ struct mxt_data {
 	const struct mxt_platform_data *pdata;
 	enum mxt_device_state state;
 	struct mxt_object *object_table;
-	struct regulator *regulator_vdd;
-	struct regulator *regulator_vddio;
 	u16 mem_size;
 	struct mxt_info info;
 	unsigned int irq;
@@ -661,6 +653,7 @@ struct mxt_data {
 	struct bin_attribute self_ref_attr;
 	struct bin_attribute mutual_ref_attr;
 	bool debug_enabled;
+	bool rescue_test_enabled;
 	bool driver_paused;
 	bool irq_enabled;
 	u8 bootloader_addr;
@@ -751,6 +744,11 @@ struct mxt_data {
 	u8 T220_reportid_min;
 	u8 T220_reportid_max;
 
+	u8 tx_num;
+	u8 rx_num;
+	u16 *raw_data_16;
+	u8 *T37_buf;
+
 	struct pinctrl *ts_pinctrl;
 	struct pinctrl_state *gpio_state_active;
 	struct pinctrl_state *gpio_state_suspend;
@@ -760,6 +758,12 @@ struct mxt_data {
 #endif
 	bool palm_detected_flag;
 	ktime_t last_plam_time;
+
+	struct work_struct tmr_work;
+	struct timer_list esd_timeout_tmr;
+	struct timer_list *p_esd_timeout_tmr;
+	struct workqueue_struct *esd_tmr_workqueue;
+	spinlock_t esd_spin_lock;
 };
 
 static struct mxt_suspend mxt_save[] = {
@@ -792,6 +796,9 @@ static const struct mxt_i2c_address_pair mxt_i2c_addresses[] = {
 };
 
 static BLOCKING_NOTIFIER_HEAD(glove_mode_chain);
+
+static void esd_timer_start(u16 sec, struct mxt_data *data);
+static void esd_timer_stop(struct mxt_data *data);
 
 int mxt_register_glove_mode_notifier(struct notifier_block *nb)
 {
@@ -1290,6 +1297,28 @@ static int mxt_soft_reset(struct mxt_data *data, u8 value)
 	return 0;
 }
 
+// mXT144U alive check due to ESD issue
+// step 1: check "is_mXT144U_alive()" every 2s
+// step 2: if is_mXT144U_alive() == false, do power off & power on reset
+// note: please disable mXT144U alive check during Firmware upgrade
+bool is_mXT144U_alive(struct mxt_data *data)
+{
+	#define mXT144U_FAMILY_ID 0xA6
+	#define mXT144U_VARIANT_ID 0x08
+
+	struct i2c_client *client = data->client;
+	unsigned char ID_val[2] = {0};
+	int error;
+
+	error = mxt_read_reg(client, 0, 2, ID_val);
+	if (ID_val[0] == mXT144U_FAMILY_ID && ID_val[1] == mXT144U_VARIANT_ID) {
+		return true;
+	} else {
+		pr_err("atmel_mxt_ts: is_mXT144U_alive: mXT144U is NOT alive");
+		return false;
+	}
+}
+
 static void mxt_proc_t6_messages(struct mxt_data *data, u8 *msg)
 {
 	u32 crc;
@@ -1706,6 +1735,422 @@ static void mxt_proc_t42_messages(struct mxt_data *data, u8 *msg)
 		pr_info("atmel_mxt_ts: T42 suppress\n");
 	else
 		pr_info("atmel_mxt_ts: T42 normal\n");
+}
+
+/******************************************************/
+static bool control_T46_T72_T100(struct mxt_data *data)
+{
+	u8 T46_Ctrl =0;
+	u8 T72_Ctrl =0;
+	u8 T100_Ctrl =0;
+	ssize_t ret = 0;
+
+	//read T46 &T72 &T100 Ctrl bits
+	ret = mxt_read_object(data, MXT_SPT_CTECONFIG_T46,0, &T46_Ctrl);
+	if (ret) {
+		pr_err("atmel_mxt_ts: control_T46_T72_T100: Failed to read object %d\n", (int)MXT_SPT_CTECONFIG_T46);
+		return false;
+	}
+
+	ret = mxt_read_object(data, MXT_PROCG_NOISESUPPRESSION_T72,0, &T72_Ctrl);
+	if (ret) {
+		pr_err("atmel_mxt_ts: control_T46_T72_T100: Failed to read object %d\n", (int)MXT_PROCG_NOISESUPPRESSION_T72);
+		return false;
+	}
+
+	ret = mxt_read_object(data, MXT_TOUCH_MULTI_T100,0, &T100_Ctrl);
+	if (ret) {
+		pr_err("atmel_mxt_ts: control_T46_T72_T100: Failed to read object %d\n", (int)MXT_TOUCH_MULTI_T100);
+		return false;
+	}
+
+	//disable P2P
+	ret = mxt_write_object(data, MXT_SPT_CTECONFIG_T46, 0, (T46_Ctrl | 0x08));
+	if (ret) {
+		return false;
+	}
+
+	//disable T72
+	ret = mxt_write_object(data, MXT_PROCG_NOISESUPPRESSION_T72, 0, (T72_Ctrl & 0xFE));
+	if (ret) {
+		return false;
+	}
+
+	//disable T100 report
+	ret = mxt_write_object(data, MXT_TOUCH_MULTI_T100, 0, (T100_Ctrl & 0xFD));
+	if (ret) {
+		return false;
+	}
+
+	return true;
+}
+
+static size_t mxt_obj_size(const struct mxt_object *obj)
+{
+	return obj->size;
+}
+
+
+static int mxt_T6_diag_cmd(struct mxt_data *data, struct mxt_object *T6,u8 cmd)
+{
+	int ret;
+	u16 addr = T6->start_address + MXT_COMMAND_DIAGNOSTIC;
+
+	ret = mxt_write_reg(data->client, addr, cmd);
+
+	if (ret)
+		return ret;
+
+	/*	 * Poll T6.diag until it returns 0x00, which indicates command has	 * completed.	 */
+
+	while (cmd != 0) {
+		msleep(10);
+		ret = mxt_read_reg(data->client, addr, 1, &cmd);
+		if (ret)
+			return ret;
+	}
+	return 0;
+}
+
+
+unsigned int get_rawdata(struct mxt_data *data, u8 mode)
+{
+	struct mxt_object *T6, *T37;
+	u8 *obuf;
+	ssize_t ret = 0;
+	size_t i,j;
+	u8 lsb, msb;
+	size_t T37_buf_size, num_pages;
+	size_t pos;
+	int retry = 0;
+	int retry_count = 0;
+	int index = 0;
+	int count = 0;
+
+	if (!data || !data->object_table)
+		return -ENODEV;
+
+	T6 = mxt_get_object(data, MXT_GEN_COMMAND_T6);
+	T37 = mxt_get_object(data, MXT_DEBUG_DIAGNOSTIC_T37);
+	if (!T6 || mxt_obj_size(T6) < 6 || !T37 || mxt_obj_size(T37) < 3) {
+		pr_err("atmel_mxt_ts: get_rawdata: Invalid T6 or T37 object\n");
+		return -ENODEV;
+	}
+
+	/* Something has gone wrong if T37_buf is already allocated */
+	if (data->T37_buf || data->raw_data_16)
+		return -EINVAL;
+
+	T37_buf_size = data->info.matrix_xsize * data->info.matrix_ysize * sizeof(__le16);
+	data->T37_buf = vmalloc(T37_buf_size);//GFP_KERNEL);
+	if (!data->T37_buf)
+		return -ENOMEM;
+
+	data->raw_data_16 = (u16 *)vmalloc(T37_buf_size);
+	if(!data->raw_data_16) {
+		vfree(data->T37_buf);
+		data->T37_buf = NULL;
+		return -ENOMEM;
+	}
+
+	/* Temporary buffer used to fetch one T37 page */
+	obuf = vmalloc(mxt_obj_size(T37));//GFP_KERNEL);
+	if (!obuf) {
+		vfree(data->T37_buf);
+		data->T37_buf = NULL;
+
+		vfree(data->raw_data_16);
+		data->raw_data_16 = NULL;
+
+		return -ENOMEM;
+	}
+
+	memset(data->T37_buf,0,T37_buf_size);
+	memset(data->raw_data_16,0,T37_buf_size);
+	memset(obuf,0,mxt_obj_size(T37));
+
+	retry = 3;
+
+READ_TX_RX:
+	//get TX_Num & RX_Num
+	if(mxt_read_object(data, MXT_TOUCH_MULTI_T100,MXT_MULTITOUCH_XSIZE, &(data->tx_num))|
+	   mxt_read_object(data, MXT_TOUCH_MULTI_T100,MXT_MULTITOUCH_YSIZE, &(data->rx_num))) {
+		pr_err("atmel_mxt_ts: get_rawdata: read tx_num or rx_num failed\n");
+		goto err_free_T37_buf;
+	}
+
+	if((!(data->tx_num))||(!(data->rx_num))) {
+		pr_err("atmel_mxt_ts: get_rawdata: data->tx_num or data->rx_num equal zero\n");
+		goto err_free_T37_buf;
+	}
+
+	if((!(data->info.matrix_xsize))||(!(data->info.matrix_ysize))) {
+		pr_err("atmel_mxt_ts: get_rawdata: data->info.matrix_xsize or data->info.matrix_ysize equal zero\n");
+		goto err_free_T37_buf;
+	}
+
+	if((data->tx_num > data->info.matrix_xsize)||
+	   (data->rx_num > data->info.matrix_ysize)) {
+		if(retry) {
+			retry--;
+			goto READ_TX_RX;
+		}
+
+		pr_err("atmel_mxt_ts: get_rawdata: get tx_num or rx_num error\n");
+		goto err_free_T37_buf;
+	}
+
+
+
+	if(!control_T46_T72_T100(data)) {
+		pr_err("atmel_mxt_ts: get_rawdata: control_T46_T72_T100 failed\n");
+		goto err_free_T37_buf;
+	}
+
+	msleep(50);
+
+	num_pages = DIV_ROUND_UP(T37_buf_size, mxt_obj_size(T37) - 2);
+
+RETRY:
+	pos = 0;
+	for (i = 0; i < num_pages; i++) {
+		u8 cmd;
+		u8 num;
+		size_t chunk_len;
+
+		msleep(50);
+		retry = 3;
+		do {
+			/* For first page, send mode as cmd, otherwise PageUp */
+			cmd = (i == 0) ? mode : 0x01;
+			ret = mxt_T6_diag_cmd(data, T6, cmd);
+			if (ret) {
+				pr_err("atmel_mxt_ts: get_rawdata: send T6 cmd failed, retry= %d\n",retry);
+				continue;
+			}
+
+			msleep(50);
+
+			count = mxt_obj_size(T37);
+			index = 0;
+
+			while(count > 0) {
+				num = min(16,count);
+				ret = mxt_read_reg(data->client, T37->start_address + index, num, obuf +index);
+				if (ret) {
+					pr_err("atmel_mxt_ts: get_rawdata: read T37 failed, retry= %d\n",retry);
+					break;
+				}
+				index += num;
+				count -= num;
+			}
+
+			if(count > 0)
+				continue;
+
+			/* Verify first two bytes are current mode and page # */
+			if((obuf[0] == mode)&&(obuf[1] == i)) {
+				break;
+			}
+
+		} while(retry--);
+
+		if(!retry) {
+			if (obuf[0] != mode) {
+				pr_err("atmel_mxt_ts: get_rawdata: Unexpected mode (%u != %u)\n", obuf[0], mode);
+			}
+			if (obuf[1] != i) {
+				pr_err("atmel_mxt_ts: get_rawdata: Unexpected page (%u != %zu)\n", obuf[1], i);
+			}
+
+			pr_err("atmel_mxt_ts: get_rawdata: get_rawdata failed, retry= %d\n",retry);
+			ret = -EIO;
+			goto err_free_T37_buf;
+		}
+
+
+		/*
+		 * Copy the data portion of the page, or however many bytes are
+		 * left, whichever is less.
+		 */
+		chunk_len = min(mxt_obj_size(T37) - 2, T37_buf_size - pos);
+		memcpy(&data->T37_buf[pos], &obuf[2], chunk_len);
+		pos += chunk_len;
+	}
+
+	i = 0;
+	index = 0;
+	for(j = 0; j < data->info.matrix_xsize * data->info.matrix_ysize * 2; j += 2) {
+		index ++;
+		lsb = data->T37_buf[j] & 0xff;
+		msb = data->T37_buf[j+1] & 0xff;
+		data->raw_data_16[i] = lsb | (msb << 8);
+		i++;
+
+		if(index == data->rx_num) {
+			index = 0;
+			j = j + (data->info.matrix_ysize -data->rx_num)*2;
+		}
+
+		if(i == (data->tx_num)*(data->rx_num))
+			break;
+    }
+
+	if((!(data->raw_data_16[0]))&&
+		(!(data->raw_data_16[1]))&&
+		(!(data->raw_data_16[data->info.matrix_xsize]))) {
+		if(retry_count <3) {
+			retry_count ++;
+			goto RETRY;
+		}
+	}
+
+	goto out;
+
+err_free_T37_buf:
+	vfree(data->T37_buf);
+	data->T37_buf = NULL;
+
+	vfree(data->raw_data_16);
+	data->raw_data_16 = NULL;
+
+out:
+	vfree(obuf);
+
+	return ret ?1: 0;
+}
+
+
+
+void print_rawdata(u16 *report_data_16,u8 tx_num,u8 rx_num)
+{
+	char *pos = NULL;
+	char *buf = NULL;
+	u16 *pos_data = NULL;
+	int buf_size = 0;
+	int count = 0;
+	int ii,jj,cnt;
+
+	pos_data = report_data_16;
+
+	buf_size = rx_num * 8 + strlen("mxt: rawdata: TxXX: ") + 3;
+	buf = vmalloc(buf_size);
+
+	if(buf) {
+		printk("\nmxt:print_rawdata  start\n");
+		printk("mxt: rawdata Tx:%d\n",tx_num);
+		printk("mxt: rawdata Rx:%d\n",rx_num);
+
+		for (ii = 0; ii < tx_num; ii++) {
+			pos = buf;
+			count = 0;
+			cnt = snprintf(pos, buf_size -count, "mxt: rawdata: Tx%d: ",ii);
+			pos += cnt;
+			count += cnt;
+
+			for (jj = 0; jj < rx_num; jj++) {
+				cnt = snprintf(pos, buf_size -count, "%d, ",*pos_data);
+				pos += cnt;
+				count += cnt;
+
+				pos_data ++;
+			}
+			*pos = '\0';
+			printk("%s\n",buf);
+		}
+
+		printk("\nmxt:print_rawdata  end\n");
+
+		vfree(buf);
+	}
+	return;
+}
+
+
+
+static ssize_t mxt_rawdata_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct mxt_data *data = dev_get_drvdata(dev);
+	int ii;
+	int jj;
+	int cnt;
+	int count = 0;
+	unsigned int sum = 0;
+	short max = 0;
+	short min = 0;
+	u16 *report_data_16;
+	char *pos = NULL;
+	u8 mode = 0x11;
+
+	pos = buf;
+
+	if(get_rawdata(data, mode)) { //0x11  for Reference data
+		cnt = snprintf(pos, PAGE_SIZE, "get_rawdata failed!\n");
+		count += cnt;
+		goto out;
+	}
+
+	report_data_16 = data->raw_data_16;
+
+	for (ii = 0; ii < data->tx_num; ii++) {
+		for (jj = 0; jj < data->rx_num; jj++) {
+			cnt = snprintf(pos, PAGE_SIZE - count, "%-4d, ",
+						   *report_data_16);
+
+			sum += *report_data_16;
+
+			if (max < *report_data_16)
+				max = *report_data_16;
+
+			if (ii == 0 && jj == 0)
+				min = *report_data_16;
+			else if (*report_data_16 < min)
+				min = *report_data_16;
+
+			report_data_16++;
+			pos += cnt;
+			count += cnt;
+		}
+		cnt = snprintf(pos, PAGE_SIZE - count, "\n");
+		pos += cnt;
+		count += cnt;
+	}
+	cnt = snprintf(pos, PAGE_SIZE - count, "\n");
+	pos += cnt;
+	count += cnt;
+
+	cnt = snprintf(pos, PAGE_SIZE - count, "tx = %d\nrx = %d\n",
+			data->tx_num, data->rx_num);
+	pos += cnt;
+	count += cnt;
+
+	cnt = snprintf(pos, PAGE_SIZE - count,
+			"max = %d, min = %d, average = %d\n",
+			max, min, sum/(data->tx_num*data->rx_num));
+	pos += cnt;
+	count += cnt;
+
+	//print rawdata
+	if (count >= PAGE_SIZE) {
+		report_data_16 = data->raw_data_16;
+		print_rawdata(report_data_16,data->tx_num,data->rx_num);
+	}
+
+out:
+	if(data->T37_buf) {
+		vfree(data->T37_buf);
+		data->T37_buf = NULL;
+	}
+
+	if(data->raw_data_16) {
+		vfree(data->raw_data_16);
+		data->raw_data_16 = NULL;
+	}
+
+	mxt_soft_reset(data,MXT_RESET_VALUE);
+
+	return count;
 }
 
 static int mxt_proc_t48_messages(struct mxt_data *data, u8 *msg)
@@ -3208,81 +3653,6 @@ static int mxt_read_resolution(struct mxt_data *data)
 	return 0;
 }
 
-#if 0
-static int mxt_configure_regulator(struct mxt_data *data, bool enabled)
-{
-	int ret = 0;
-	struct i2c_client *client = data->client;
-
-	if (!enabled)
-		goto disable_regulator;
-
-	/* Configure regualtor vddio */
-	data->regulator_vddio = devm_regulator_get(&client->dev, "vddio");
-	if (IS_ERR(data->regulator_vddio)) {
-		ret = PTR_ERR(data->regulator_vddio);
-		pr_err("atmel_mxt_ts: regulator_get for vddio failed: %d\n", ret);
-		goto err_null_regulator_vddio;
-	}
-
-	if (regulator_count_voltages(data->regulator_vddio) > 1) {
-		ret = regulator_set_voltage(data->regulator_vddio,
-				MXT_VDDIO_MIN_UV, MXT_VDDIO_MAX_UV);
-		if (ret < 0) {
-			pr_err("atmel_mxt_ts: regulator_set_voltage for vddio failed: %d\n", ret);
-			return ret;
-		}
-	}
-
-	ret = regulator_enable(data->regulator_vddio);
-	if (ret < 0) {
-		pr_err("atmel_mxt_ts: regulator_enable for vddio failed: %d\n", ret);
-		goto err_put_regulator_vddio;
-	}
-
-	/* Configure regulator vdd */
-	data->regulator_vdd = devm_regulator_get(&client->dev, "vdd");
-	if (IS_ERR(data->regulator_vdd)) {
-		ret = PTR_ERR(data->regulator_vdd);
-		pr_err("atmel_mxt_ts: regulator_get for vdd failed: %d\n", ret);
-		goto err_null_regulator_vdd;
-	}
-
-	if (regulator_count_voltages(data->regulator_vdd) > 1) {
-		ret = regulator_set_voltage(data->regulator_vdd,
-				MXT_VDD_MIN_UV, MXT_VDD_MAX_UV);
-		if (ret < 0) {
-			pr_err("atmel_mxt_ts: regulator_set_voltage for vdd failed: %d\n", ret);
-			return ret;
-		}
-	}
-
-	ret = regulator_enable(data->regulator_vdd);
-	if (ret < 0) {
-		pr_err("atmel_mxt_ts: regulator_enable for vdd failed: %d\n", ret);
-		goto err_put_regulator_vdd;
-	}
-
-	return ret;
-
-err_put_regulator_vdd:
-	devm_regulator_put(data->regulator_vdd);
-err_null_regulator_vdd:
-	data->regulator_vdd = NULL;
-err_put_regulator_vddio:
-	devm_regulator_put(data->regulator_vddio);
-err_null_regulator_vddio:
-	data->regulator_vddio = NULL;
-	return ret;
-
-disable_regulator:
-	regulator_disable(data->regulator_vddio);
-	regulator_disable(data->regulator_vdd);
-	devm_regulator_put(data->regulator_vddio);
-	devm_regulator_put(data->regulator_vdd);
-	return 0;
-}
-#endif
 static ssize_t mxt_update_fw_store(struct device *dev,
 					struct device_attribute *attr,
 					const char *buf, size_t count);
@@ -3869,6 +4239,8 @@ static ssize_t mxt_update_firmware(struct device *dev,
 	int len = 0;
 	int ret;
 
+	esd_timer_stop(data);
+
 	if (upgraded)
 		*upgraded = false;
 
@@ -3886,12 +4258,15 @@ static ssize_t mxt_update_firmware(struct device *dev,
 force_update:
 	if (count <= 0){
 		pr_info("atmel_mxt_ts: count is invalid. (count = %d)\n", count);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error_out;
 	}
 	len = strnlen(buf, count);
 	fw_name = kmalloc(len + 1, GFP_KERNEL);
-	if (fw_name == NULL)
-		return -ENOMEM;
+	if (fw_name == NULL) {
+		ret = -ENOMEM;
+		goto error_out;
+	}
 
 	if (count > 0) {
 		strncpy(fw_name, buf, len);
@@ -3942,7 +4317,11 @@ force_update:
 update_cfg:
 	pr_info("atmel_mxt_ts: mxt_update_config after update_firmware!\n");
 	mxt_update_config(data);
+	esd_timer_start(MXT_ESD_TIMER_INTERVAL, data);
 	return count;
+error_out:
+	esd_timer_start(MXT_ESD_TIMER_INTERVAL, data);
+	return ret;
 }
 
 static ssize_t mxt_update_fw_show(struct device *dev,
@@ -4083,6 +4462,23 @@ static ssize_t mxt_debug_enable_store(struct device *dev,
 		return count;
 	} else {
 		pr_info("atmel_mxt_ts: debug_enabled write error\n");
+		return -EINVAL;
+	}
+}
+
+static ssize_t mxt_rescue_test_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct mxt_data *data = dev_get_drvdata(dev);
+	int i;
+
+	if (sscanf(buf, "%u", &i) == 1 && i < 2) {
+		data->rescue_test_enabled = (i == 1);
+
+		pr_info("atmel_mxt_ts: %s\n", i ? "rescue_test enabled" : "rescue_test disabled");
+		return count;
+	} else {
+		pr_info("atmel_mxt_ts: rescue_test_enabled write error\n");
 		return -EINVAL;
 	}
 }
@@ -5457,6 +5853,131 @@ static ssize_t mxt_mem_access_write(struct file *filp, struct kobject *kobj,
 	return ret == 0 ? count : 0;
 }
 
+static void esd_timeout_handler(unsigned long param)
+{
+	struct mxt_data *data = (struct mxt_data *)param;
+
+	data->p_esd_timeout_tmr = NULL;
+	queue_work(data->esd_tmr_workqueue, &data->tmr_work);
+}
+
+static void esd_timer_start(u16 sec, struct mxt_data *data)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&data->esd_spin_lock, flags);
+	if (data->p_esd_timeout_tmr != NULL)
+#ifdef CONFIG_SMP
+		del_singleshot_timer_sync(data->p_esd_timeout_tmr);
+#else
+		del_timer(data->p_esd_timeout_tmr);
+#endif
+	data->p_esd_timeout_tmr = NULL;
+	init_timer(&(data->esd_timeout_tmr));
+	data->esd_timeout_tmr.data = (unsigned long)(data);
+	data->esd_timeout_tmr.function = esd_timeout_handler;
+	data->esd_timeout_tmr.expires = jiffies + (HZ * sec);
+	data->p_esd_timeout_tmr = &data->esd_timeout_tmr;
+	add_timer(&data->esd_timeout_tmr);
+	spin_unlock_irqrestore(&data->esd_spin_lock, flags);
+}
+
+static void esd_timer_stop(struct mxt_data *data)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&data->esd_spin_lock, flags);
+	if (data->p_esd_timeout_tmr)
+#ifdef CONFIG_SMP
+		del_singleshot_timer_sync(data->p_esd_timeout_tmr);
+#else
+		del_timer(data->p_esd_timeout_tmr);
+#endif
+
+	data->p_esd_timeout_tmr = NULL;
+	spin_unlock_irqrestore(&data->esd_spin_lock, flags);
+}
+
+static void esd_timer_init(struct mxt_data *data)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&data->esd_spin_lock, flags);
+	init_timer(&(data->esd_timeout_tmr));
+	data->esd_timeout_tmr.data = (unsigned long)(data);
+	data->esd_timeout_tmr.function = esd_timeout_handler;
+	data->p_esd_timeout_tmr = NULL;
+	spin_unlock_irqrestore(&data->esd_spin_lock, flags);
+}
+
+static void ts_tmr_work(struct work_struct *work)
+{
+	struct mxt_data *data =
+	    container_of(work, struct mxt_data, tmr_work);
+	bool alive;
+	int error;
+
+	mutex_lock(&data->input_dev->mutex);
+	alive = is_mXT144U_alive(data);
+
+	// step 1: check "is_mXT144U_alive()" every 2s
+	// step 2: if is_mXT144U_alive() == false, do power off & power on reset
+	if (!alive || data->rescue_test_enabled) {
+		if (data->rescue_test_enabled)
+			data->rescue_test_enabled = false;
+		pr_info("atmel_mxt_ts: ts_tmr_work rescue triggered, alive %d\n", alive);
+		/* power off */
+		if (data->pdata->switch_gpio > 0) {
+			error = gpio_direction_output(data->pdata->switch_gpio, 0);
+			if (error) {
+				pr_err("atmel_mxt_ts: unable to clear switch gpio %d\n",
+						data->pdata->switch_gpio);
+				goto ts_tmr_work_out;
+			}
+		}
+		msleep(10);
+		/* power on */
+		if (data->pdata->switch_gpio > 0) {
+			error = gpio_direction_output(data->pdata->switch_gpio, 1);
+			if (error) {
+				pr_err("atmel_mxt_ts: unable to set switch gpio %d\n",
+						data->pdata->switch_gpio);
+				goto ts_tmr_work_out;
+			}
+		}
+
+		/* reset */
+		if (data->pdata->reset_gpio > 0) {
+			error = gpio_direction_output(data->pdata->reset_gpio, 0);
+			if (error) {
+				pr_err("atmel_mxt_ts: unable to set direction for gpio %d\n",
+					data->pdata->reset_gpio);
+				goto ts_tmr_work_out;
+			}
+
+			mdelay(10);
+
+			error = gpio_direction_output(data->pdata->reset_gpio, 1);
+			if (error) {
+				pr_err("atmel_mxt_ts: unable to set direction for gpio %d\n",
+					data->pdata->reset_gpio);
+				goto ts_tmr_work_out;
+			}
+		}
+
+		mdelay(100);
+		mxt_wait_for_chg(data);
+	}
+	// note: please disable mXT144U alive check during Firmware upgrade
+ts_tmr_work_out:
+	mutex_unlock(&data->input_dev->mutex);
+	esd_timer_start(MXT_ESD_TIMER_INTERVAL, data);
+
+	pr_info("atmel_mxt_ts: ts_tmr_work run, alive %d\n", alive);
+
+	return;
+}
+
 static DEVICE_ATTR(update_fw, S_IWUSR | S_IRUSR, mxt_update_fw_show, mxt_update_fw_store);
 static DEVICE_ATTR(update_cfg, S_IWUSR, NULL, mxt_update_cfg_store);
 static DEVICE_ATTR(debug_enable, S_IWUSR | S_IRUSR, mxt_debug_enable_show,
@@ -5476,6 +5997,8 @@ static DEVICE_ATTR(sensitive_mode, S_IWUSR | S_IRUSR, mxt_sensitive_mode_show, m
 static DEVICE_ATTR(chip_reset, S_IWUSR, NULL, mxt_chip_reset_store);
 static DEVICE_ATTR(chg_state, S_IRUGO, mxt_chg_state_show, NULL);
 static DEVICE_ATTR(wakeup_mode, S_IWUSR | S_IRUSR, mxt_wakeup_mode_show, mxt_wakeup_mode_store);
+static DEVICE_ATTR(rawdata, S_IWUSR | S_IRUSR, mxt_rawdata_show, NULL);
+static DEVICE_ATTR(rescue_test, S_IWUSR, NULL, mxt_rescue_test_store);
 // static DEVICE_ATTR(hover_tune, S_IWUSR | S_IRUSR, mxt_hover_tune_show, mxt_hover_tune_store);
 // static DEVICE_ATTR(hover_from_flash, S_IWUSR, NULL, mxt_hover_from_flash_store);
 
@@ -5496,6 +6019,8 @@ static struct attribute *mxt_attrs[] = {
 	&dev_attr_chip_reset.attr,
 	&dev_attr_chg_state.attr,
 	&dev_attr_wakeup_mode.attr,
+	&dev_attr_rawdata.attr,
+	&dev_attr_rescue_test.attr,
 	// &dev_attr_hover_tune.attr,
 	// &dev_attr_hover_from_flash.attr,
 	NULL
@@ -5774,8 +6299,9 @@ static int mxt_suspend(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct mxt_data *data = i2c_get_clientdata(client);
 	struct input_dev *input_dev = data->input_dev;
-	// int ret;
+	int ret;
 
+	esd_timer_stop(data);
 	pr_info("atmel_mxt_ts: mxt_suspend cut_off_power=%d, wakeup_gesture_mode=%d\n",data->pdata->cut_off_power, data->wakeup_gesture_mode);
 	if (data->pdata->cut_off_power) {
 		cancel_delayed_work_sync(&data->resume_delayed_work);
@@ -5790,17 +6316,17 @@ static int mxt_suspend(struct device *dev)
 
 		mxt_clear_touch_event(data);
 
-		// if (data->regulator_vddio) {
-		// 	ret = regulator_disable(data->regulator_vddio);
-		// 	if (ret < 0)
-		// 		pr_err("atmel_mxt_ts: regulator disable for vddio failed: %d\n", ret);
-		// }
-
-		// if (data->regulator_vdd) {
-		// 	ret = regulator_disable(data->regulator_vdd);
-		// 	if (ret < 0)
-		// 		pr_err("atmel_mxt_ts: regulator disable for vdd failed: %d\n", ret);
-		// }
+		if (data->pdata->switch_gpio > 0) {
+			ret = gpio_direction_output(data->pdata->switch_gpio, 0);
+			if (ret) {
+				pr_err("atmel_mxt_ts: unable to clear switch gpio %d\n",
+						data->pdata->switch_gpio);
+				return -EIO;
+			}
+		} else {
+			pr_err("atmel_mxt_ts: gpio switch is not valid %d\n",
+					data->pdata->switch_gpio);
+		}
 
 		data->is_stopped = 1;
 		mutex_unlock(&input_dev->mutex);
@@ -5832,6 +6358,7 @@ static int mxt_resume(struct device *dev)
 	struct input_dev *input_dev = data->input_dev;
 	int ret;
 
+	esd_timer_start(MXT_ESD_TIMER_INTERVAL, data);
 	pr_info("atmel_mxt_ts: mxt_resume.\n");
 	if (data->pdata->cut_off_power) {
 		mutex_lock(&input_dev->mutex);
@@ -5840,16 +6367,16 @@ static int mxt_resume(struct device *dev)
 			return 0;
 		}
 
-		if (data->regulator_vddio) {
-			ret = regulator_enable(data->regulator_vddio);
-			if (ret < 0)
-				pr_err("atmel_mxt_ts: regulator enable for vddio failed: %d\n", ret);
-		}
-
-		if (data->regulator_vdd) {
-			ret = regulator_enable(data->regulator_vdd);
-			if (ret < 0)
-				pr_err("atmel_mxt_ts: regulator enable for vdd failed: %d\n", ret);
+		if (data->pdata->switch_gpio > 0) {
+			ret = gpio_direction_output(data->pdata->switch_gpio, 1);
+			if (ret) {
+				pr_err("atmel_mxt_ts: unable to set switch gpio %d\n",
+						data->pdata->switch_gpio);
+				return -EIO;
+			}
+		} else {
+			pr_err("atmel_mxt_ts: gpio switch is not valid %d\n",
+					data->pdata->switch_gpio);
 		}
 
 		mdelay(1);
@@ -6337,6 +6864,8 @@ static int mxt_parse_dt(struct device *dev, struct mxt_platform_data *pdata)
 	u32 temp_val;
 
 	/* reset, irq gpio info */
+	pdata->switch_gpio = of_get_named_gpio_flags(np, "atmel,switch-gpio",
+				0, &pdata->switch_gpio_flags);
 	pdata->reset_gpio = of_get_named_gpio_flags(np, "atmel,reset-gpio",
 				0, &pdata->reset_gpio_flags);
 	pdata->irq_gpio = of_get_named_gpio_flags(np, "atmel,irq-gpio",
@@ -6576,12 +7105,6 @@ static int mxt_probe(struct i2c_client *client,
 	data->pdata = pdata;
 	data->irq = client->irq;
 
-	// error = mxt_configure_regulator(data, true);
-	// if (error) {
-	// 	pr_err("atmel_mxt_ts: unable to configure regulator\n");
-	// 	goto err_free_data;
-	// }
-
 	// error = mxt_initialize_pinctrl(data);
 	// if (error || !data->ts_pinctrl){
 	// 	pr_err("atmel_mxt_ts: Initialize pinctrl failed\n");
@@ -6594,13 +7117,29 @@ static int mxt_probe(struct i2c_client *client,
 	// 	}
 	// }
 
+	if (gpio_is_valid(pdata->switch_gpio)) {
+		/* configure touchscreen switch out gpio */
+		error = gpio_request(pdata->switch_gpio, "mxt_gpio_switch");
+		if (error < 0) {
+			pr_err("atmel_mxt_ts: unable to request switch gpio %d\n",
+				pdata->switch_gpio);
+			goto err_free_data;
+		}
+
+		error = gpio_direction_output(pdata->switch_gpio, 1);
+		if (error) {
+			pr_err("atmel_mxt_ts: unable to set direction for gpio %d\n",
+				pdata->switch_gpio);
+			goto err_switch_gpio;
+		}
+	}
 	if (gpio_is_valid(pdata->irq_gpio)) {
 		/* configure touchscreen irq gpio */
 		error = gpio_request(pdata->irq_gpio, "mxt_irq_gpio");
 		if (error) {
 			pr_err("atmel_mxt_ts: unable to request gpio [%d]\n",
 				pdata->irq_gpio);
-			// goto err_pinctrl_sleep;
+			goto err_switch_gpio;
 		}
 		error = gpio_direction_input(pdata->irq_gpio);
 		if (error) {
@@ -6646,6 +7185,19 @@ static int mxt_probe(struct i2c_client *client,
 				mxt_calibration_delayed_work);
 	INIT_DELAYED_WORK(&data->resume_delayed_work,
 				mxt_resume_delayed_work);
+
+	spin_lock_init(&data->esd_spin_lock);
+	INIT_WORK(&data->tmr_work, ts_tmr_work);
+	data->esd_tmr_workqueue = create_singlethread_workqueue("esd_tmr_workqueue");
+
+	if (!data->esd_tmr_workqueue) {
+		pr_err("atmel_mxt_ts: Failed to create esd tmr work queue\n");
+		error = -EPERM;
+		goto err_esd_tmr_workqueue;
+	}
+
+	esd_timer_init(data);
+	esd_timer_start(MXT_ESD_TIMER_INTERVAL, data);
 
 	/* Initialize i2c device */
 	error = mxt_initialize(data);
@@ -6752,6 +7304,7 @@ static int mxt_probe(struct i2c_client *client,
 	data->wakeup_gesture_mode = 1;
 	/* Update hardware info - Touch IC: Atmel */
 	//update_hardware_info(TYPE_TOUCH, 2);
+
 	pr_info("atmel_mxt_ts: mxt_probe success.\n");
 
 	return 0;
@@ -6773,6 +7326,7 @@ err_free_input_device:
 err_free_object:
 	kfree(data->msg_buf);
 	kfree(data->object_table);
+err_esd_tmr_workqueue:
 err_reset_gpio_req:
 	if (gpio_is_valid(pdata->reset_gpio))
 		gpio_free(pdata->reset_gpio);
@@ -6786,8 +7340,11 @@ err_irq_gpio_req:
 // 	}
 // err_free_regulator:
 // 	mxt_configure_regulator(data, false);
-// err_free_data:
-// 	kfree(data);
+err_switch_gpio:
+	if (gpio_is_valid(pdata->switch_gpio))
+		gpio_free(pdata->switch_gpio);
+err_free_data:
+	kfree(data);
 	return error;
 }
 
@@ -6814,8 +7371,6 @@ static int mxt_remove(struct i2c_client *client)
 	data->msg_buf = NULL;
 	kfree(data->object_table);
 	data->object_table = NULL;
-
-	// mxt_configure_regulator(data, false);
 
 	if (gpio_is_valid(pdata->irq_gpio))
 		gpio_free (pdata->irq_gpio);
