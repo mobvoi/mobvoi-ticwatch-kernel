@@ -1,0 +1,10 @@
+#
+# Atmel Touchscreen driver configuration
+#
+menuconfig TOUCHSCREEN_ATMEL
+	bool "Atmel Touchscreen"
+	depends on I2C
+	default n
+	help
+	  Say Y here if you have Atmel touch panel.
+	  If unsure, say N.

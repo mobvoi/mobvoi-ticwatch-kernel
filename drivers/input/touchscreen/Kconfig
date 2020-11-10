@@ -1455,3 +1455,4 @@ config TOUCHSCREEN_RAYDIUM_CHIPSET
 endif
 
 source "drivers/input/touchscreen/zinitix/Kconfig"
+source "drivers/input/touchscreen/atmel_mxt/Kconfig"
