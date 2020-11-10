@@ -1,0 +1,135 @@
+&i2c_4 {
+	status = "ok";
+	atmel_mxt_ts_336u@4a {
+		compatible = "atmel,mxt-ts";
+		reg = <0x4a>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <44 0x2008>;
+		/* vddio-supply = <&tp1v8_vreg>; */
+		/* vdd-supply = <&tp2v8_vreg>; */
+		/* pins used by touchscreen */
+		pinctrl-names = "pmx_ts_active","pmx_ts_suspend";
+		pinctrl-0 = <&ts_int_active &ts_reset_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		atmel,switch-gpio = <&tlmm 46 0x00>;
+		atmel,reset-gpio = <&tlmm 45 0x00>;
+		atmel,irq-gpio = <&tlmm 44 0x2008>;
+		atmel,mxt-fw-name = "mXT336U10AA.fw";
+		atmel,config-array-size = <2>;
+		atmel,default-config = <0>;
+		atmel,irqflags = <0x2008>;
+		atmel,vendor-id-byte = /bits/ 8 <0 3>;
+		atmel,cfg_1 {
+			atmel,family-id = <0xA6>;
+			atmel,variant-id = <0x08>;
+			atmel,version = <0x05>;
+			atmel,build = <0x01>;
+			atmel,rev-id = <0x2>;
+			atmel,mxt-cfg-name = "mxt_336u_biel_hw1_config.fw";
+			atmel,vendor-id = <0x31>; /* Biel HW ver 1 */
+			atmel,panel-id = <0x31>;
+			atmel,key-codes = <158 102 139>;
+			atmel,selfintthr-stylus = <0>;
+			atmel,t71-tchthr-pos = <22>;
+			atmel,self-chgtime-min = <0>;
+			atmel,self-chgtime-max = <0>;
+			atmel,mult-intthr-sensitive = <12>;
+			atmel,mult-intthr-not-sensitive = <17>;
+			atmel,atchthr-sensitive = <6>;
+			atmel,mult-tchthr-sensitive = <0>;
+			atmel,mult-tchthr-not-sensitive = <0>;
+			atmel,wake-up-self-adcx = <16>;
+			atmel,support-wakeup-gesture;
+		};
+		atmel,cfg_2 {
+			atmel,family-id = <0xA6>;
+			atmel,variant-id = <0x06>;
+			atmel,version = <0x10>;
+			atmel,build = <0xAA>;
+			atmel,rev-id = <0x2>;
+			atmel,mxt-cfg-name = "mxt_336u_biel_hw2_config.fw";
+			atmel,vendor-id =<0x32>; /* Biel HW ver 2 */
+			atmel,panel-id = <0x32>;
+			atmel,key-codes = <158 102 139>;
+			atmel,selfintthr-stylus = <0>;
+			atmel,t71-tchthr-pos = <22>;
+			atmel,self-chgtime-min = <0>;
+			atmel,self-chgtime-max = <0>;
+			atmel,mult-intthr-sensitive = <12>;
+			atmel,mult-intthr-not-sensitive = <17>;
+			atmel,atchthr-sensitive = <6>;
+			atmel,mult-tchthr-sensitive = <0>;
+			atmel,mult-tchthr-not-sensitive = <0>;
+			atmel,wake-up-self-adcx = <16>;
+			atmel,support-wakeup-gesture;
+		};
+	};
+	raydium_ts@39 {
+		status = "disabled";
+	};
+};
+
+&ts_int_active {
+	mux {
+		pins = "gpio25";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio25";
+		drive-strength = <8>;
+		bias-disable = <0>; /* no pull */
+	};
+};
+
+&ts_int_suspend {
+	mux {
+		pins = "gpio25";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio25";
+		drive-strength = <2>;
+		bias-disable = <0>; /* no pull */
+	};
+};
+
+&ts_reset_active {
+	mux {
+		pins = "gpio45";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio45";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+};
+
+&ts_reset_suspend {
+	mux {
+		pins = "gpio45";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio45";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+};
+
+&ts_release {
+	mux {
+		pins = "gpio44", "gpio45";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio44", "gpio45";
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+};

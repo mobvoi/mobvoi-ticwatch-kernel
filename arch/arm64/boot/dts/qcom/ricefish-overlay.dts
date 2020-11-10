@@ -16,7 +16,7 @@
 
 #include "rover-sdm429-bg-wtp-overlay.dtsi"
 #include "rover-mdss-panels.dtsi"
-#include "rover-ts.dtsi"
+#include "ricefish-ts.dtsi"
 #include "rover-nfc.dtsi"
 #include "rover-nanohub.dtsi"
 #include "rover-vibrator.dtsi"
