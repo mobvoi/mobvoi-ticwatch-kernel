@@ -1,0 +1,144 @@
+#include "dsi-panel-jd5858-cmd.dtsi"
+
+&dsi_jd5858_cmd {
+	/delete-property/ qcom,mdss-dsi-panel-timings;
+	qcom,mdss-dsi-panel-timings-phy-12nm = [04 04 01 08 00 03 01 0D];
+	qcom,panel-supply-entries = <&dsi_pm660_panel_pwr_supply>;
+	// qcom,partial-update-enabled;
+	// qcom,partial-update-addr-offset = <0x10 0>;
+	// qcom,panel-roi-alignment = <2 2 4 2 20 2>;
+
+	// qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	// qcom,mdss-dsi-bl-pmic-pwm-frequency = <100>;
+	// qcom,mdss-dsi-bl-pmic-bank-select = <0>;
+	// qcom,mdss-dsi-pwm-gpio = <&tlmm 43 0>;
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "te_signal_check";
+};
+
+&mdss_dsi_active {
+	mux {
+		pins = "gpio55", "gpio43";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio55", "gpio43";
+		drive-strength = <8>; /* 8 mA */
+		bias-disable = <0>; /* no pull */
+		output-high;
+	};
+};
+
+&mdss_dsi_suspend {
+	mux {
+		pins = "gpio55", "gpio43";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio55", "gpio43";
+		drive-strength = <2>; /* 2 mA */
+		bias-pull-down; /* pull down */
+		input-enable;
+	};
+};
+
+&pmx_mdss {
+	mdss_dsi_reset_active: mdss_dsi_reset_active {
+		mux {
+			pins = "gpio56";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio56";
+			drive-strength = <8>; /* 8 mA */
+			bias-disable = <0>; /* no pull */
+			output-low;
+		};
+	};
+
+	mdss_dsi_reset_suspend: mdss_dsi_reset_suspend {
+		mux {
+			pins = "gpio56";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio56";
+			drive-strength = <8>; /* 8 mA */
+			bias-disable = <0>; /* no pull */
+			output-low;
+		};
+	};
+
+	mdss_dsi_mutex_active: mdss_dsi_mutex_active {
+		mux {
+			pins = "gpio133";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio133";
+			drive-strength = <2>; /* 2 mA */
+			bias-pull-down; /* pull down */
+			input-enable;
+		};
+	};
+
+	mdss_dsi_mutex_suspend: mdss_dsi_mutex_suspend {
+		mux {
+			pins = "gpio133";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio133";
+			drive-strength = <2>; /* 2 mA */
+			bias-pull-down; /* pull down */
+			input-enable;
+		};
+	};
+	mdss_te_active: mdss_te_active {
+				mux {
+					pins = "gpio24";
+					function = "mdp_vsync";
+				};
+				config {
+					pins = "gpio24";
+					drive-strength = <2>; /* 8 mA */
+					bias-pull-down; /* pull down*/
+				};
+			};
+
+			mdss_te_suspend: mdss_te_suspend {
+				mux {
+					pins = "gpio24";
+					function = "mdp_vsync";
+				};
+				config {
+					pins = "gpio24";
+					drive-strength = <2>; /* 2 mA */
+					bias-pull-down; /* pull down */
+				};
+			};
+};
+
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&dsi_jd5858_cmd>;
+	pinctrl-names = "mdss_default", "mdss_sleep";
+	pinctrl-0 = <&mdss_dsi_active &mdss_te_active
+			&mdss_dsi_reset_active &mdss_dsi_mutex_active>;
+	pinctrl-1 = <&mdss_dsi_suspend &mdss_te_suspend
+			&mdss_dsi_reset_suspend &mdss_dsi_mutex_suspend>;
+	/delete-property/ vdd-supply;
+	/delete-property/ vddio-supply;
+	qcom,platform-te-gpio = <&tlmm 24 0>;
+	qcom,platform-reset-gpio = <&tlmm 56 0>;
+	qcom,platform-enable-gpio = <&tlmm 55 0>;
+	qcom,platform-mutex-gpio = <&tlmm 133 0>;
+	qcom,platform-bklight-en-gpio = <&tlmm 43 0>;
+	qcom,platform-mutex-count = <5>;
+	qcom,platform-mutex-timeout= <100>;
+};
