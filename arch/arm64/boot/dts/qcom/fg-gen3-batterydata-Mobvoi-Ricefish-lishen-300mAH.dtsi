@@ -1,0 +1,81 @@
+
+qcom,4580597_mobvoi_rover_lishen_595mah_pwm3100_averaged_masterslave_may25th2020 {
+	qcom, = <24>;
+/*
+#4580597_Mobvoi_Rover_lishen_595mAH_PWM3100_averaged_MasterSlave_May25th2020
+*/
+	qcom,max-voltage-uv = <4350000>;
+	qcom,fg-cc-cv-threshold-mv = <4340>;
+	qcom,nom-batt-capacity-mah = <300>;
+	qcom,fastchg-current-ma = <149>;
+	qcom,batt-id-kohm = <33>;
+	qcom,jeita-fcc-ranges = <0   100  160000
+				101  200  260000
+				201  450  400000>;
+	qcom,jeita-fv-ranges = <0   100  4450000
+				101 200  4450000
+				201 450  4450000>;
+	qcom,battery-beta = <3380>;
+	qcom,battery-type =
+	"4580597_mobvoi_rover_lishen_595mah_pwm3100_averaged_masterslave_may25th2020";
+	qcom,checksum = <0x7B97>;
+	qcom,gui-version = "PM660GUI - 0.0.0.45";
+	qcom,fg-profile-data = [
+		 8F 22 37 0D
+		 65 12 3A 04
+		 02 1D C9 FA
+		 EC 05 BB 02
+		 E8 18 AE 22
+		 D0 45 74 52
+		 99 00 00 00
+		 13 00 00 00
+		 00 00 D8 C2
+		 8F CC 64 BD
+		 3B 00 08 00
+		 B4 EA 4C EC
+		 AA F4 16 EA
+		 0A F2 E2 0B
+		 C9 1D 73 4B
+		 0D 06 09 20
+		 27 00 14 00
+		 C5 1F 60 05
+		 E2 0A CC 05
+		 D7 1C E5 02
+		 FB 15 59 12
+		 9E 18 EF 23
+		 C3 4D 85 5B
+		 66 00 00 00
+		 0D 00 00 00
+		 00 00 3A CC
+		 D8 BB 48 C2
+		 35 00 00 00
+		 5B F2 4C EC
+		 73 F5 A1 E2
+		 73 D4 FB 01
+		 AF FD D6 13
+		 99 33 CC FF
+		 07 10 00 00
+		 6C 02 33 47
+		 35 00 40 00
+		 26 04 0A FA
+		 FF 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+	];
+};

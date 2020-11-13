@@ -24,7 +24,7 @@
 #include "rover-bluetooth.dtsi"
 #include "rover-wlan.dtsi"
 #include "rover-audio.dtsi"
-#include "rover-charge.dts"
+#include "ricefish-charge.dts"
 
 / {
 	model = "Qualcomm Technologies, Inc. SDA429 QRD BG WTP Overlay";

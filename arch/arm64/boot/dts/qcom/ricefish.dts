@@ -30,7 +30,7 @@
 	/delete-node/ mtp_batterydata;
 	mtp_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
-		#include "fg-gen3-batterydata-Mobvoi-Rover-lishen-595mAH.dtsi"
+		#include "fg-gen3-batterydata-Mobvoi-Ricefish-lishen-300mAH.dtsi"
 	};
 };
 
