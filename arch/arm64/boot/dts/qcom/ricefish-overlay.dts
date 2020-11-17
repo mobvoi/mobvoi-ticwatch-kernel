@@ -18,7 +18,7 @@
 #include "ricefish-mdss-panels.dtsi"
 #include "ricefish-ts.dtsi"
 #include "rover-nfc.dtsi"
-#include "rover-nanohub.dtsi"
+#include "ricefish-nanohub.dtsi"
 #include "rover-vibrator.dtsi"
 #include "rover-keys.dtsi"
 #include "rover-bluetooth.dtsi"
