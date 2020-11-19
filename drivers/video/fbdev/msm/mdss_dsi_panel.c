@@ -873,6 +873,7 @@ static void mdss_dsi_panel_switch_mode(struct mdss_panel_data *pdata,
 		mdss_dsi_panel_dsc_pps_send(ctrl_pdata, &pdata->panel_info);
 }
 
+extern void mdss_set_gpio_pwm(int level);
 static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 							u32 bl_level)
 {
@@ -926,6 +927,14 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 			if (sctrl)
 				mdss_dsi_panel_bklt_dcs(sctrl, bl_level);
 		}
+		break;
+	case BL_GPIO_PWM:
+		/* convert 0~255 bl level to 0~100 duty cycles */
+		bl_level = 100 * bl_level / 255;
+		if (bl_level > 99){
+			bl_level = 99;
+		}
+		mdss_set_gpio_pwm(bl_level);
 		break;
 	default:
 		pr_err("%s: Unknown bl_ctrl configuration\n",
@@ -2438,6 +2447,8 @@ int mdss_panel_parse_bl_settings(struct device_node *np,
 
 			pr_debug("%s: Configured DCS_CMD bklt ctrl\n",
 								__func__);
+		} else if (!strcmp(data, "bl_ctrl_gpio_pwm")) {
+			ctrl_pdata->bklt_ctrl = BL_GPIO_PWM;
 		}
 	}
 	return 0;
