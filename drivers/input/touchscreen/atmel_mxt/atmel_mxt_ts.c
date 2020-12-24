@@ -4379,6 +4379,21 @@ static ssize_t mxt_update_cfg_store(struct device *dev,
 	if (name_from_buf && config_name)
 		kfree(config_name);
 
+	if (ret < 0)
+		return ret;
+	else if (ret == 0)
+		/* CRC matched, or no config file, or config parse failure.
+		 * Even if we need to re-check, we still cannot get the correct
+		 * info in current config. So there is no need to reset */
+		return 0;
+
+	/* Backup to memory */
+	ret = mxt_backup_nv(data);
+	if (ret) {
+		pr_err("atmel_mxt_ts: back nv failed!\n");
+		return ret;
+	}
+
 	return ret == 0 ? count : ret;
 }
 
@@ -4790,6 +4805,23 @@ static void mxt_calibration_delayed_work(struct work_struct *work)
 						calibration_delayed_work);
 
 	mxt_do_calibration(data);
+}
+
+static ssize_t mxt_update_fw_flag_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	int ret;
+	struct mxt_data *data = dev_get_drvdata(dev);
+
+	ret = mxt_read_config_info(data);
+
+	pr_info("atmel_mxt_ts: Config info: %02X %02X %02X %02X %02X %02X %02X %02X",
+			data->config_info[0], data->config_info[1],
+			data->config_info[2], data->config_info[3],
+			data->config_info[4], data->config_info[5],
+			data->config_info[6], data->config_info[7]);
+
+	return sprintf(buf, "Config info: %02X, %02X\n", data->config_info[0], data->config_info[1]);
 }
 
 static ssize_t mxt_update_fw_flag_store(struct device *dev,
@@ -5989,7 +6021,7 @@ static DEVICE_ATTR(build, S_IRUGO, mxt_build_show, NULL);
 static DEVICE_ATTR(slowscan_enable, S_IWUSR | S_IRUSR,
 			mxt_slowscan_show, mxt_slowscan_store);
 static DEVICE_ATTR(self_tune, S_IWUSR, NULL, mxt_self_tune_store);
-static DEVICE_ATTR(update_fw_flag, S_IWUSR, NULL, mxt_update_fw_flag_store);
+static DEVICE_ATTR(update_fw_flag, S_IWUSR | S_IRUSR, mxt_update_fw_flag_show, mxt_update_fw_flag_store);
 static DEVICE_ATTR(selftest,  S_IWUSR | S_IRUSR, mxt_selftest_show, mxt_selftest_store);
 static DEVICE_ATTR(stylus, S_IWUSR | S_IRUSR, mxt_stylus_show, mxt_stylus_store);
 static DEVICE_ATTR(diagnostic, S_IWUSR | S_IRUSR, mxt_diagnostic_show, mxt_diagnostic_store);
