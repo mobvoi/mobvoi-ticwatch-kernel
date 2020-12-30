@@ -23,7 +23,7 @@
 #include "rover-keys.dtsi"
 #include "rover-bluetooth.dtsi"
 #include "rover-wlan.dtsi"
-#include "rover-audio.dtsi"
+#include "ricefish-audio.dtsi"
 #include "ricefish-charge.dts"
 
 / {
