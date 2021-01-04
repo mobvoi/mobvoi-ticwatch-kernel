@@ -36,7 +36,13 @@
 #define VSYNC_DELAY msecs_to_jiffies(17)
 
 DEFINE_LED_TRIGGER(bl_led_trigger);
+int idle_flags = 0;
 
+int idle_mode_flags(void)
+{
+       return idle_flags;
+}
+EXPORT_SYMBOL(idle_mode_flags);
 void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl)
 {
 	if (ctrl->pwm_pmi)
@@ -274,6 +280,7 @@ static void mdss_dsi_panel_set_idle_mode(struct mdss_panel_data *pdata,
 					CMD_REQ_COMMIT);
 			ctrl->idle = true;
 			pr_debug("Idle on\n");
+			idle_flags = 1;
 		}
 	} else {
 		if (ctrl->idle_off_cmds.cmd_cnt) {
@@ -281,6 +288,7 @@ static void mdss_dsi_panel_set_idle_mode(struct mdss_panel_data *pdata,
 					CMD_REQ_COMMIT);
 			ctrl->idle = false;
 			pr_debug("Idle off\n");
+			idle_flags = 0;
 		}
 	}
 }

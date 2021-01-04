@@ -795,6 +795,8 @@ static const struct mxt_i2c_address_pair mxt_i2c_addresses[] = {
 #endif
 };
 
+extern int idle_mode_flags(void);
+
 static BLOCKING_NOTIFIER_HEAD(glove_mode_chain);
 
 static void esd_timer_start(u16 sec, struct mxt_data *data);
@@ -1481,6 +1483,7 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 	int id;
 	int index = 0;
 	ktime_t cur_time;
+	int idle_mode_flag;
 
 	if (!input_dev || data->driver_paused)
 		return;
@@ -1590,6 +1593,28 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 				input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, 1);
 				input_report_abs(sel_input_dev, ABS_MT_POSITION_X, data->max_y - y);
 				input_report_abs(sel_input_dev, ABS_MT_POSITION_Y, data->max_x - x);
+				idle_mode_flag = idle_mode_flags();
+				pr_err("%s:idle_mode_flag = %d\n",__func__,idle_mode_flag);
+				if(idle_mode_flag == 1) {
+					pr_err("%s:touch x y position report  idle mode!!!\n",__func__);
+					#ifdef TOUCH_WAKEUP_EVENT_RECORD
+						atomic_set(&wakeup_flag, 1);
+						wakeup_event_record_write(EVENT_TOUCH_WAKEUP);
+					#endif
+					input_event(input_dev, EV_KEY, KEY_WAKEUP, 1);
+					input_sync(input_dev);
+					input_event(input_dev, EV_KEY, KEY_WAKEUP, 0);
+					input_sync(input_dev);
+
+					input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, 1);
+					input_report_abs(sel_input_dev, ABS_MT_POSITION_X, data->max_y - y);
+					input_report_abs(sel_input_dev, ABS_MT_POSITION_Y, data->max_x - x);
+				} else {
+					pr_err("%s:touch x y position report!!!\n",__func__);
+					input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, 1);
+					input_report_abs(sel_input_dev, ABS_MT_POSITION_X, data->max_y - y);
+					input_report_abs(sel_input_dev, ABS_MT_POSITION_Y, data->max_x - x);
+				}
 // #ifdef CONFIG_TOUCHSCREEN_ATMEL_MXT_EDGE_SUPPORT
 // 				if (is_edge_touch)
 // 					input_report_key(sel_input_dev, BTN_TOOL_EDGE_TOUCH, 1);

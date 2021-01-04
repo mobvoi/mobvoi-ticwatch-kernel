@@ -699,6 +699,8 @@ void mdss_dsi_ctrl_phy_reset(struct mdss_dsi_ctrl_pdata *ctrl);
 
 void mdss_dsi_debug_bus_init(struct mdss_dsi_data *sdata);
 
+int idle_mode_flags(void);
+
 static inline const char *__mdss_dsi_pm_name(enum dsi_pm_type module)
 {
 	switch (module) {
