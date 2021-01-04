@@ -1482,7 +1482,6 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 	u8 peak = 0;
 	int id;
 	int index = 0;
-	ktime_t cur_time;
 	int idle_mode_flag;
 
 	if (!input_dev || data->driver_paused)
@@ -1492,17 +1491,17 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 // 	if (!edge_input_dev || data->driver_paused)
 // 		return;
 // #endif
-
+#if 0
 	/*debounce from last palm */
 	if (data->palm_detected_flag) {
 		cur_time = ktime_get_boottime();
 		if (cur_time.tv64 - data->last_plam_time.tv64 < 1000000000) {
 			pr_info("atmel_mxt_ts: palm_detected_flag debounce return\n");
-
 			return;
 		}
 		data->palm_detected_flag = 0;
 	}
+#endif
 
 	id = message[0] - data->T100_reportid_min;
 
@@ -1568,6 +1567,15 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 		{
 			//// pls send event to upper layer to turn off the screen ???
 				pr_info("atmel_mxt_ts: large touch palm enter\n");
+
+				//input_report_abs(sel_input_dev, BTN_TOUCH, 0);
+				for (id = 0; id < data->num_touchids - 2; id++) {
+					input_mt_slot(sel_input_dev, id);
+					input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, false);
+					data->finger_down[id] = false;
+					mxt_input_sync(data);
+				}
+
 				input_report_key(sel_input_dev, KEY_SLEEP, 1);
 				input_sync(sel_input_dev);
 				input_report_key(sel_input_dev, KEY_SLEEP, 0);
@@ -1590,9 +1598,6 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 					!data->finger_down[id - 2])
 					return;
 
-				input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, 1);
-				input_report_abs(sel_input_dev, ABS_MT_POSITION_X, data->max_y - y);
-				input_report_abs(sel_input_dev, ABS_MT_POSITION_Y, data->max_x - x);
 				idle_mode_flag = idle_mode_flags();
 				pr_err("%s:idle_mode_flag = %d\n",__func__,idle_mode_flag);
 				if(idle_mode_flag == 1) {
@@ -2406,6 +2411,8 @@ static void mxt_proc_t220_messages(struct mxt_data *data, u8 *msg)
 static int mxt_proc_message(struct mxt_data *data, u8 *msg)
 {
 	u8 report_id = msg[0];
+	ktime_t cur_time;
+	long long sub_time = 0;
 
 	if (report_id == MXT_RPTID_NOMSG)
 		return -1;
@@ -2413,6 +2420,18 @@ static int mxt_proc_message(struct mxt_data *data, u8 *msg)
 	if (data->debug_enabled)
 		print_hex_dump(KERN_DEBUG, "MXT MSG:", DUMP_PREFIX_NONE, 16, 1,
 			       msg, data->T5_msg_size, false);
+	/*debounce from last palm */
+	if (data->palm_detected_flag) {
+		cur_time = ktime_get_boottime();
+		sub_time = ktime_to_ms(ktime_sub(cur_time,data->last_plam_time));
+		pr_err("%s:sub_time = %lld\n",__func__,sub_time);
+
+		if (sub_time < 2000) {
+			pr_info("atmel_mxt_ts: palm_detected_flag debounce return\n");
+			return 0;
+		}
+		data->palm_detected_flag = 0;
+	}
 
 	if (report_id >= data->T9_reportid_min
 	    && report_id <= data->T9_reportid_max) {
