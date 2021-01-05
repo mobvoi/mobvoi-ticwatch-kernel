@@ -831,6 +831,122 @@ static ssize_t nanohub_lcd_mutex_status(struct device *dev,
 		"%d\n", atomic_read(&data->lcd_mutex));
 }
 
+/* As a workaround,  send SpiOledCfgData in kernel for E3 */
+const char spi_oled_cfg_cmd[] = {
+	0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x63, 0x03, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00,
+};
+
+struct spi_oled_cfg_data {
+	uint8_t res[20];
+	uint32_t mode;
+	uint32_t index;
+	uint32_t timeout;
+	uint32_t color;
+	uint32_t brightness;
+};
+
+
+struct nanohub_data *g_data;
+void mcu_lcd_bl_brightness(int level)
+{
+	uint32_t brightness;
+	struct nanohub_data *data = g_data;
+	struct spi_oled_cfg_data *cmd_data;
+	int ret;
+
+	pr_err("nanohub: %s(%d)\n", __func__, level);
+	brightness = level;
+	if (brightness > 255)
+		brightness = 255;
+	cmd_data = kmalloc(sizeof(struct spi_oled_cfg_data), GFP_KERNEL);
+	if (cmd_data) {
+		memcpy(cmd_data, spi_oled_cfg_cmd,
+		       sizeof(struct spi_oled_cfg_data));
+		if (brightness > 0)
+			cmd_data->mode = 4;
+		else
+			cmd_data->mode = 5;
+		cmd_data->brightness = brightness;
+
+		mutex_lock(&(data->nanohub_write_lock));
+		ret = request_wakeup_timeout(data, WAKEUP_TIMEOUT_MS);
+		if (ret) {
+			pr_err("nanohub: %s error to request wakeup(%d)\n",
+			       __func__, ret);
+			mutex_unlock(&(data->nanohub_write_lock));
+			return;
+		}
+		ret = nanohub_kernel_write(data, (uint8_t *)cmd_data,
+					   sizeof(struct spi_oled_cfg_data));
+		release_wakeup(data);
+		mutex_unlock(&(data->nanohub_write_lock));
+
+		kfree(cmd_data);
+	} else {
+		pr_err("kmalloc cmd_data failed!\n");
+	}
+}
+
+static ssize_t nanohub_lcd_bl_brightness(struct device *dev,
+					 struct device_attribute *attr,
+					 const char *buf, size_t count)
+{
+	struct nanohub_data *data = dev_get_nanohub_data(dev);
+	uint32_t lcd_bl_brightness = 0;
+	struct spi_oled_cfg_data *cmd_data;
+	int ret;
+
+	if (sscanf(buf, "%d\n", &lcd_bl_brightness) > 0)
+		data->lcd_bl_brightness = lcd_bl_brightness;
+
+	if (lcd_bl_brightness > 255) {
+		lcd_bl_brightness = 255;
+		data->lcd_bl_brightness = lcd_bl_brightness;
+	}
+
+	cmd_data = kmalloc(sizeof(struct spi_oled_cfg_data), GFP_KERNEL);
+	if (cmd_data) {
+		memcpy(cmd_data, spi_oled_cfg_cmd,
+		       sizeof(struct spi_oled_cfg_data));
+		if (data->lcd_bl_brightness > 0)
+			cmd_data->mode = 4;
+		else
+			cmd_data->mode = 5;
+		cmd_data->brightness = lcd_bl_brightness;
+
+		mutex_lock(&(data->nanohub_write_lock));
+		ret = request_wakeup_timeout(data, WAKEUP_TIMEOUT_MS);
+		if (ret) {
+			pr_err("nanohub: error to request wakeup, ret = %d\n",
+			       ret);
+			mutex_unlock(&(data->nanohub_write_lock));
+			return ret;
+		}
+		ret = nanohub_kernel_write(data, (uint8_t *)cmd_data,
+					   sizeof(struct spi_oled_cfg_data));
+		release_wakeup(data);
+		mutex_unlock(&(data->nanohub_write_lock));
+
+		kfree(cmd_data);
+	} else {
+		pr_err("kmalloc cmd_data failed!\n");
+	}
+
+	return count;
+}
+
+static ssize_t nanohub_lcd_bl_brightness_status(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	struct nanohub_data *data = dev_get_nanohub_data(dev);
+	return scnprintf(buf, PAGE_SIZE,
+		"%d\n", data->lcd_bl_brightness);
+}
+
 static ssize_t nanohub_sensorhal_status_set(struct device *dev,
 				struct device_attribute *attr,
 				const char *buf, size_t count)
@@ -1212,6 +1328,8 @@ static struct device_attribute attributes[] = {
 	__ATTR(mode, 0220, NULL, nanohub_mode_set),
 	__ATTR(download_bl_status, 0444, nanohub_download_bl_status, NULL),
 	__ATTR(lcd_mutex, 0660, nanohub_lcd_mutex_status, nanohub_lcd_mutex),
+	__ATTR(lcd_bl_brightness, 0660, nanohub_lcd_bl_brightness_status,
+	       nanohub_lcd_bl_brightness),
 	__ATTR(sensorhal_alive, 0660, nanohub_sensorhal_status_get,
 		nanohub_sensorhal_status_set),
 #if defined(CONFIG_NANOHUB_MAX1726X)
@@ -2220,6 +2338,7 @@ struct iio_dev *nanohub_probe(struct device *dev, struct iio_dev *iio_dev)
 	iio_dev->num_channels = 0;
 
 	data = iio_priv(iio_dev);
+	g_data = data;
 	data->iio_dev = iio_dev;
 	data->pdata = pdata;
 

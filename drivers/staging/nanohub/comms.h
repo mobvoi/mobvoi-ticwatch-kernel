@@ -116,6 +116,23 @@ int nanohub_comms_tx_rx_retrans(struct nanohub_data *, uint32_t,
 #define UPLOAD_REPLY_APP_SEC_INVALID_DATA	11
 #define UPLOAD_REPLY_APP_SEC_BAD		12
 
+static inline int nanohub_kernel_write(struct nanohub_data *data,
+				       uint8_t *buffer, size_t buffer_len)
+{
+	uint8_t ret;
+
+	if (nanohub_comms_tx_rx_retrans
+	    (data, CMD_COMMS_WRITE, buffer, buffer_len, &ret, sizeof(ret), false,
+	     10, 10) == sizeof(ret)) {
+		if (ret)
+			return buffer_len;
+		else
+			return 0;
+	} else {
+		return ERROR_NACK;
+	}
+}
+
 static inline int nanohub_comms_write(struct nanohub_data *data,
 				      const uint8_t *buffer, size_t buffer_len)
 {

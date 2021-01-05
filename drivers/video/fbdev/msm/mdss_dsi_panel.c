@@ -880,7 +880,7 @@ static void mdss_dsi_panel_switch_mode(struct mdss_panel_data *pdata,
 			(!pdata->panel_info.send_pps_before_switch))
 		mdss_dsi_panel_dsc_pps_send(ctrl_pdata, &pdata->panel_info);
 }
-
+void mcu_lcd_bl_brightness(int level);
 static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 							u32 bl_level)
 {
@@ -903,7 +903,7 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 
 	if ((bl_level < pdata->panel_info.bl_min) && (bl_level != 0))
 		bl_level = pdata->panel_info.bl_min;
-
+	__gpio_set_value(ctrl_pdata->bklt_en_gpio,0);
 	switch (ctrl_pdata->bklt_ctrl) {
 	case BL_WLED:
 		led_trigger_event(bl_led_trigger, bl_level);
@@ -934,6 +934,9 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 			if (sctrl)
 				mdss_dsi_panel_bklt_dcs(sctrl, bl_level);
 		}
+		break;
+	case BL_MCU_PWM:
+		mcu_lcd_bl_brightness(bl_level);
 		break;
 	default:
 		pr_err("%s: Unknown bl_ctrl configuration\n",
@@ -2446,7 +2449,8 @@ int mdss_panel_parse_bl_settings(struct device_node *np,
 
 			pr_debug("%s: Configured DCS_CMD bklt ctrl\n",
 								__func__);
-		}
+		}else if (!strcmp(data,"bl_ctrl_mcu_pwm"))
+			ctrl_pdata->bklt_ctrl = BL_MCU_PWM;
 	}
 	return 0;
 }

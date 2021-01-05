@@ -147,6 +147,7 @@ struct nanohub_data {
 #endif
 	uint32_t nanohub_variant_version;
 	uint16_t nanohub_hw_type;
+	uint32_t lcd_bl_brightness;
 };
 
 enum {
