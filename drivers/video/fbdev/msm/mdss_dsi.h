@@ -99,7 +99,6 @@ enum dsi_panel_bl_ctrl {
 	BL_PWM,
 	BL_WLED,
 	BL_DCS_CMD,
-	BL_GPIO_PWM, /* gpio pwm bl ctrl type */
 	UNKNOWN_CTRL,
 };
 

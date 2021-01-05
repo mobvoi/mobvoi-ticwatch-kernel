@@ -1496,7 +1496,6 @@ static struct rcg_clk crypto_clk_src = {
 
 static struct clk_freq_tbl ftbl_gcc_gp1_3_clk[] = {
 	F( 19200000,	xo,	1,	0,	0),
-	F(   9375,	xo,	16,	1,	128), /* add freq 9375 */
 	F_END
 };
 
