@@ -1,8 +1,8 @@
 &pm660_charger{
 	qcom,battery-data = <&mtp_batterydata>;
 	qcom,float-option = <1>;
-	qcom,fcc-max-ua = <149000>;
-	qcom,fv-max-uv = <4350000>;
+	qcom,fcc-max-ua = <300000>;
+	qcom,fv-max-uv = <4450000>;
 	qcom,usb-icl-ua = <500000>;
 	qcom,step-charging-enable;
 	qcom,sw-jeita-enable;
