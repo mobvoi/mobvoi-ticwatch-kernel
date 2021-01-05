@@ -8,7 +8,7 @@
 	// qcom,partial-update-addr-offset = <0x10 0>;
 	// qcom,panel-roi-alignment = <2 2 4 2 20 2>;
 
-	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_gpio_pwm";
+	// qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
 	// qcom,mdss-dsi-bl-pmic-pwm-frequency = <100>;
 	// qcom,mdss-dsi-bl-pmic-bank-select = <0>;
 	// qcom,mdss-dsi-pwm-gpio = <&tlmm 43 0>;
@@ -18,12 +18,12 @@
 
 &mdss_dsi_active {
 	mux {
-		pins = "gpio55";
+		pins = "gpio55", "gpio43";
 		function = "gpio";
 	};
 
 	config {
-		pins = "gpio55";
+		pins = "gpio55", "gpio43";
 		drive-strength = <8>; /* 8 mA */
 		bias-disable = <0>; /* no pull */
 		output-high;
@@ -32,12 +32,12 @@
 
 &mdss_dsi_suspend {
 	mux {
-		pins = "gpio55";
+		pins = "gpio55", "gpio43";
 		function = "gpio";
 	};
 
 	config {
-		pins = "gpio55";
+		pins = "gpio55", "gpio43";
 		drive-strength = <2>; /* 2 mA */
 		bias-pull-down; /* pull down */
 		input-enable;
@@ -138,37 +138,7 @@
 	qcom,platform-reset-gpio = <&tlmm 56 0>;
 	qcom,platform-enable-gpio = <&tlmm 55 0>;
 	qcom,platform-mutex-gpio = <&tlmm 133 0>;
-	// qcom,platform-bklight-en-gpio = <&tlmm 43 0>;
+	qcom,platform-bklight-en-gpio = <&tlmm 43 0>;
 	qcom,platform-mutex-count = <5>;
 	qcom,platform-mutex-timeout= <100>;
-};
-
-&soc {
-	pwm_bkl: pwm_bkl {
-		compatible = "gpio-pwm-bkl";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pwm_bkl_default>;
-		clocks = <&clock_gcc clk_gp2_clk_src>;
-		clock-names = "gpio-pwm-clk";
-		qcom,pwm-clk-base-offset = <0x09000>;
-		qcom,pwm-clk-d-offset = <0x14>;
-		qcom,pwm-clk-rcgr-offset = <0x04>;
-		qcom,pwm-clk-cbcr-offset = <0x00>;
-		qcom,pwm-clk-default-freq = <9375>;
-		qcom,pwm-clk-default-duty = <50>;
-	};
-};
-
-&tlmm {
-	pwm_bkl_default: pwm_bkl_default {
-		mux {
-			pins = "gpio43";
-			function = "gcc_gp2_clk_a";
-		};
-		config {
-			pins = "gpio43";
-			drive-strength = <16>;
-			bias-disable; /* no pull */
-		};
-	};
 };
