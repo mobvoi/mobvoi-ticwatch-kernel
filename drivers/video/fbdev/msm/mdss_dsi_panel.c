@@ -280,7 +280,6 @@ static void mdss_dsi_panel_set_idle_mode(struct mdss_panel_data *pdata,
 					CMD_REQ_COMMIT);
 			ctrl->idle = true;
 			pr_debug("Idle on\n");
-			idle_flags = 1;
 		}
 	} else {
 		if (ctrl->idle_off_cmds.cmd_cnt) {
@@ -288,7 +287,6 @@ static void mdss_dsi_panel_set_idle_mode(struct mdss_panel_data *pdata,
 					CMD_REQ_COMMIT);
 			ctrl->idle = false;
 			pr_debug("Idle off\n");
-			idle_flags = 0;
 		}
 	}
 }
@@ -1137,6 +1135,13 @@ static int mdss_dsi_panel_low_power_config(struct mdss_panel_data *pdata,
                 mdss_dsi_panel_set_idle_mode(pdata, false);
 	else
 		mdss_dsi_panel_set_idle_mode(pdata, false);
+	if (enable) {
+		pr_debug("Idle on\n");
+		idle_flags = 1;
+	} else {
+		pr_debug("Idle off\n");
+		idle_flags = 0;
+	}
 	pr_debug("%s:-\n", __func__);
 	return 0;
 }
