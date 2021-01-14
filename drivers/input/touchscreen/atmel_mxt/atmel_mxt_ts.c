@@ -7399,11 +7399,13 @@ err_free_irq:
 // #endif
 err_free_input_device:
 	input_unregister_device(data->input_dev);
+	fb_unregister_client(&data->fb_notif);
 err_free_object:
 	kfree(data->msg_buf);
 	kfree(data->object_table);
 err_esd_tmr_workqueue:
 err_reset_gpio_req:
+	del_timer(&data->esd_timeout_tmr);
 	if (gpio_is_valid(pdata->reset_gpio))
 		gpio_free(pdata->reset_gpio);
 err_irq_gpio_req:

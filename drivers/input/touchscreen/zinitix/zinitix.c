@@ -1337,6 +1337,9 @@ static bool ts_check_need_upgrade(struct bt541_ts_info *info,
 #endif
 	u8 *firmware_data;
 
+	//temp to disable upgrade
+	if(1) return false;
+
 	ts_select_type_hw(info);
 	firmware_data = (u8 *)m_pFirmware[m_FirmwareIdx];
 
@@ -4908,9 +4911,10 @@ err_gpio_request:
 	kfree(info);
 err_mem_alloc:
 err_no_platform_data:
+	if (gpio_is_valid(pdata->gpio_switch))
+		gpio_free(pdata->gpio_switch);
 	if (IS_ENABLED(CONFIG_OF))
 		devm_kfree(&client->dev, (void *)pdata);
-
 	zinitix_info("Failed to probe\n");
 	return ret;
 }
