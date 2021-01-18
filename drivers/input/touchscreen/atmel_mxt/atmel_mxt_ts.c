@@ -33,6 +33,7 @@
 #include <linux/fb.h>
 #endif
 
+extern int panel_on(void);
 /* Version */
 #define MXT_VER_20      20
 #define MXT_VER_21      21
@@ -799,8 +800,10 @@ extern int idle_mode_flags(void);
 
 static BLOCKING_NOTIFIER_HEAD(glove_mode_chain);
 
+static void mxt_clear_touch_event(struct mxt_data *data);
 static void esd_timer_start(u16 sec, struct mxt_data *data);
 static void esd_timer_stop(struct mxt_data *data);
+static struct mxt_data *g_data = NULL;
 
 int mxt_register_glove_mode_notifier(struct notifier_block *nb)
 {
@@ -2857,6 +2860,7 @@ release:
 }
 
 static int mxt_chip_reset(struct mxt_data *data);
+int mxt_chip_reset_by_powerkey(void);
 
 static int mxt_set_power_cfg(struct mxt_data *data, u8 mode)
 {
@@ -5696,6 +5700,56 @@ static int mxt_chip_reset(struct mxt_data *data)
 	return error;
 }
 
+int mxt_chip_reset_by_powerkey(void)
+{
+	int error;
+	int panel_on_flag;
+	if (g_data == NULL)
+	{
+		pr_err("atmel_mxt_ts: %s: g_data is null!\n",__func__);
+		return -1;
+	}
+	panel_on_flag = panel_on();
+	pr_err("atmel_mxt_ts: %s:panel_on_flag = %d!\n",
+			__func__,panel_on_flag);
+
+	if(panel_on_flag == 1)
+	{
+		pr_info("atmel_mxt_ts: %s: reset by powerkey!\n",
+			__func__);
+		mxt_disable_irq(g_data);
+
+		mxt_clear_touch_event(g_data);
+		/* power off */
+		if (g_data->pdata->switch_gpio > 0) {
+			error = gpio_direction_output(g_data->pdata->switch_gpio, 0);
+			if (error) {
+				pr_err("atmel_mxt_ts: unable to clear switch gpio %d\n",
+						g_data->pdata->switch_gpio);
+			}
+		}
+		msleep(10);
+		/* power on */
+		if (g_data->pdata->switch_gpio > 0) {
+			error = gpio_direction_output(g_data->pdata->switch_gpio, 1);
+			if (error) {
+				pr_err("atmel_mxt_ts: unable to set switch gpio %d\n",
+						g_data->pdata->switch_gpio);
+			}
+		}
+
+		gpio_set_value(g_data->pdata->reset_gpio, 0);
+		msleep(20);
+		gpio_set_value(g_data->pdata->reset_gpio, 1);
+
+		msleep(10);
+		mxt_wait_for_chg(g_data);
+		mxt_enable_irq(g_data);
+	}
+	return error;
+}
+EXPORT_SYMBOL(mxt_chip_reset_by_powerkey);
+
 static ssize_t mxt_chip_reset_store(struct device *dev,
 				struct device_attribute *attr,
 				const char *buf, size_t count)
@@ -7380,7 +7434,7 @@ static int mxt_probe(struct i2c_client *client,
 	data->wakeup_gesture_mode = 1;
 	/* Update hardware info - Touch IC: Atmel */
 	//update_hardware_info(TYPE_TOUCH, 2);
-
+	g_data = data;
 	pr_info("atmel_mxt_ts: mxt_probe success.\n");
 
 	return 0;

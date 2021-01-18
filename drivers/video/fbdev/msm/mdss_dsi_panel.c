@@ -36,6 +36,14 @@
 #define VSYNC_DELAY msecs_to_jiffies(17)
 
 DEFINE_LED_TRIGGER(bl_led_trigger);
+int panel_on_flags = 1;
+
+int panel_on(void)
+{
+	return panel_on_flags;
+}
+EXPORT_SYMBOL(panel_on);
+
 int idle_flags = 0;
 
 int idle_mode_flags(void)
@@ -997,6 +1005,10 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	if (pinfo->compression_mode == COMPRESSION_DSC)
 		mdss_dsi_panel_dsc_pps_send(ctrl, pinfo);
 
+	panel_on_flags = 1;
+	pr_info("%s:%d Panel on !\n", __func__,panel_on_flags);
+
+
 	mdss_dsi_panel_on_hdmi(ctrl, pinfo);
 
 	/* Ensure low persistence mode is set as before */
@@ -1102,7 +1114,7 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->off_cmds, CMD_REQ_COMMIT);
 
 	mdss_dsi_panel_off_hdmi(ctrl, pinfo);
-
+	panel_on_flags = 0; 
 end:
 	/* clear idle state */
 	ctrl->idle = false;

@@ -156,6 +156,7 @@
 #define QPNP_PON_BUFFER_SIZE			9
 
 #define QPNP_POFF_REASON_UVLO			13
+extern int mxt_chip_reset_by_powerkey(void);
 
 enum qpnp_pon_version {
 	QPNP_PON_GEN1_V1,
@@ -236,6 +237,7 @@ struct qpnp_pon {
 	ktime_t			kpdpwr_last_release_time;
 	struct notifier_block   pon_nb;
 	bool			legacy_hard_reset_offset;
+	struct delayed_work power_work;
 };
 
 static int pon_ship_mode_en;
@@ -996,6 +998,11 @@ qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 		input_sync(pon->pon_input);
 	}
 
+	if ((cfg->key_code == KEY_POWER) && (pon_rt_sts == 1))
+	{
+		pr_err("POWER KEY pressed! \n");
+		schedule_delayed_work(&pon->power_work,msecs_to_jiffies(0));
+	}
 	input_report_key(pon->pon_input, cfg->key_code, key_status);
 	input_sync(pon->pon_input);
 
@@ -2149,6 +2156,12 @@ static int pon_register_twm_notifier(struct qpnp_pon *pon)
 	return rc;
 }
 
+static void delay_powerkey_work(struct work_struct *work)
+{
+	mxt_chip_reset_by_powerkey();
+	return;
+}
+
 static int qpnp_pon_probe(struct platform_device *pdev)
 {
 	struct qpnp_pon *pon;
@@ -2607,6 +2620,7 @@ static int qpnp_pon_probe(struct platform_device *pdev)
 					"qcom,use-legacy-hard-reset-offset");
 
 	qpnp_pon_debugfs_init(pdev);
+	INIT_DELAYED_WORK(&pon->power_work,delay_powerkey_work);
 	return 0;
 
 err_out:
