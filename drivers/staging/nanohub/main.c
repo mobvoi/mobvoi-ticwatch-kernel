@@ -849,7 +849,6 @@ struct spi_oled_cfg_data {
 	uint32_t brightness;
 };
 
-
 struct nanohub_data *g_data;
 void mcu_lcd_bl_brightness(int level)
 {
@@ -866,10 +865,7 @@ void mcu_lcd_bl_brightness(int level)
 	if (cmd_data) {
 		memcpy(cmd_data, spi_oled_cfg_cmd,
 		       sizeof(struct spi_oled_cfg_data));
-		if (brightness > 0)
-			cmd_data->mode = 4;
-		else
-			cmd_data->mode = 5;
+		cmd_data->mode = 6; /* STATE_SET_BRIGHTNESS */
 		cmd_data->brightness = brightness;
 
 		mutex_lock(&(data->nanohub_write_lock));
