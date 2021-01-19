@@ -119,6 +119,18 @@ static int mdss_mdp_disable_autorefresh(struct mdss_mdp_ctl *ctl,
 	struct mdss_mdp_ctl *sctl);
 static int mdss_mdp_setup_vsync(struct mdss_mdp_cmd_ctx *ctx, bool enable);
 
+/**************************************************************************/
+void display_delay_work(struct work_struct *work)
+{
+	struct mdss_mdp_ctl *ctl;
+	ctl = container_of(work, struct mdss_mdp_ctl, display_work.work);
+
+	pr_err("%s: delaywork\n", __func__);
+	mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_POST_PANEL_ON,
+			NULL, CTL_INTF_EVENT_FLAG_DEFAULT);
+	pr_err("%s-enter-MDSS_EVENT_POST_PANEL_ON",__func__);
+}
+/***************************************************************************/
 static bool __mdss_mdp_cmd_is_aux_pp_needed(struct mdss_data_type *mdata,
 	struct mdss_mdp_ctl *mctl)
 {
@@ -2335,7 +2347,7 @@ static int mdss_mdp_cmd_panel_on(struct mdss_mdp_ctl *ctl,
 		pr_err("invalid ctx\n");
 		return -ENODEV;
 	}
-
+	pr_err("%s-enter",__func__);
 	if (sctl)
 		sctx = (struct mdss_mdp_cmd_ctx *) sctl->intf_ctx[MASTER_CTX];
 
@@ -2357,9 +2369,10 @@ static int mdss_mdp_cmd_panel_on(struct mdss_mdp_ctl *ctl,
 
 			rc = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_PANEL_ON,
 					NULL, CTL_INTF_EVENT_FLAG_DEFAULT);
+			pr_err("%s-enter-MDSS_EVENT_PANEL_ON",__func__);
 			WARN(rc, "intf %d panel on error (%d)\n",
 					ctl->intf_num, rc);
-
+			schedule_delayed_work(&ctl->display_work, msecs_to_jiffies(1));
 		}
 
 		rc = mdss_mdp_tearcheck_enable(ctl, true);
@@ -3545,6 +3558,7 @@ static int mdss_mdp_cmd_ctx_setup(struct mdss_mdp_ctl *ctl,
 		clk_ctrl_delayed_off_work);
 	INIT_WORK(&ctx->pp_done_work, pingpong_done_work);
 	INIT_WORK(&ctx->early_wakeup_clk_work, early_wakeup_work);
+	INIT_DELAYED_WORK(&ctl->display_work, display_delay_work);
 	atomic_set(&ctx->pp_done_cnt, 0);
 	ctx->autorefresh_state = MDP_AUTOREFRESH_OFF;
 	ctx->autorefresh_frame_cnt = 0;

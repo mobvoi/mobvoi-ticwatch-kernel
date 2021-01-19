@@ -653,6 +653,7 @@ struct mdss_mdp_ctl {
 	/* vsync handler for FRC */
 	struct mdss_mdp_vsync_handler frc_vsync_handler;
 	bool need_vsync_on;
+	struct delayed_work display_work;
 };
 
 struct mdss_mdp_mixer {
