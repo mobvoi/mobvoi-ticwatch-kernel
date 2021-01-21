@@ -16,6 +16,8 @@
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/firmware.h>
+#include <linux/kthread.h>
+#include <linux/sched.h>
 #include <linux/i2c.h>
 #include "atmel_mxt_ts.h"
 
@@ -40,7 +42,7 @@ extern int panel_on(void);
 #define MXT_VER_22      22
 
 /* Firmware files */
-#define MXT_FW_NAME     "maxtouch.fw"
+#define MXT_FW_NAME     "maxtouch.raw"
 #define MXT_CFG_MAGIC   "OBP_RAW V1"
 
 #define REV_D            0x32
@@ -803,6 +805,9 @@ static BLOCKING_NOTIFIER_HEAD(glove_mode_chain);
 static void mxt_clear_touch_event(struct mxt_data *data);
 static void esd_timer_start(u16 sec, struct mxt_data *data);
 static void esd_timer_stop(struct mxt_data *data);
+static int check_fw_as_data_crc(struct mxt_data *data);
+static u32 fw_config_crc;
+
 static struct mxt_data *g_data = NULL;
 
 int mxt_register_glove_mode_notifier(struct notifier_block *nb)
@@ -1330,6 +1335,7 @@ static void mxt_proc_t6_messages(struct mxt_data *data, u8 *msg)
 	u8 status = msg[1];
 
 	crc = msg[2] | (msg[3] << 8) | (msg[4] << 16);
+	pr_info("atmel_mxt_ts:crc   =  0x%06X,data->config_crc = 0x%06X\n", crc,data->config_crc);
 
 	if (crc != data->config_crc) {
 		data->config_crc = crc;
@@ -2671,7 +2677,7 @@ static int mxt_download_config(struct mxt_data *data, const char *fn)
 
 	ret = request_firmware(&cfg, fn, dev);
 	if (ret < 0) {
-		pr_err("atmel_mxt_ts: Failure to request config file %s\n", fn);
+		pr_err("atmel_mxt_ts: Failure to request config file %s,ret = %d\n", fn,ret);
 		return 0;
 	}
 
@@ -2715,6 +2721,10 @@ static int mxt_download_config(struct mxt_data *data, const char *fn)
 		goto release;
 	}
 	data_pos += offset;
+
+	//record fw crc
+	fw_config_crc = config_crc;
+	pr_info("atmel_mxt_ts: info_crc = 0x%06X,data->info_block_crc = 0x%06X,config_crc = 0x%06X,data->config_crc = 0x%06X\n",info_crc,data->info_block_crc,config_crc,data->config_crc);
 
 	/* The Info Block CRC is calculated over mxt_info and the object table
 	 * If it does not match then we are trying to load the configuration
@@ -2855,6 +2865,7 @@ static int mxt_download_config(struct mxt_data *data, const char *fn)
 release_mem:
 	kfree(config_mem);
 release:
+	pr_err("atmel_mxt_ts: release fw, ret=%d, %s\n", ret, __func__);
 	release_firmware(cfg);
 	return ret;
 }
@@ -4287,6 +4298,7 @@ static ssize_t mxt_update_firmware(struct device *dev,
 	int len = 0;
 	int ret;
 
+	pr_info("atmel_mxt_ts: begin to update firmware!!\n");
 	esd_timer_stop(data);
 
 	if (upgraded)
@@ -4401,6 +4413,7 @@ static ssize_t mxt_update_cfg_store(struct device *dev,
 	int ret = 0;
 	char *config_name = NULL;
 	int len = 0;
+	pr_info("atmel_mxt_ts:%s\n", __func__);
 
 	if (count <= 2) {
 		config_name = (char *)mxt_get_config(data, use_default_cfg);
@@ -4443,6 +4456,75 @@ static ssize_t mxt_update_cfg_store(struct device *dev,
 	}
 
 	return ret == 0 ? count : ret;
+}
+
+static int check_fw_as_data_crc(struct mxt_data *data)
+{
+       pr_info("atmel_mxt_ts:%s data->config_crc = 0x%06X,fw_config_crc = 0x%06X\n", __func__,data->config_crc,fw_config_crc);
+       if(fw_config_crc == data->config_crc)
+               return  0;
+       else
+               return -1;
+}
+
+
+static ssize_t mxt_update_cfg_firmware(struct device *dev,
+                                       struct device_attribute *attr,
+                                       const char *buf, size_t count)
+{
+       struct mxt_data *data = dev_get_drvdata(dev);
+       bool use_default_cfg = false, name_from_buf = false ;
+       int ret = 0;
+       char *config_name = NULL;
+       int len = 0;
+       pr_info("atmel_mxt_ts:%s\n", __func__);
+       if (count <= 2) {
+               config_name = (char *)mxt_get_config(data, use_default_cfg);
+               name_from_buf = false;
+       } else {
+               len = strnlen(buf, count);
+               config_name = kmalloc(len + 1, GFP_KERNEL);
+               if (config_name == NULL)
+                       return -ENOMEM;
+
+               if (count > 0) {
+                       strncpy(config_name, buf, len);
+                       if (config_name[len - 1] == '\n')
+                               config_name[len - 1] = 0;
+                       else
+                               config_name[len] = 0;
+               }
+               name_from_buf = true;
+       }
+
+       pr_info("atmel_mxt_ts: Identify config name :%s, %s\n", config_name, __func__);
+       ret = mxt_download_config(data, config_name);
+
+       if (name_from_buf && config_name)
+               kfree(config_name);
+
+       if (ret < 0)
+               return ret;
+       else if (ret == 0)
+               /* CRC matched, or no config file, or config parse failure.
+                * Even if we need to re-check, we still cannot get the correct
+                * info in current config. So there is no need to reset */
+               return 0;
+
+       /* Backup to memory */
+       ret = mxt_backup_nv(data);
+       if (ret) {
+               pr_err("atmel_mxt_ts: back nv failed!\n");
+               return ret;
+       }
+
+       ret = check_fw_as_data_crc(data);
+       if(ret){
+               pr_err("atmel_mxt_ts:fw_crc is not equal to data_crc!\n");
+               return ret;
+       }
+
+       return ret == 0 ? count : ret;
 }
 
 
@@ -7197,12 +7279,24 @@ static int mxt_parse_dt(struct device *dev, struct mxt_platform_data *pdata)
 	return -ENODEV;
 }
 #endif
+static int atmel_fw_update_thread(void *data)
+{
+	ssize_t ret;
+	struct mxt_data *p_data = data;
+	pr_info("atmel_mxt_ts:%s begin to mxt_update_cfg_firmware.\n",__func__);
+
+	ret= mxt_update_cfg_firmware(&p_data->client->dev, NULL, MXT_FW_NAME, strlen(MXT_FW_NAME));
+	pr_info("atmel_mxt_ts:%s finish mxt_update_cfg_firmware.\n",__func__);
+	esd_timer_start(MXT_ESD_TIMER_INTERVAL, data);
+	return ret;
+}
 
 static int mxt_probe(struct i2c_client *client,
 		const struct i2c_device_id *id)
 {
 	struct mxt_platform_data *pdata;
 	struct mxt_data *data;
+	struct task_struct *fw_thrd;
 	int error;
 
 	pr_info("atmel_mxt_ts: mxt_probe start.\n");
@@ -7327,7 +7421,6 @@ static int mxt_probe(struct i2c_client *client,
 	}
 
 	esd_timer_init(data);
-	esd_timer_start(MXT_ESD_TIMER_INTERVAL, data);
 
 	/* Initialize i2c device */
 	error = mxt_initialize(data);
@@ -7434,6 +7527,10 @@ static int mxt_probe(struct i2c_client *client,
 	data->wakeup_gesture_mode = 1;
 	/* Update hardware info - Touch IC: Atmel */
 	//update_hardware_info(TYPE_TOUCH, 2);
+
+	//update fw
+	pr_err("atmel_mxt_ts: begin to update fw!!!\n");
+	fw_thrd = kthread_run(atmel_fw_update_thread,data,"atmel_fw");
 	g_data = data;
 	pr_info("atmel_mxt_ts: mxt_probe success.\n");
 
