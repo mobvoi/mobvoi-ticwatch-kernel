@@ -2435,7 +2435,7 @@ static int mxt_proc_message(struct mxt_data *data, u8 *msg)
 		sub_time = ktime_to_ms(ktime_sub(cur_time,data->last_plam_time));
 		pr_err("%s:sub_time = %lld\n",__func__,sub_time);
 
-		if (sub_time < 2000) {
+		if (sub_time < 500) {
 			pr_info("atmel_mxt_ts: palm_detected_flag debounce return\n");
 			return 0;
 		}
