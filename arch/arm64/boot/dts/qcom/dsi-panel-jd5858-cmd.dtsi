@@ -40,17 +40,15 @@
 		qcom,mdss-dsi-pixel-packing = "tight";
 		qcom,mdss-dsi-pixel-alignment = <0>;
 		qcom,mdss-dsi-on-command = [
-			15 01 00 00 00 00 02 35 00
-			15 01 00 00 00 00 02 51 FF
-			15 01 00 00 00 00 02 DE 01
-			15 01 00 00 00 00 02 B6 01
-			15 01 00 00 00 00 02 DE 00
-			39 01 00 00 00 00 05 2A 00 00 01 67
-			39 01 00 00 00 00 05 2B 00 00 01 67
+			29 01 00 00 00 00 04 DF 98 54 EC
+			13 01 00 00 00 00 02 DE 00
+			29 01 00 00 00 00 04 E6 32 80 00
+			13 01 00 00 00 00 02 DE 03
+			13 01 00 00 00 00 02 B6 19
 			05 01 00 00 78 00 02 11 00
 			];
 		qcom,mdss-dsi-post-panel-on-command = [
-			05 01 00 00 40 00 02 29 00
+			05 01 00 00 1E 00 02 29 00
 			];
 		qcom,mdss-dsi-off-command = [
 			15 01 00 00 00 00 02 DE 01
@@ -90,6 +88,6 @@
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
 		qcom,mdss-dsi-mdp-trigger = "none";
 		//qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
-		qcom,mdss-dsi-reset-sequence = <0 50>, <1 50>, <0 120>;
+		qcom,mdss-dsi-reset-sequence = <0 10>, <1 10>, <0 20>;
 	};
 };
