@@ -119,6 +119,8 @@ static int mdss_mdp_disable_autorefresh(struct mdss_mdp_ctl *ctl,
 	struct mdss_mdp_ctl *sctl);
 static int mdss_mdp_setup_vsync(struct mdss_mdp_cmd_ctx *ctx, bool enable);
 
+static int first_post_panel_on_run = 0;
+extern void post_panel_on_set_bl(void);
 /**************************************************************************/
 void display_delay_work(struct work_struct *work)
 {
@@ -128,6 +130,11 @@ void display_delay_work(struct work_struct *work)
 	pr_err("%s: delaywork\n", __func__);
 	mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_POST_PANEL_ON,
 			NULL, CTL_INTF_EVENT_FLAG_DEFAULT);
+	if (first_post_panel_on_run == 0) {
+		first_post_panel_on_run = 1;
+	} else if (first_post_panel_on_run == 1) {
+		post_panel_on_set_bl();
+	}
 	pr_err("%s-enter-MDSS_EVENT_POST_PANEL_ON",__func__);
 }
 /***************************************************************************/

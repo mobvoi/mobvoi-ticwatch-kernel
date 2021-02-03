@@ -29,15 +29,22 @@
 #include "mdss_dba_utils.h"
 #endif
 #include "mdss_debug.h"
+#include "mdss_panel.h"
+#include <linux/mutex.h>
 
 #define DT_CMD_HDR 6
 #define DEFAULT_MDP_TRANSFER_TIME 14000
 
 #define VSYNC_DELAY msecs_to_jiffies(17)
 
+DEFINE_MUTEX(bl_mutex);
 DEFINE_LED_TRIGGER(bl_led_trigger);
 int panel_on_flags = 1;
+int post_panel_on_flag = 0;
 
+int post_panel_on_bl_flag = 0;
+struct completion bl_completion;
+EXPORT_SYMBOL_GPL(post_panel_on_bl_flag);
 int panel_on(void)
 {
 	return panel_on_flags;
@@ -528,7 +535,6 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			}
 
 			if (gpio_is_valid(ctrl_pdata->bklt_en_gpio)) {
-
 				if (ctrl_pdata->bklt_en_gpio_invert)
 					rc = gpio_direction_output(
 						ctrl_pdata->bklt_en_gpio, 0);
@@ -567,12 +573,10 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 		}
 	} else {
 		if (gpio_is_valid(ctrl_pdata->bklt_en_gpio)) {
-
 			if (ctrl_pdata->bklt_en_gpio_invert)
 				gpio_set_value((ctrl_pdata->bklt_en_gpio), 1);
 			else
 				gpio_set_value((ctrl_pdata->bklt_en_gpio), 0);
-
 			gpio_free(ctrl_pdata->bklt_en_gpio);
 		}
 		/* Delete en_gpio ctrl here, Due to it's controlled when
@@ -887,11 +891,24 @@ static void mdss_dsi_panel_switch_mode(struct mdss_panel_data *pdata,
 		mdss_dsi_panel_dsc_pps_send(ctrl_pdata, &pdata->panel_info);
 }
 void mcu_lcd_bl_brightness(int level);
+void post_panel_on_delay_work(void)
+{
+	wait_for_completion(&bl_completion);
+}
+EXPORT_SYMBOL_GPL(post_panel_on_delay_work);
+
+void post_panel_on_set_bl(void)
+{
+	complete(&bl_completion);
+}
+EXPORT_SYMBOL_GPL(post_panel_on_set_bl);
+
 static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 							u32 bl_level)
 {
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 	struct mdss_dsi_ctrl_pdata *sctrl = NULL;
+	static unsigned int bl_last_level = 1;
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -909,7 +926,7 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 
 	if ((bl_level < pdata->panel_info.bl_min) && (bl_level != 0))
 		bl_level = pdata->panel_info.bl_min;
-	__gpio_set_value(ctrl_pdata->bklt_en_gpio,0);
+
 	switch (ctrl_pdata->bklt_ctrl) {
 	case BL_WLED:
 		led_trigger_event(bl_led_trigger, bl_level);
@@ -941,8 +958,12 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 				mdss_dsi_panel_bklt_dcs(sctrl, bl_level);
 		}
 		break;
-	case BL_MCU_PWM:
+	case BL_MCU_PWM://update backlight level
+		if ((bl_last_level == 0) && (bl_level > 0) ){
+			post_panel_on_delay_work();
+		}
 		mcu_lcd_bl_brightness(bl_level);
+		bl_last_level = bl_level;
 		break;
 	default:
 		pr_err("%s: Unknown bl_ctrl configuration\n",
@@ -3087,6 +3108,7 @@ int mdss_dsi_panel_init(struct device_node *node,
 		pr_err("%s:%d panel dt parse failed\n", __func__, __LINE__);
 		return rc;
 	}
+	init_completion(&bl_completion);
 
 	pinfo->dynamic_switch_pending = false;
 	pinfo->is_lpm_mode = false;
