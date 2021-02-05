@@ -32,6 +32,8 @@
 #define MAX1726X_TEMP_MIN	0	/* 0.1 DegreeC */
 #define MAX1726X_TEMP_MAX	500	/* 0.1 DegreeC */
 
+#define USB_ONLINE_FLAG 1
+#define FULL_SOC_VALUE 100
 static enum power_supply_property max1726x_battery_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_PRESENT,
@@ -186,8 +188,10 @@ static int max1726x_curr_to_ua(uint32_t curr)
 {
 	int res;
 
-	/* The value is signed. If curr & 0x8000 is true, it's negative and
-	 * 0xffff is -1 */
+	/*
+	 * The value is signed. If curr & 0x8000 is true, it's negative and
+	 * 0xffff is -1
+	 */
 	res  = (int16_t)curr;
 
 	res *= 1562500 / (MAX1726X_RSENSE * 1000);
@@ -333,6 +337,17 @@ static void max1726x_info_debug_show(void)
 			para_version);
 }
 #endif
+static bool bms_psy_initialized(struct nanohub_fuelgauge_data *fg_data)
+{
+	if (fg_data->bms_psy)
+		return true;
+
+	fg_data->bms_psy = power_supply_get_by_name("bms");
+	if (!fg_data->bms_psy)
+		return false;
+
+	return true;
+}
 
 static int max1726x_battery_get_property(struct power_supply *psy,
 					 enum power_supply_property psp,
@@ -342,6 +357,8 @@ static int max1726x_battery_get_property(struct power_supply *psy,
 	struct max1726x_info_cache *cache;
 	int ret = 0;
 	bool request = false;
+	int current_soc;
+	union power_supply_propval prop;
 
 	if (!fg_data)
 		return -EINVAL;
@@ -379,7 +396,40 @@ static int max1726x_battery_get_property(struct power_supply *psy,
 		val->intval = max1726x_curr_to_ua(cache->avgcurr);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
-		val->intval = cache->repsoc >> 8; /* REPSOC LSB: 1/256 % */
+		current_soc = cache->repsoc >> 8;/* REPSOC LSB: 1/256 % */
+		if (bms_psy_initialized(fg_data)) {
+			power_supply_get_property(fg_data->bms_psy,
+						  POWER_SUPPLY_PROP_ONLINE,
+						  &prop);
+			if (prop.intval == USB_ONLINE_FLAG &&
+			    ((current_soc == FULL_SOC_VALUE) ||
+			     (fg_data->ui_soc == FULL_SOC_VALUE))) {
+				val->intval = FULL_SOC_VALUE;
+				/* hard code to full when usb present*/
+				fg_data->ui_soc = FULL_SOC_VALUE;
+				pr_debug("nanohub: [FG] hold full soc");
+			} else if (prop.intval != USB_ONLINE_FLAG &&
+				   ((current_soc - fg_data->ui_soc) < 0 &&
+				    (current_soc - fg_data->ui_soc) > -3)) {
+				    /*detal need to below 3*/
+				pr_debug("nanohub: [FG] ui_soc %d, soc%d\n",
+					 fg_data->ui_soc, current_soc);
+				val->intval = fg_data->ui_soc;
+				if (delayed_work_pending(&fg_data->recal_ws))
+					break;
+				schedule_delayed_work(&fg_data->recal_ws,
+						      msecs_to_jiffies(120000));
+				/*2min delay to recalculate ui soc*/
+			} else {
+				pr_debug("nanohub: [FG] ui_soc %d, soc%d\n",
+					 fg_data->ui_soc, current_soc);
+				cancel_delayed_work(&fg_data->recal_ws);
+				val->intval = current_soc;
+				fg_data->ui_soc = 0;
+			}
+		} else {
+			val->intval = current_soc;
+		}
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
 		ret = max1726x_batt_cap_level(val);
@@ -446,6 +496,14 @@ static const struct max1726x_info_cache default_cache = {
 	.temp = (25 << 8),	/* Default Temperatue: 25 DegreeC */
 };
 
+static void full_soc_recalculate_work_fn(struct work_struct *work)
+{
+	pr_debug("nanohub: [FG] %s entry\n", __func__);
+	if (m_fg_data->ui_soc > 0)
+		m_fg_data->ui_soc -= 1;
+	power_supply_changed(m_fg_data->batt_psy);
+}
+
 static int max1726x_init(void)
 {
 	struct nanohub_fuelgauge_data *fg_data;
@@ -487,6 +545,8 @@ static int max1726x_init(void)
 	mutex_init(&fg_data->lock);
 	init_completion(&fg_data->updated);
 
+	INIT_DELAYED_WORK(&m_fg_data->recal_ws, full_soc_recalculate_work_fn);
+	schedule_delayed_work(&m_fg_data->recal_ws, msecs_to_jiffies(1000));
 	fg_data->info_cache_updated = false;
 
 init_data_alloc:

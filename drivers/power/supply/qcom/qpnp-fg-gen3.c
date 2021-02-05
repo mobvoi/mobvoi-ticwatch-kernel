@@ -4116,6 +4116,9 @@ static int fg_psy_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_REAL_CAPACITY:
 		rc = fg_get_prop_real_capacity(chip, &pval->intval);
 		break;
+	case POWER_SUPPLY_PROP_ONLINE:
+		pval->intval = chip->online_status;
+		break;
 	default:
 		pr_err("unsupported property %d\n", psp);
 		rc = -EINVAL;
@@ -4320,6 +4323,7 @@ static enum power_supply_property fg_psy_props[] = {
 	POWER_SUPPLY_PROP_CC_STEP,
 	POWER_SUPPLY_PROP_CC_STEP_SEL,
 	POWER_SUPPLY_PROP_REAL_CAPACITY,
+	POWER_SUPPLY_PROP_ONLINE,
 };
 
 static const struct power_supply_desc fg_psy_desc = {
