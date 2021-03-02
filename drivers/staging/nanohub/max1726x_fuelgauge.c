@@ -436,7 +436,10 @@ static int max1726x_battery_get_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_TEMP:
 		/* 0.1 DegreeC LSB */
-		ret = max1726x_get_temp(&val->intval);
+		//ret = max1726x_get_temp(&val->intval);
+		/*Get battery temperature from battery instead of MAX1726X*/
+		ret = max1726x_get_smb2_batt_prop(fg_data->batt_psy,
+				    POWER_SUPPLY_PROP_TEMP, val);
 		break;
 	case POWER_SUPPLY_PROP_TECHNOLOGY:
 		val->intval = POWER_SUPPLY_TECHNOLOGY_LION;
