@@ -73,20 +73,6 @@
 		};
 	};
 
-	mdss_dsi_bl_default: mdss_dsi_bl_default {
-		mux {
-			pins = "gpio43";
-			function = "gpio";
-		};
-
-		config {
-			pins = "gpio43";
-			drive-strength = <8>; /* 8 mA */
-			bias-disable = <0>; /* no pull */
-			output-low;
-		};
-	};
-
 	mdss_dsi_mutex_active: mdss_dsi_mutex_active {
 		mux {
 			pins = "gpio133";
@@ -143,8 +129,7 @@
 	qcom,dsi-pref-prim-pan = <&dsi_jd5858_cmd>;
 	pinctrl-names = "mdss_default", "mdss_sleep";
 	pinctrl-0 = <&mdss_dsi_active &mdss_te_active
-			&mdss_dsi_reset_active &mdss_dsi_mutex_active
-			&mdss_dsi_bl_default>;
+			&mdss_dsi_reset_active &mdss_dsi_mutex_active>;
 	pinctrl-1 = <&mdss_dsi_suspend &mdss_te_suspend
 			&mdss_dsi_reset_suspend &mdss_dsi_mutex_suspend>;
 	/delete-property/ vdd-supply;
@@ -153,6 +138,7 @@
 	qcom,platform-reset-gpio = <&tlmm 56 0>;
 	qcom,platform-enable-gpio = <&tlmm 55 0>;
 	qcom,platform-mutex-gpio = <&tlmm 133 0>;
+	qcom,platform-bklight-en-gpio = <&tlmm 43 0>;
 	qcom,platform-mutex-count = <5>;
 	qcom,platform-mutex-timeout= <100>;
 };
