@@ -767,6 +767,7 @@ struct mxt_data {
 	struct timer_list *p_esd_timeout_tmr;
 	struct workqueue_struct *esd_tmr_workqueue;
 	spinlock_t esd_spin_lock;
+	bool enable_wakeup;
 };
 
 static struct mxt_suspend mxt_save[] = {
@@ -807,8 +808,17 @@ static void esd_timer_start(u16 sec, struct mxt_data *data);
 static void esd_timer_stop(struct mxt_data *data);
 static int check_fw_as_data_crc(struct mxt_data *data);
 static u32 fw_config_crc;
-
+static int lcd_suspend = 0;
 static struct mxt_data *g_data = NULL;
+
+int atmel_mxt_wakeup(bool enabled)
+{
+	if(g_data == NULL)
+		return -1;
+	g_data->enable_wakeup = enabled;
+	return 0;
+}
+EXPORT_SYMBOL(atmel_mxt_wakeup);
 
 int mxt_register_glove_mode_notifier(struct notifier_block *nb)
 {
@@ -1608,9 +1618,7 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 					return;
 
 				idle_mode_flag = idle_mode_flags();
-				pr_err("%s:idle_mode_flag = %d\n",__func__,idle_mode_flag);
 				if(idle_mode_flag == 1) {
-					pr_err("%s:touch x y position report  idle mode!!!\n",__func__);
 					#ifdef TOUCH_WAKEUP_EVENT_RECORD
 						atomic_set(&wakeup_flag, 1);
 						wakeup_event_record_write(EVENT_TOUCH_WAKEUP);
@@ -1624,7 +1632,13 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 					input_report_abs(sel_input_dev, ABS_MT_POSITION_X, data->max_y - y);
 					input_report_abs(sel_input_dev, ABS_MT_POSITION_Y, data->max_x - x);
 				} else {
-					pr_err("%s:touch x y position report!!!\n",__func__);
+					if((lcd_suspend == 1) && (g_data->enable_wakeup == 1))
+					{
+						input_event(input_dev, EV_KEY, KEY_WAKEUP, 1);
+						input_sync(input_dev);
+						input_event(input_dev, EV_KEY, KEY_WAKEUP, 0);
+						input_sync(input_dev);
+					}
 					input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, 1);
 					input_report_abs(sel_input_dev, ABS_MT_POSITION_X, data->max_y - y);
 					input_report_abs(sel_input_dev, ABS_MT_POSITION_Y, data->max_x - x);
@@ -2532,6 +2546,15 @@ static irqreturn_t mxt_read_messages_t44(struct mxt_data *data)
 {
 	int ret;
 	u8 count, num_left;
+	struct input_dev *input_dev = data->input_dev;
+	if((lcd_suspend == 1) && (g_data->enable_wakeup == 1))
+	{
+		input_event(input_dev, EV_KEY, KEY_WAKEUP, 1);
+		input_sync(input_dev);
+		input_event(input_dev, EV_KEY, KEY_WAKEUP, 0);
+		input_sync(input_dev);
+		disable_irq_wake(data->client->irq);
+	}
 
 	/* Read T44 and T5 together */
 	ret = mxt_read_reg(data->client, data->T44_address,
@@ -6463,6 +6486,8 @@ static void mxt_clear_touch_event(struct mxt_data *data)
 // #endif
 }
 
+//no longer use mxt_set_external_gpio_pullup and mxt_set_ptc_enabled
+/*
 static int mxt_set_external_gpio_pullup(struct mxt_data *data, bool pull_up)
 {
 	int ret = 0;
@@ -6476,7 +6501,6 @@ static int mxt_set_external_gpio_pullup(struct mxt_data *data, bool pull_up)
 
 	return ret;
 }
-
 static int mxt_set_ptc_enabled(struct mxt_data *data, bool enabled)
 {
 	int ret = 0;
@@ -6494,6 +6518,7 @@ static int mxt_set_ptc_enabled(struct mxt_data *data, bool enabled)
 
 	return ret;
 }
+*/
 
 static void mxt_resume_delayed_work(struct work_struct *work)
 {
@@ -6514,8 +6539,7 @@ static int mxt_suspend(struct device *dev)
 	int ret;
 
 	esd_timer_stop(data);
-	pr_info("atmel_mxt_ts: mxt_suspend cut_off_power=%d, wakeup_gesture_mode=%d\n",data->pdata->cut_off_power, data->wakeup_gesture_mode);
-	if (data->pdata->cut_off_power) {
+	if (data->pdata->cut_off_power || !g_data->enable_wakeup) {
 		cancel_delayed_work_sync(&data->resume_delayed_work);
 		mutex_lock(&input_dev->mutex);
 		if (data->is_stopped) {
@@ -6543,23 +6567,8 @@ static int mxt_suspend(struct device *dev)
 		data->is_stopped = 1;
 		mutex_unlock(&input_dev->mutex);
 	} else {
-		if (!data->wakeup_gesture_mode)
-			mxt_disable_irq(data);
-
-		mutex_lock(&input_dev->mutex);
-
-		if (input_dev->users)
-			mxt_stop(data);
-
-		mutex_unlock(&input_dev->mutex);
-
-		if (data->pdata->use_ptc_key)
-			mxt_set_ptc_enabled(data, false);
-		mxt_set_external_gpio_pullup(data, true);
-
-		mxt_clear_touch_event(data);
+		enable_irq_wake(data->client->irq);
 	}
-
 	return 0;
 }
 
@@ -6571,8 +6580,7 @@ static int mxt_resume(struct device *dev)
 	int ret;
 
 	esd_timer_start(MXT_ESD_TIMER_INTERVAL, data);
-	pr_info("atmel_mxt_ts: mxt_resume.\n");
-	if (data->pdata->cut_off_power) {
+	if (data->pdata->cut_off_power || !g_data->enable_wakeup) {
 		mutex_lock(&input_dev->mutex);
 		if (!data->is_stopped) {
 			mutex_unlock(&input_dev->mutex);
@@ -6596,22 +6604,7 @@ static int mxt_resume(struct device *dev)
 		mutex_unlock(&input_dev->mutex);
 
 		schedule_delayed_work(&data->resume_delayed_work, msecs_to_jiffies(100));
-	} else {
-		if (!data->wakeup_gesture_mode)
-			mxt_enable_irq(data);
-
-		if (data->pdata->use_ptc_key)
-			mxt_set_ptc_enabled(data, true);
-		mxt_set_external_gpio_pullup(data, false);
-
-		mutex_lock(&input_dev->mutex);
-
-		if (input_dev->users)
-			mxt_start(data);
-
-		mutex_unlock(&input_dev->mutex);
 	}
-
 	return 0;
 }
 
@@ -6880,6 +6873,7 @@ static int fb_notifier_cb(struct notifier_block *self,
 		if (*blank == FB_BLANK_UNBLANK) {
 			pr_err("atmel_mxt_ts: ##### UNBLANK SCREEN #####\n");
 			mxt_input_enable(mxt_data->input_dev);
+			lcd_suspend = 0;
 #ifdef TOUCH_WAKEUP_EVENT_RECORD
 				if (atomic_read(&wakeup_flag) == 1)
 					wakeup_event_record_write(EVENT_SCREEN_ON);
@@ -6888,6 +6882,7 @@ static int fb_notifier_cb(struct notifier_block *self,
 		} else if (*blank >= 2) {
 			pr_err("atmel_mxt_ts: ##### BLANK SCREEN #####\n");
 			mxt_input_disable(mxt_data->input_dev);
+			lcd_suspend = 1;
 #ifdef TOUCH_WAKEUP_EVENT_RECORD
 				if (atomic_read(&wakeup_flag) == 1) {
 					wakeup_event_record_write(EVENT_SCREEN_OFF);
@@ -7524,7 +7519,7 @@ static int mxt_probe(struct i2c_client *client,
 	mxt_debugfs_init(data);
 	// schedule_work(&data->hover_loading_work);
 
-	data->wakeup_gesture_mode = 1;
+	data->wakeup_gesture_mode = 0;
 	/* Update hardware info - Touch IC: Atmel */
 	//update_hardware_info(TYPE_TOUCH, 2);
 
@@ -7626,7 +7621,8 @@ static void mxt_shutdown(struct i2c_client *client)
 	data->state = SHUTDOWN;
 }
 
-#ifdef CONFIG_PM
+//#ifdef CONFIG_PM
+#if 0   //no longer use
 static int mxt_ts_suspend(struct device *dev)
 {
 	struct mxt_data *data =  dev_get_drvdata(dev);
@@ -7685,7 +7681,8 @@ static struct i2c_driver mxt_driver = {
 		.name	= "atmel_mxt_ts",
 		.owner	= THIS_MODULE,
 		.of_match_table = mxt_match_table,
-#ifdef CONFIG_PM
+//#ifdef CONFIG_PM
+#if 0
 		.pm = &mxt_touchscreen_pm_ops,
 #endif
 	},

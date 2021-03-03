@@ -111,3 +111,4 @@ obj-$(CONFIG_TOUCHSCREEN_EKTF3XXX_CHIPSET) += ektf3xxx/
 obj-$(CONFIG_TOUCHSCREEN_RAYDIUM_CHIPSET)  += raydium_wt030/
 obj-$(CONFIG_TOUCHSCREEN_ZINITIX)	+= zinitix/
 obj-$(CONFIG_TOUCHSCREEN_ATMEL)	+= atmel_mxt/
+obj-y	+= tps_wakeup_node.o

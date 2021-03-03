@@ -526,6 +526,8 @@ struct bt541_ts_info {
 	bool enable_wakeup;
 };
 
+int lcd_is_suspend = 0;
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void zinitix_early_suspend(struct early_suspend *h);
 static void zinitix_late_resume(struct early_suspend *h);
@@ -644,6 +646,17 @@ static struct miscdevice touch_misc_device = {
 
 struct bt541_ts_info *misc_info;
 struct bt541_ts_info *misc_touch_dev;
+
+int zinitix_wakeup(bool enabled)
+{
+	if(misc_info == NULL)
+		return -1;
+
+	misc_info->enable_wakeup = enabled;
+	zinitix_debug("misc_info->enable_wakeup = (%d)\n", misc_info->enable_wakeup);
+	return 0;
+}
+EXPORT_SYMBOL(zinitix_wakeup);
 
 /* define i2c sub functions*/
 static inline s32 read_data(struct i2c_client *client,
@@ -2429,6 +2442,20 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 					 (u32) info->touch_info.coord[i].
 					 minor_width);
 #endif
+			if(misc_info->enable_wakeup && lcd_is_suspend)
+			{
+				input_report_key(info->input_dev, KEY_WAKEUP,
+						 1);
+				input_sync(info->input_dev);
+				input_report_key(info->input_dev, KEY_WAKEUP,
+						 0);
+				input_sync(info->input_dev);
+
+				zinitix_info("report wakeup key(misc_info->enable_wakeup = %d)\n",
+					     misc_info->enable_wakeup);
+			}
+			zinitix_debug("Finger[%d] x = %d, y = %d, w = %d, p = %d\n",
+						i, x, y, w, palm);
 			input_report_abs(info->input_dev, ABS_MT_POSITION_X, x);
 			input_report_abs(info->input_dev, ABS_MT_POSITION_Y, y);
 			input_report_key(info->input_dev, BTN_TOUCH, 1);
@@ -2556,7 +2583,6 @@ reset_exit:
 
 	enable_irq(info->irq);
 
-	tpd_halt = 0;
 	up(&info->work_lock);
 	zinitix_debug("resume end\n");
 
@@ -2590,7 +2616,6 @@ static int bt541_ts_suspend(struct device *dev)
 #endif
 
 	down(&info->work_lock);
-	tpd_halt = 1;
 	if (info->work_state != NOTHING && info->work_state != SUSPEND) {
 		zinitix_err("Invalid work proceedure (%d)\n", info->work_state);
 		up(&info->work_lock);
@@ -2659,10 +2684,16 @@ static int fb_notifier_callback(struct notifier_block *self,
 	    misc_touch_dev && misc_touch_dev->client) {
 		blank = evdata->data;
 		if (*blank == FB_BLANK_UNBLANK) {
-			bt541_ts_resume(&misc_touch_dev->client->dev);
+			if(!misc_info->enable_wakeup) {
+				bt541_ts_resume(&misc_touch_dev->client->dev);
+			}
+			lcd_is_suspend = 0;
 		} else if (*blank == FB_BLANK_POWERDOWN ||
 				*blank == FB_BLANK_NORMAL) {
-			bt541_ts_suspend(&misc_touch_dev->client->dev);
+			if(!misc_info->enable_wakeup) {
+				bt541_ts_suspend(&misc_touch_dev->client->dev);
+			}
+			lcd_is_suspend = 1;
 		}
 	}
 
@@ -3868,9 +3899,9 @@ static int init_sec_factory(struct bt541_ts_info *info)
 	for (i = 0; i < ARRAY_SIZE(tsp_cmds); i++)
 		list_add_tail(&tsp_cmds[i].list, &factory_info->cmd_list_head);
 
-	sec_class = class_create(THIS_MODULE, "tsp");
+	sec_class = class_create(THIS_MODULE, "tp_node");
 
-	factory_ts_dev = device_create(sec_class, NULL, 0, info, "tsp");
+	factory_ts_dev = device_create(sec_class, NULL, 0, info, "tp_node1");
 	if (unlikely(!factory_ts_dev)) {
 		zinitix_err("Failed to create factory dev\n");
 		ret = -ENODEV;
@@ -4679,7 +4710,7 @@ static int bt541_ts_probe(struct i2c_client *client,
 
 	info->input_dev = input_dev;
 	info->work_state = PROBE;
-	info->enable_wakeup = true;
+	info->enable_wakeup = false;
 
 	ret = zinitix_power_init(info, true);
 	if (ret) {
