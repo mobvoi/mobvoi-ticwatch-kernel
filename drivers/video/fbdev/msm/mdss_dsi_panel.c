@@ -534,7 +534,7 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 					(pinfo->rst_seq[i] * 1000) + 10);
 			}
 
-			if (gpio_is_valid(ctrl_pdata->bklt_en_gpio)) {
+			if (gpio_is_valid(ctrl_pdata->bklt_en_gpio) && ctrl_pdata->bklt_ctrl != BL_MCU_PWM) {
 				if (ctrl_pdata->bklt_en_gpio_invert)
 					rc = gpio_direction_output(
 						ctrl_pdata->bklt_en_gpio, 0);
