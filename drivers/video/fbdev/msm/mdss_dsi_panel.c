@@ -962,8 +962,8 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 		if ((bl_last_level == 0) && (bl_level > 0) ){
 			post_panel_on_delay_work();
 		}
-		mcu_lcd_bl_brightness(bl_level);
-		bl_last_level = bl_level;
+		mcu_lcd_bl_brightness(bl_level*180/255);
+		bl_last_level = bl_level*180/255;
 		break;
 	default:
 		pr_err("%s: Unknown bl_ctrl configuration\n",
