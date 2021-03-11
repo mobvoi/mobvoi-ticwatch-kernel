@@ -4710,7 +4710,7 @@ static int bt541_ts_probe(struct i2c_client *client,
 
 	info->input_dev = input_dev;
 	info->work_state = PROBE;
-	info->enable_wakeup = false;
+	info->enable_wakeup = true;
 
 	ret = zinitix_power_init(info, true);
 	if (ret) {

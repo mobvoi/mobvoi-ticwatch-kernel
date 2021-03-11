@@ -7527,6 +7527,7 @@ static int mxt_probe(struct i2c_client *client,
 	pr_err("atmel_mxt_ts: begin to update fw!!!\n");
 	fw_thrd = kthread_run(atmel_fw_update_thread,data,"atmel_fw");
 	g_data = data;
+        g_data->enable_wakeup = true;
 	pr_info("atmel_mxt_ts: mxt_probe success.\n");
 
 	return 0;
