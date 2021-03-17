@@ -1594,18 +1594,12 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 		{
 			//// pls send event to upper layer to turn off the screen ???
 				pr_info("atmel_mxt_ts: large touch palm enter\n");
-				//input_report_abs(sel_input_dev, BTN_TOUCH, 0);
-				for (id = 0; id < data->num_touchids - 2; id++) {
-					input_mt_slot(sel_input_dev, id);
-					input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, false);
-					data->finger_down[id] = false;
-					mxt_input_sync(data);
-				}
-
 				input_report_key(sel_input_dev, KEY_SLEEP, 1);
 				input_sync(sel_input_dev);
 				input_report_key(sel_input_dev, KEY_SLEEP, 0);
 				input_sync(sel_input_dev);
+				mxt_clear_touch_event(data);
+
 				data->last_plam_time = ktime_get_boottime();
 				data->last_plam_time = data->last_plam_time;
 				data->palm_detected_flag = 1;
