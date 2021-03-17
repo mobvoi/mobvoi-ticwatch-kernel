@@ -1506,6 +1506,14 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 	if (!input_dev || data->driver_paused)
 		return;
 
+	if((lcd_suspend == 1) && (g_data->enable_wakeup == 1))
+	{
+		input_event(input_dev, EV_KEY, KEY_WAKEUP, 1);
+		input_sync(input_dev);
+		input_event(input_dev, EV_KEY, KEY_WAKEUP, 0);
+		input_sync(input_dev);
+	}
+
 // #ifdef CONFIG_TOUCHSCREEN_ATMEL_MXT_EDGE_SUPPORT
 // 	if (!edge_input_dev || data->driver_paused)
 // 		return;
@@ -1586,7 +1594,6 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 		{
 			//// pls send event to upper layer to turn off the screen ???
 				pr_info("atmel_mxt_ts: large touch palm enter\n");
-
 				//input_report_abs(sel_input_dev, BTN_TOUCH, 0);
 				for (id = 0; id < data->num_touchids - 2; id++) {
 					input_mt_slot(sel_input_dev, id);
@@ -1758,18 +1765,6 @@ static void mxt_proc_t24_messages(struct mxt_data *data, u8 *msg)
 
 	pr_info("atmel_mxt_ts: msg for t24 = 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
 		msg[0], msg[1], msg[2], msg[3], msg[4], msg[5]);
-
-	if (data->is_stopped && (msg[1] == TAP_EVENT || msg[1] == DOUBLE_TAP_EVENT )) {
-#ifdef TOUCH_WAKEUP_EVENT_RECORD
-		atomic_set(&wakeup_flag, 1);
-		wakeup_event_record_write(EVENT_TOUCH_WAKEUP);
-#endif
-		data->is_wakeup_by_gesture = true;
-		input_event(input_dev, EV_KEY, KEY_WAKEUP, 1);
-		input_sync(input_dev);
-		input_event(input_dev, EV_KEY, KEY_WAKEUP, 0);
-		input_sync(input_dev);
-	}
 }
 //hk20200727
 
@@ -2546,15 +2541,6 @@ static irqreturn_t mxt_read_messages_t44(struct mxt_data *data)
 {
 	int ret;
 	u8 count, num_left;
-	struct input_dev *input_dev = data->input_dev;
-	if((lcd_suspend == 1) && (g_data->enable_wakeup == 1))
-	{
-		input_event(input_dev, EV_KEY, KEY_WAKEUP, 1);
-		input_sync(input_dev);
-		input_event(input_dev, EV_KEY, KEY_WAKEUP, 0);
-		input_sync(input_dev);
-		disable_irq_wake(data->client->irq);
-	}
 
 	/* Read T44 and T5 together */
 	ret = mxt_read_reg(data->client, data->T44_address,
@@ -6567,6 +6553,7 @@ static int mxt_suspend(struct device *dev)
 		data->is_stopped = 1;
 		mutex_unlock(&input_dev->mutex);
 	} else {
+		disable_irq_wake(data->client->irq);
 		enable_irq_wake(data->client->irq);
 	}
 	return 0;
@@ -6875,19 +6862,18 @@ static int fb_notifier_cb(struct notifier_block *self,
 			mxt_input_enable(mxt_data->input_dev);
 			lcd_suspend = 0;
 #ifdef TOUCH_WAKEUP_EVENT_RECORD
-				if (atomic_read(&wakeup_flag) == 1)
-					wakeup_event_record_write(EVENT_SCREEN_ON);
+			if (atomic_read(&wakeup_flag) == 1)
+				wakeup_event_record_write(EVENT_SCREEN_ON);
 #endif
-		//} else if (*blank == FB_BLANK_POWERDOWN) {
-		} else if (*blank >= 2) {
+		} else if (*blank == FB_BLANK_POWERDOWN || *blank == FB_BLANK_NORMAL) {
 			pr_err("atmel_mxt_ts: ##### BLANK SCREEN #####\n");
 			mxt_input_disable(mxt_data->input_dev);
 			lcd_suspend = 1;
 #ifdef TOUCH_WAKEUP_EVENT_RECORD
-				if (atomic_read(&wakeup_flag) == 1) {
-					wakeup_event_record_write(EVENT_SCREEN_OFF);
-					atomic_set(&wakeup_flag, 0);
-				}
+			if (atomic_read(&wakeup_flag) == 1) {
+				wakeup_event_record_write(EVENT_SCREEN_OFF);
+				atomic_set(&wakeup_flag, 0);
+			}
 #endif
 		}
 	}
@@ -7527,7 +7513,9 @@ static int mxt_probe(struct i2c_client *client,
 	pr_err("atmel_mxt_ts: begin to update fw!!!\n");
 	fw_thrd = kthread_run(atmel_fw_update_thread,data,"atmel_fw");
 	g_data = data;
-        g_data->enable_wakeup = true;
+	g_data->enable_wakeup = true;
+	enable_irq_wake(data->client->irq);
+
 	pr_info("atmel_mxt_ts: mxt_probe success.\n");
 
 	return 0;
