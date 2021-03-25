@@ -850,12 +850,12 @@ struct spi_oled_cfg_data {
 };
 
 struct nanohub_data *g_data;
-void mcu_lcd_bl_brightness(int level)
+int mcu_lcd_bl_brightness(int level)
 {
 	uint32_t brightness;
 	struct nanohub_data *data = g_data;
 	struct spi_oled_cfg_data *cmd_data;
-	int ret;
+	int ret = ERROR_NACK;
 
 	pr_err("nanohub: %s(%d)\n", __func__, level);
 	brightness = level;
@@ -874,7 +874,10 @@ void mcu_lcd_bl_brightness(int level)
 			pr_err("nanohub: %s error to request wakeup(%d)\n",
 			       __func__, ret);
 			mutex_unlock(&(data->nanohub_write_lock));
-			return;
+			/*The calling function will check the return value to
+			  check the set_bl status, so the failure value is
+			  uniformly set to ERROR_NACK*/
+			return ERROR_NACK;
 		}
 		ret = nanohub_kernel_write(data, (uint8_t *)cmd_data,
 					   sizeof(struct spi_oled_cfg_data));
@@ -885,6 +888,8 @@ void mcu_lcd_bl_brightness(int level)
 	} else {
 		pr_err("kmalloc cmd_data failed!\n");
 	}
+
+	return ret;
 }
 
 static ssize_t nanohub_lcd_bl_brightness(struct device *dev,

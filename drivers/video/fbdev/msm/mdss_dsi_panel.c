@@ -890,7 +890,7 @@ static void mdss_dsi_panel_switch_mode(struct mdss_panel_data *pdata,
 			(!pdata->panel_info.send_pps_before_switch))
 		mdss_dsi_panel_dsc_pps_send(ctrl_pdata, &pdata->panel_info);
 }
-void mcu_lcd_bl_brightness(int level);
+int mcu_lcd_bl_brightness(int level);
 void post_panel_on_delay_work(void)
 {
 	wait_for_completion(&bl_completion);
@@ -903,12 +903,25 @@ void post_panel_on_set_bl(void)
 }
 EXPORT_SYMBOL_GPL(post_panel_on_set_bl);
 
+static void mdss_dsi_disable_bl(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
+{
+	if (gpio_is_valid(ctrl_pdata->bklt_en_gpio)) {
+		if (ctrl_pdata->bklt_en_gpio_invert)
+			gpio_set_value((ctrl_pdata->bklt_en_gpio), 1);
+		else
+			gpio_set_value((ctrl_pdata->bklt_en_gpio), 0);
+		gpio_free(ctrl_pdata->bklt_en_gpio);
+	}
+}
+
+#define ERROR_NACK			-1
 static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 							u32 bl_level)
 {
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 	struct mdss_dsi_ctrl_pdata *sctrl = NULL;
 	static unsigned int bl_last_level = 1;
+	static bool ap_ctr_bl = true;
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -959,11 +972,19 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 		}
 		break;
 	case BL_MCU_PWM://update backlight level
-		if ((bl_last_level == 0) && (bl_level > 0) ){
-			post_panel_on_delay_work();
+		{
+			int ret = 0;
+			if ((bl_last_level == 0) && (bl_level > 0) ){
+				post_panel_on_delay_work();
+			}
+			ret = mcu_lcd_bl_brightness(bl_level*180/255);
+			bl_last_level = bl_level*180/255;
+
+			if(ret != ERROR_NACK && ap_ctr_bl) {
+				ap_ctr_bl = false;
+				mdss_dsi_disable_bl(ctrl_pdata);
+			}
 		}
-		mcu_lcd_bl_brightness(bl_level*180/255);
-		bl_last_level = bl_level*180/255;
 		break;
 	default:
 		pr_err("%s: Unknown bl_ctrl configuration\n",
