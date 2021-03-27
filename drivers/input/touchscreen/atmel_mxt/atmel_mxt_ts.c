@@ -453,6 +453,7 @@ extern int panel_on(void);
 #define MXT_T100_TYPE_PASSIVE_STYLUS	2
 #define MXT_T100_TYPE_ACTIVE_STYLUS	3
 #define MXT_T100_TYPE_HOVERING_FINGER	4
+#define MXT_T100_TYPE_LARGE_OBJECT	6
 #define MXT_T100_TYPE_HOVERING_GLOVE	5
 #define MXT_T100_TYPE_EDGE_TOUCH	7
 
@@ -762,6 +763,13 @@ struct mxt_data {
 	bool palm_detected_flag;
 	ktime_t last_plam_time;
 
+//20210319
+	ktime_t suspend_plam_time;
+	ktime_t suspend_finger_time;
+	ktime_t idle_finger_time;
+
+	struct delayed_work wake_work;
+//
 	struct work_struct tmr_work;
 	struct timer_list esd_timeout_tmr;
 	struct timer_list *p_esd_timeout_tmr;
@@ -1484,6 +1492,65 @@ static int mxt_do_diagnostic(struct mxt_data *data, u8 mode)
 static int mxt_set_power_cfg(struct mxt_data *data, u8 mode);
 static void mxt_set_gesture_wake_up(struct mxt_data *data, bool enable);
 
+//20210319
+int PALM = 0;
+struct input_dev *sel_input_dev = NULL;
+u8 touch_type;
+int x;
+int y;
+int area = 0;
+int amplitude = 0;
+u8 vector = 0;
+static void ts_wake_work(struct work_struct *work)
+{
+	pr_err("%s:lcd_suspend = %d,enable_wakeup = %d,PALM = %d\n",__func__,lcd_suspend,g_data->enable_wakeup,PALM);
+
+	if((g_data->enable_wakeup == 1) && PALM != 1)
+	{
+
+		input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, 1);
+		input_report_abs(sel_input_dev, ABS_MT_POSITION_X, g_data->max_y - y);
+		input_report_abs(sel_input_dev, ABS_MT_POSITION_Y, g_data->max_x - x);
+
+		input_event(sel_input_dev, EV_KEY, KEY_WAKEUP, 1);
+		input_sync(sel_input_dev);
+		input_event(sel_input_dev, EV_KEY, KEY_WAKEUP, 0);
+		input_sync(sel_input_dev);
+
+		if (touch_type == MXT_T100_TYPE_HOVERING_FINGER)
+			input_report_abs(sel_input_dev, BTN_TOUCH, 0);
+		else
+			input_report_abs(sel_input_dev, BTN_TOUCH, 1);
+
+		if (touch_type == MXT_T100_TYPE_HOVERING_GLOVE)
+			blocking_notifier_call_chain(&glove_mode_chain,
+					1, NULL);
+		else
+			blocking_notifier_call_chain(&glove_mode_chain,
+					0, NULL);
+
+		if (g_data->t100_tchaux_bits &  MXT_T100_AMPL) {
+			if (touch_type == MXT_T100_TYPE_HOVERING_FINGER)
+				amplitude = 0;
+			else if (amplitude == 0)
+				amplitude = 1;
+			input_report_abs(sel_input_dev, ABS_MT_PRESSURE, amplitude);
+		}
+		if (g_data->t100_tchaux_bits &  MXT_T100_AREA) {
+			if (touch_type == MXT_T100_TYPE_HOVERING_FINGER)
+				area = 0;
+			else if (area == 0)
+				area = 1;
+			input_report_abs(sel_input_dev, ABS_MT_TOUCH_MAJOR, area);
+		}
+		if (g_data->t100_tchaux_bits &  MXT_T100_VECT)
+			input_report_abs(sel_input_dev, ABS_MT_ORIENTATION, vector);
+		mxt_input_sync(g_data);
+	}
+	mxt_clear_touch_event(g_data);
+	PALM = 0;
+}
+//
 static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 {
 	struct input_dev *input_dev = data->input_dev;
@@ -1491,44 +1558,24 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 // 	struct input_dev *edge_input_dev = data->edge_input_dev;
 // 	bool is_edge_touch = false;
 // #endif
-	struct input_dev *sel_input_dev = NULL;
-	u8 status, touch_type, touch_event;
-	int x;
-	int y;
-	int area = 0;
-	int amplitude = 0;
-	u8 vector = 0;
+	u8 status, touch_event;
 	u8 peak = 0;
 	int id;
 	int index = 0;
 	int idle_mode_flag;
-
+//20210319
+	long long suspend_sub_time;
+//
 	if (!input_dev || data->driver_paused)
 		return;
 
-	if((lcd_suspend == 1) && (g_data->enable_wakeup == 1))
-	{
-		input_event(input_dev, EV_KEY, KEY_WAKEUP, 1);
-		input_sync(input_dev);
-		input_event(input_dev, EV_KEY, KEY_WAKEUP, 0);
-		input_sync(input_dev);
-	}
+	idle_mode_flag = idle_mode_flags();
+	pr_err("%s:idle_mode_flag = %d\n",__func__,idle_mode_flag);
 
 // #ifdef CONFIG_TOUCHSCREEN_ATMEL_MXT_EDGE_SUPPORT
 // 	if (!edge_input_dev || data->driver_paused)
 // 		return;
 // #endif
-#if 0
-	/*debounce from last palm */
-	if (data->palm_detected_flag) {
-		cur_time = ktime_get_boottime();
-		if (cur_time.tv64 - data->last_plam_time.tv64 < 1000000000) {
-			pr_info("atmel_mxt_ts: palm_detected_flag debounce return\n");
-			return;
-		}
-		data->palm_detected_flag = 0;
-	}
-#endif
 
 	id = message[0] - data->T100_reportid_min;
 
@@ -1588,62 +1635,59 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 		input_mt_slot(sel_input_dev, id - 2);
 
 //hk20200730  //for palm on screen
-		#define MXT_T100_TYPE_LARGE_OBJECT	6
+		pr_err("atmel_mxt_ts:%s:touch_event = %d,touch_type=%d,status=0x%02x\n",__func__,touch_event,touch_type,status);
 
-		if(touch_event == MXT_T100_EVENT_SUP || touch_type == MXT_T100_TYPE_LARGE_OBJECT)
-		{
-			//// pls send event to upper layer to turn off the screen ???
-				pr_info("atmel_mxt_ts: large touch palm enter\n");
-				input_report_key(sel_input_dev, KEY_SLEEP, 1);
-				input_sync(sel_input_dev);
-				input_report_key(sel_input_dev, KEY_SLEEP, 0);
-				input_sync(sel_input_dev);
-				mxt_clear_touch_event(data);
+		if(touch_event == MXT_T100_EVENT_SUP || touch_type == MXT_T100_TYPE_LARGE_OBJECT) {
+			if (lcd_suspend == 0) {
+				if (idle_mode_flag == 0) {
+					//// pls send event to upper layer to turn off the screen ???
+					input_report_key(sel_input_dev, KEY_SLEEP, 1);
+					input_sync(sel_input_dev);
+					input_report_key(sel_input_dev, KEY_SLEEP, 0);
+					input_sync(sel_input_dev);
 
-				data->last_plam_time = ktime_get_boottime();
-				data->last_plam_time = data->last_plam_time;
-				data->palm_detected_flag = 1;
+					mxt_clear_touch_event(data);
+					data->last_plam_time = ktime_get_boottime();
+					data->last_plam_time = data->last_plam_time;
+					data->palm_detected_flag = 1;
+					return;
+				} else {
+					data->suspend_plam_time = ktime_get_boottime();
+					data->suspend_plam_time = data->suspend_plam_time;
+					suspend_sub_time = ktime_to_ms(ktime_sub(data->suspend_plam_time,data->idle_finger_time));
+					pr_err("atmel_mxt_ts: suspend_sub_time = %lld\n", suspend_sub_time);
+					if(suspend_sub_time <= 50)
+						PALM = 1;
+					return;
+				}
+			} else {
+				data->suspend_plam_time = ktime_get_boottime();
+				data->suspend_plam_time = data->suspend_plam_time;
+				suspend_sub_time = ktime_to_ms(ktime_sub(data->suspend_plam_time,data->suspend_finger_time));
+				pr_err("atmel_mxt_ts: suspend_sub_time = %lld\n", suspend_sub_time);
+				if(suspend_sub_time <= 50)
+					PALM = 1;
 				return;
+			}
 		}
 //hk20200730
+
 		if (status & MXT_T100_DETECT) {
-			if (touch_event == MXT_T100_EVENT_DOWN || touch_event == MXT_T100_EVENT_UNSUP
-			|| touch_event == MXT_T100_EVENT_MOVE || touch_event == MXT_T100_EVENT_NONE) {
+			if (lcd_suspend == 0) {
+				if (touch_event == MXT_T100_EVENT_DOWN || touch_event == MXT_T100_EVENT_UNSUP
+				|| touch_event == MXT_T100_EVENT_MOVE || touch_event == MXT_T100_EVENT_NONE) {
 				/* Touch in detect, report X/Y position */
-				if (touch_event == MXT_T100_EVENT_DOWN ||
-					touch_event == MXT_T100_EVENT_UNSUP)
+
 					data->finger_down[id - 2] = true;
-				if ((touch_event == MXT_T100_EVENT_MOVE ||
-					touch_event == MXT_T100_EVENT_NONE) &&
-					!data->finger_down[id - 2])
-					return;
-
-				idle_mode_flag = idle_mode_flags();
-				if(idle_mode_flag == 1) {
-					#ifdef TOUCH_WAKEUP_EVENT_RECORD
-						atomic_set(&wakeup_flag, 1);
-						wakeup_event_record_write(EVENT_TOUCH_WAKEUP);
-					#endif
-					input_event(input_dev, EV_KEY, KEY_WAKEUP, 1);
-					input_sync(input_dev);
-					input_event(input_dev, EV_KEY, KEY_WAKEUP, 0);
-					input_sync(input_dev);
-
-					input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, 1);
-					input_report_abs(sel_input_dev, ABS_MT_POSITION_X, data->max_y - y);
-					input_report_abs(sel_input_dev, ABS_MT_POSITION_Y, data->max_x - x);
-				} else {
-					if((lcd_suspend == 1) && (g_data->enable_wakeup == 1))
-					{
-						input_event(input_dev, EV_KEY, KEY_WAKEUP, 1);
-						input_sync(input_dev);
-						input_event(input_dev, EV_KEY, KEY_WAKEUP, 0);
-						input_sync(input_dev);
-					}
-					input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, 1);
-					input_report_abs(sel_input_dev, ABS_MT_POSITION_X, data->max_y - y);
-					input_report_abs(sel_input_dev, ABS_MT_POSITION_Y, data->max_x - x);
-				}
+					if(idle_mode_flag == 1) {
+						pr_err("%s:touch x y position report  idle mode!!!\n",__func__);
+						data->idle_finger_time = ktime_get_boottime();
+						data->idle_finger_time = data->idle_finger_time;
+						schedule_delayed_work(&data->wake_work, msecs_to_jiffies(50));//delay 50 ms
+					} else {
+						input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, 1);
+						input_report_abs(sel_input_dev, ABS_MT_POSITION_X, data->max_y - y);
+						input_report_abs(sel_input_dev, ABS_MT_POSITION_Y, data->max_x - x);
 // #ifdef CONFIG_TOUCHSCREEN_ATMEL_MXT_EDGE_SUPPORT
 // 				if (is_edge_touch)
 // 					input_report_key(sel_input_dev, BTN_TOOL_EDGE_TOUCH, 1);
@@ -1654,29 +1698,39 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 					input_report_abs(sel_input_dev, BTN_TOUCH, 1);
 
 				if (touch_type == MXT_T100_TYPE_HOVERING_GLOVE)
-					blocking_notifier_call_chain(&glove_mode_chain,
-							1, NULL);
+					blocking_notifier_call_chain(&glove_mode_chain,1, NULL);
 				else
-					blocking_notifier_call_chain(&glove_mode_chain,
-							0, NULL);
+					blocking_notifier_call_chain(&glove_mode_chain,0, NULL);
 
-				if (data->t100_tchaux_bits &  MXT_T100_AMPL) {
-					if (touch_type == MXT_T100_TYPE_HOVERING_FINGER)
-						amplitude = 0;
-					else if (amplitude == 0)
-						amplitude = 1;
-					input_report_abs(sel_input_dev, ABS_MT_PRESSURE, amplitude);
+					if (data->t100_tchaux_bits &  MXT_T100_AMPL) {
+						if (touch_type == MXT_T100_TYPE_HOVERING_FINGER)
+							amplitude = 0;
+						else if (amplitude == 0)
+							amplitude = 1;
+						input_report_abs(sel_input_dev, ABS_MT_PRESSURE, amplitude);
+					}
+					if (data->t100_tchaux_bits &  MXT_T100_AREA) {
+						if (touch_type == MXT_T100_TYPE_HOVERING_FINGER)
+							area = 0;
+						else if (area == 0)
+							area = 1;
+						input_report_abs(sel_input_dev, ABS_MT_TOUCH_MAJOR, area);
+					}
+					if (data->t100_tchaux_bits &  MXT_T100_VECT)
+						input_report_abs(sel_input_dev, ABS_MT_ORIENTATION, vector);
+					mxt_input_sync(data);
+					}
 				}
-				if (data->t100_tchaux_bits &  MXT_T100_AREA) {
-					if (touch_type == MXT_T100_TYPE_HOVERING_FINGER)
-						area = 0;
-					else if (area == 0)
-						area = 1;
-					input_report_abs(sel_input_dev, ABS_MT_TOUCH_MAJOR, area);
+			} else {
+				if (touch_event == MXT_T100_EVENT_DOWN || touch_event == MXT_T100_EVENT_UNSUP
+				|| touch_event == MXT_T100_EVENT_MOVE || touch_event == MXT_T100_EVENT_NONE) {
+				/* Touch in detect, report X/Y position */
+					data->finger_down[id - 2] = true;
+					data->suspend_finger_time = ktime_get_boottime();
+					data->suspend_finger_time = data->suspend_finger_time;
+					schedule_delayed_work(&data->wake_work, msecs_to_jiffies(50));//delay 50 ms
+
 				}
-				if (data->t100_tchaux_bits &  MXT_T100_VECT)
-					input_report_abs(sel_input_dev, ABS_MT_ORIENTATION, vector);
-				mxt_input_sync(data);
 			}
 		} else {
 			/* Touch no longer in detect, so close out slot */
@@ -1687,10 +1741,7 @@ static void mxt_proc_t100_messages(struct mxt_data *data, u8 *message)
 				data->is_wakeup_by_gesture = false;
 				mxt_set_power_cfg(data, MXT_POWER_CFG_RUN);
 			}
-// #ifdef CONFIG_TOUCHSCREEN_ATMEL_MXT_EDGE_SUPPORT
-// 			if (is_edge_touch)
-// 				input_report_key(sel_input_dev, BTN_TOOL_EDGE_TOUCH, 0);
-// #endif
+
 			input_mt_report_slot_state(sel_input_dev, MT_TOOL_FINGER, 0);
 			data->finger_down[id - 2] = false;
 			mxt_input_sync(data);
@@ -2438,7 +2489,7 @@ static int mxt_proc_message(struct mxt_data *data, u8 *msg)
 		sub_time = ktime_to_ms(ktime_sub(cur_time,data->last_plam_time));
 		pr_err("%s:sub_time = %lld\n",__func__,sub_time);
 
-		if (sub_time < 500) {
+		if (sub_time < 200) {
 			pr_info("atmel_mxt_ts: palm_detected_flag debounce return\n");
 			return 0;
 		}
@@ -6852,7 +6903,7 @@ static int fb_notifier_cb(struct notifier_block *self,
 		blank = evdata->data;
 		pr_info("atmel_mxt_ts: blank = %d\n", *blank);
 		if (*blank == FB_BLANK_UNBLANK) {
-			pr_err("atmel_mxt_ts: ##### UNBLANK SCREEN #####\n");
+			pr_err("atmel_mxt_ts: #####  SCREEN ON#####\n");
 			mxt_input_enable(mxt_data->input_dev);
 			lcd_suspend = 0;
 #ifdef TOUCH_WAKEUP_EVENT_RECORD
@@ -6860,7 +6911,7 @@ static int fb_notifier_cb(struct notifier_block *self,
 				wakeup_event_record_write(EVENT_SCREEN_ON);
 #endif
 		} else if (*blank == FB_BLANK_POWERDOWN || *blank == FB_BLANK_NORMAL) {
-			pr_err("atmel_mxt_ts: ##### BLANK SCREEN #####\n");
+			pr_err("atmel_mxt_ts: #####  SCREEN OFF#####\n");
 			mxt_input_disable(mxt_data->input_dev);
 			lcd_suspend = 1;
 #ifdef TOUCH_WAKEUP_EVENT_RECORD
@@ -7387,6 +7438,9 @@ static int mxt_probe(struct i2c_client *client,
 
 	spin_lock_init(&data->esd_spin_lock);
 	INIT_WORK(&data->tmr_work, ts_tmr_work);
+//20210319
+	INIT_DELAYED_WORK(&data->wake_work, ts_wake_work);
+//
 	data->esd_tmr_workqueue = create_singlethread_workqueue("esd_tmr_workqueue");
 
 	if (!data->esd_tmr_workqueue) {

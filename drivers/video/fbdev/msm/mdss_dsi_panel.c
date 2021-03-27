@@ -58,6 +58,14 @@ int idle_mode_flags(void)
        return idle_flags;
 }
 EXPORT_SYMBOL(idle_mode_flags);
+
+int idle_mode_flags_set(bool idle_on)
+{
+	idle_flags = idle_on;
+	return 0;
+}
+EXPORT_SYMBOL(idle_mode_flags_set);
+
 void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl)
 {
 	if (ctrl->pwm_pmi)
