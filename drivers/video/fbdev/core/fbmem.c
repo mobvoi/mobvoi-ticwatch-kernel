@@ -1058,10 +1058,11 @@ fb_set_var(struct fb_info *info, struct fb_var_screeninfo *var)
 	return ret;
 }
 EXPORT_SYMBOL(fb_set_var);
+extern int mdss_fb_mutex_with_ext_ctrl(struct fb_info *info);
 
 int
 fb_blank(struct fb_info *info, int blank)
-{	
+{
 	struct fb_event event;
 	int ret = -EINVAL, early_ret;
 
@@ -1072,6 +1073,8 @@ fb_blank(struct fb_info *info, int blank)
 	event.data = &blank;
 
 	early_ret = fb_notifier_call_chain(FB_EARLY_EVENT_BLANK, &event);
+	if(blank == FB_BLANK_UNBLANK)
+		mdss_fb_mutex_with_ext_ctrl(info);
 
 	if (info->fbops->fb_blank)
  		ret = info->fbops->fb_blank(blank, info);

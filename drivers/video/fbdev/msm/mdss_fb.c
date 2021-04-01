@@ -2174,15 +2174,17 @@ error:
 	return ret;
 }
 
-static int mdss_fb_mutex_with_ext_ctrl(struct msm_fb_data_type *mfd)
+int mdss_fb_mutex_with_ext_ctrl(struct fb_info *info)
 {
 	struct mdss_panel_data *pdata;
+	struct msm_fb_data_type *mfd;
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 	int disp_mutex_gpio = -1;
 	int mutex_timeout, mutex_cnt;
 	int value;
 	int cnt;
 
+	mfd = (struct msm_fb_data_type *)info->par;
 	pdata = dev_get_platdata(&mfd->pdev->dev);
 	if (pdata) {
 		ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
@@ -2198,8 +2200,11 @@ static int mdss_fb_mutex_with_ext_ctrl(struct msm_fb_data_type *mfd)
 		gpio_direction_input(disp_mutex_gpio);
 		for (cnt = 0; cnt < mutex_cnt; cnt++) {
 			value = gpio_get_value(disp_mutex_gpio);
-			if (value)
-				msleep(mutex_timeout);
+
+			if (value) {
+				pr_info("%s: sleep to wait disp_mutex_gpio, cnt=%d\n", __func__, cnt);
+				msleep(mutex_timeout * 2);
+			}
 			else
 				break;
 		}
@@ -2274,6 +2279,13 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 
 	switch (blank_mode) {
 	case FB_BLANK_UNBLANK:
+		/*
+		 * if ext gpio is high, block unblank hundreds miliseconds. Do not
+		 * return false here to void that ext gpio is alway high unexpectedly
+		 * which cause the disp cannot be unblanked.
+		 */
+		mdss_fb_mutex_with_ext_ctrl(info);
+
 		if (!lcd_loadswitch_flag) {
 			if (gpio_is_valid(disp_en_gpio)) {
 				if (gpio_direction_output(disp_en_gpio, 1)) {
@@ -2292,13 +2304,6 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 			return -EPERM;
 		}
 
-		/*
-		 * if ext gpio is high, block unblank hundreds miliseconds. Do not
-		 * return false here to void that ext gpio is alway high unexpectedly
-		 * which cause the disp cannot be unblanked.
-		 */
-		mdss_fb_mutex_with_ext_ctrl(mfd);
-
 		pr_debug("unblank called. cur pwr state=%d\n", cur_power_state);
 		ret = mdss_fb_blank_unblank(mfd);
 		break;
@@ -2313,6 +2318,7 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 		ret = mdss_fb_blank_blank(mfd, req_power_state);
 		break;
 	case BLANK_FLAG_LP:
+		mdss_fb_mutex_with_ext_ctrl(info);
 		req_power_state = MDSS_PANEL_POWER_LP1;
 		pr_debug(" power mode requested\n");
 
@@ -2333,8 +2339,6 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 		} else {
 			return -EPERM;
 		}
-
-		mdss_fb_mutex_with_ext_ctrl(mfd);
 
 		/*
 		 * If low power mode is requested when panel is already off,
