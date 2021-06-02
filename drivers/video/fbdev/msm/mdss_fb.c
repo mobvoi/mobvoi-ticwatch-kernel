@@ -2198,6 +2198,7 @@ int mdss_fb_mutex_with_ext_ctrl(struct fb_info *info)
 	mutex_cnt = ctrl_pdata->disp_mutex_cnt;
 	if (gpio_is_valid(disp_mutex_gpio)) {
 		gpio_direction_input(disp_mutex_gpio);
+		msleep(30);
 		for (cnt = 0; cnt < mutex_cnt; cnt++) {
 			value = gpio_get_value(disp_mutex_gpio);
 
