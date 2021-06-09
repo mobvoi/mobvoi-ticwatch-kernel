@@ -347,6 +347,7 @@ int dhd_wifi_init_gpio(void)
 }
 
 extern void sdhci_msm_set_carddetect(bool val);
+extern void sdhci_msm_set_bus_status(bool val);
 
 int dhd_wlan_set_carddetect(int val)
 {
@@ -370,6 +371,7 @@ int dhd_wlan_power(int on)
         gpio_export(72,1);
 
 	if (on) {
+		sdhci_msm_set_bus_status(TRUE);
 		if (gpio_direction_output(gpio_wl_reg_on, 0)) {
 			pr_err("%s: WL_REG_ON didn't output low\n", __func__);
 			return -EIO;
@@ -391,6 +393,7 @@ int dhd_wlan_power(int on)
 		}
 		mdelay(200);
 		dhd_wlan_set_carddetect(0);
+		sdhci_msm_set_bus_status(FALSE);
 	}
 	return 0;
 }
