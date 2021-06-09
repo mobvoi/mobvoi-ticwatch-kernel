@@ -46,6 +46,8 @@
 #include "sdhci-msm-ice.h"
 #include "cmdq_hci.h"
 
+extern void mmc_power_off(struct mmc_host *host);
+extern void mmc_power_up(struct mmc_host *host, u32 ocr);
 #define QOS_REMOVE_DELAY_MS	10
 #define CORE_POWER		0x0
 #define CORE_SW_RST		(1 << 7)
@@ -4806,6 +4808,20 @@ void sdhci_msm_set_carddetect(bool val)
 }
 EXPORT_SYMBOL(sdhci_msm_set_carddetect);
 
+void sdhci_msm_set_bus_status(bool on)
+{
+	pr_info("sdhci-msm: %s @%d set bus status =%d\n", __func__, __LINE__, on);
+	if(on) {
+		if(wifi_host && (wifi_host->mmc) && (wifi_host->mmc->bus_ops)) {
+			wifi_host->mmc->bus_ops->runtime_resume(wifi_host->mmc);
+		}
+	}else {
+		if(wifi_host && (wifi_host->mmc) && (wifi_host->mmc->bus_ops)) {
+			wifi_host->mmc->bus_ops->runtime_suspend(wifi_host->mmc);
+		}
+	}
+}
+EXPORT_SYMBOL(sdhci_msm_set_bus_status);
 static int sdhci_msm_probe(struct platform_device *pdev)
 {
 	const struct sdhci_msm_offset *msm_host_offset;
