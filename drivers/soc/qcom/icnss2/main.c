@@ -813,7 +813,7 @@ static int icnss_pd_restart_complete(struct icnss_priv *priv)
 	clear_bit(ICNSS_REJUVENATE, &priv->state);
 	clear_bit(ICNSS_PD_RESTART, &priv->state);
 	priv->early_crash_ind = false;
-	priv->is_ssr = false;
+	priv->is_ssr = priv->is_low_pwr_mode = false;
 
 	if (!priv->ops || !priv->ops->reinit)
 		goto out;
@@ -1373,7 +1373,8 @@ static int icnss_driver_event_idle_shutdown(struct icnss_priv *priv,
 	if (!priv->ops || !priv->ops->idle_shutdown)
 		return 0;
 
-	if (priv->is_ssr || test_bit(ICNSS_PDR, &priv->state) ||
+	if (priv->is_ssr || priv->is_low_pwr_mode ||
+	    test_bit(ICNSS_PDR, &priv->state) ||
 	    test_bit(ICNSS_REJUVENATE, &priv->state)) {
 		icnss_pr_err("SSR/PDR is already in-progress during idle shutdown callback\n");
 		ret = -EBUSY;
@@ -1396,7 +1397,8 @@ static int icnss_driver_event_idle_restart(struct icnss_priv *priv,
 	if (!priv->ops || !priv->ops->idle_restart)
 		return 0;
 
-	if (priv->is_ssr || test_bit(ICNSS_PDR, &priv->state) ||
+	if (priv->is_ssr || priv->is_low_pwr_mode ||
+	    test_bit(ICNSS_PDR, &priv->state) ||
 	    test_bit(ICNSS_REJUVENATE, &priv->state)) {
 		icnss_pr_err("SSR/PDR is already in-progress during idle restart callback\n");
 		ret = -EBUSY;
@@ -1715,6 +1717,18 @@ static char *icnss_subsys_notify_state_to_str(enum subsys_notif_type code)
 		return "PROXY_UNVOTE";
 	case SUBSYS_SOC_RESET:
 		return "SOC_RESET";
+	case SUBSYS_BEFORE_DS_ENTRY:
+		return "BEFORE_DS_ENTRY";
+	case SUBSYS_AFTER_DS_ENTRY:
+		return "AFTER_DS_ENTRY";
+	case SUBSYS_DS_ENTRY_FAIL:
+		return "DS_ENTRY_FAIL";
+	case SUBSYS_BEFORE_DS_EXIT:
+		return "BEFORE_DS_EXIT";
+	case SUBSYS_AFTER_DS_EXIT:
+		return "AFTER_DS_EXIT";
+	case SUBSYS_DS_EXIT_FAIL:
+		return "DS_EXIT_FAIL";
 	case SUBSYS_NOTIF_TYPE_COUNT:
 		return "NOTIF_TYPE_COUNT";
 	default:
@@ -1793,16 +1807,36 @@ static int icnss_modem_notifier_nb(struct notifier_block *nb,
 	icnss_pr_vdbg("Modem-Notify: event %s(%lu)\n",
 		      icnss_subsys_notify_state_to_str(code), code);
 
-	if (code == SUBSYS_AFTER_SHUTDOWN) {
-		icnss_pr_info("Collecting msa0 segment dump\n");
-		icnss_msa0_ramdump(priv);
+	switch (code) {
+	case SUBSYS_AFTER_SHUTDOWN:
+		/* Collect ramdump only when there was a crash. */
+		if (priv->early_crash_ind) {
+			icnss_pr_info("Collecting msa0 segment dump\n");
+			icnss_msa0_ramdump(priv);
+		}
+		goto out;
+	case SUBSYS_BEFORE_DS_ENTRY:
+		priv->is_low_pwr_mode = true;
+		set_bit(ICNSS_DEEP_SLEEP, &priv->state);
+		break;
+	case SUBSYS_BEFORE_SHUTDOWN:
+		if (notif->crashed) /* SSR */
+			priv->is_ssr = true;
+		else                /* Hibernate */
+			priv->is_low_pwr_mode = true;
+		break;
+	case SUBSYS_AFTER_DS_ENTRY:
+		goto out;
+	case SUBSYS_DS_ENTRY_FAIL:
+		/* May need to handle if wlan needs to respond to it. */
+	case SUBSYS_BEFORE_DS_EXIT:
+	case SUBSYS_AFTER_DS_EXIT:
+		if (!test_and_clear_bit(ICNSS_DEEP_SLEEP, &priv->state))
+			goto out;
+		priv->is_low_pwr_mode = false;
+	default:
 		goto out;
 	}
-
-	if (code != SUBSYS_BEFORE_SHUTDOWN)
-		goto out;
-
-	priv->is_ssr = true;
 
 	icnss_update_state_send_modem_shutdown(priv, data);
 
@@ -2029,7 +2063,7 @@ static int icnss_service_notifier_notify(struct notifier_block *nb,
 	if (notification != SERVREG_NOTIF_SERVICE_STATE_DOWN_V01)
 		goto done;
 
-	if (!priv->is_ssr)
+	if (!priv->is_ssr || !priv->is_low_pwr_mode)
 		set_bit(ICNSS_PDR, &priv->state);
 
 	event_data = kzalloc(sizeof(*event_data), GFP_KERNEL);
@@ -3285,7 +3319,8 @@ int icnss_idle_shutdown(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (priv->is_ssr || test_bit(ICNSS_PDR, &priv->state) ||
+	if (priv->is_ssr || priv->is_low_pwr_mode ||
+	    test_bit(ICNSS_PDR, &priv->state) ||
 	    test_bit(ICNSS_REJUVENATE, &priv->state)) {
 		icnss_pr_err("SSR/PDR is already in-progress during idle shutdown\n");
 		return -EBUSY;
@@ -3305,7 +3340,8 @@ int icnss_idle_restart(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (priv->is_ssr || test_bit(ICNSS_PDR, &priv->state) ||
+	if (priv->is_ssr || priv->is_low_pwr_mode ||
+	    test_bit(ICNSS_PDR, &priv->state) ||
 	    test_bit(ICNSS_REJUVENATE, &priv->state)) {
 		icnss_pr_err("SSR/PDR is already in-progress during idle restart\n");
 		return -EBUSY;
