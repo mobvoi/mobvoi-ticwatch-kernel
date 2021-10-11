@@ -581,6 +581,15 @@ config QCOM_SOCINFO
 	 Say yes here to support the Qualcomm socinfo driver, providing
 	 information about the SoC to user space.
 
+config QCOM_SOCINFO_DT
+	tristate "Qualcomm Technologies, Inc. DT based socinfo driver"
+	select SOC_BUS
+	help
+	 Say yes here to support the Qualcomm Technologies, Inc. device tree
+	 based socinfo driver, providing information about the SoC to
+	 user space. The driver gets the soc information from device tree.
+	 If unsure, say no.
+
 config QCOM_WCNSS_CTRL
 	tristate "Qualcomm WCNSS control driver"
 	depends on ARCH_QCOM || COMPILE_TEST
@@ -1474,6 +1483,18 @@ config AUTO_EARLY_LAUNCH
 	 ramdisk.
 	 early_init user space executable file will be copied into
 	 ramdisk/early_services directory during build.
+
+config QCOM_ADSP_VOTE_SMP2P
+	bool "Send command to ADSP for unvote/vote during suspend/resume"
+	depends on QCOM_SMP2P
+	help
+		When this option is enabled, vote/unvote commands are sent to remote ADSP
+		from the local processor through the smp2p framework.
+		This driver send voting request from hlos to adsp, this prevent ADSP to
+		not go in low power mode when it is idle. HLOS send request for vote &
+		unvote during system power transition.
+		This driver can be used to manually release and acquire the ADSP vote
+		from debugfs interface.
 
 source "drivers/soc/qcom/icnss2/Kconfig"
 

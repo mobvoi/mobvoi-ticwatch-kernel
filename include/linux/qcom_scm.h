@@ -44,6 +44,14 @@ struct qcom_scm_mem_map_info {
 	__le64 mem_size;
 };
 
+enum qcom_scm_custom_reset_type {
+	QCOM_SCM_RST_NONE,
+	QCOM_SCM_RST_SHUTDOWN_TO_RTC_MODE = 0x80000005,
+	QCOM_SCM_RST_SHUTDOWN_TO_TWM_MODE,
+	QCOM_SCM_RST_MAX
+};
+extern enum qcom_scm_custom_reset_type qcom_scm_custom_reset_type;
+
 #define QCOM_SCM_VMID_HLOS       0x3
 #define QCOM_SCM_VMID_MSS_MSA    0xF
 #define QCOM_SCM_VMID_WLAN       0x18
@@ -113,6 +121,7 @@ extern void qcom_scm_halt_spmi_pmic_arbiter(void);
 extern void qcom_scm_deassert_ps_hold(void);
 extern void qcom_scm_mmu_sync(bool sync);
 extern int qcom_scm_restore_sec_cfg(u32 device_id, u32 spare);
+extern int qcom_scm_load_qup_fw(void);
 extern int qcom_scm_iommu_secure_ptbl_size(u32 spare, size_t *size);
 extern int qcom_scm_iommu_secure_ptbl_init(u64 addr, u32 size, u32 spare);
 extern int qcom_scm_mem_protect_video(u32 cp_start, u32 cp_size,
@@ -272,6 +281,7 @@ static inline void qcom_scm_deassert_ps_hold(void) {}
 static inline void qcom_scm_mmu_sync(bool sync) {}
 static inline int qcom_scm_restore_sec_cfg(u32 device_id, u32 spare)
 		{ return -ENODEV; }
+static inline int qcom_scm_load_qup_fw(void) { return -ENODEV; }
 static inline int qcom_scm_iommu_secure_ptbl_size(u32 spare, size_t *size)
 		{ return -ENODEV; }
 static inline int qcom_scm_iommu_secure_ptbl_init(u64 addr, u32 size, u32 spare)
