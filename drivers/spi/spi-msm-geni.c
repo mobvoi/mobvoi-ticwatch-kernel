@@ -107,6 +107,9 @@
 #define RX_IO_EN2CORE_EN_DELAY_SHFT	8
 #define RX_SI_EN2IO_DELAY_SHFT 12
 
+#define SPI_XFER_COMPLETED 0
+#define SPI_XFER_INPROGRESS 1
+
 struct gsi_desc_cb {
 	struct spi_master *spi;
 	struct spi_transfer *xfer;
@@ -168,6 +171,7 @@ struct spi_geni_master {
 	int num_tx_eot;
 	int num_rx_eot;
 	int num_xfers;
+	u8 xfer_status;
 	void *ipc;
 	bool gsi_mode; /* GSI Mode */
 	bool shared_ee; /* Dual EE use case */
@@ -1075,6 +1079,25 @@ static int spi_geni_prepare_message(struct spi_master *spi,
 		}
 	}
 
+	if (pm_runtime_status_suspended(mas->dev) && !mas->is_le_vm) {
+		if (!pm_runtime_enabled(mas->dev)) {
+			GENI_SE_ERR(mas->ipc, false, NULL,
+				"%s: System suspended\n", __func__);
+			return -EACCES;
+		}
+
+		ret = pm_runtime_get_sync(mas->dev);
+		if (ret < 0) {
+			dev_err(mas->dev,
+			"%s:pm_runtime_get_sync failed %d\n", __func__, ret);
+			WARN_ON_ONCE(1);
+			pm_runtime_put_noidle(mas->dev);
+			/* Set device in suspended since resume failed */
+			pm_runtime_set_suspended(mas->dev);
+			return ret;
+		}
+	}
+
 	mas->cur_xfer_mode = select_xfer_mode(spi, spi_msg);
 
 	if (mas->cur_xfer_mode < 0) {
@@ -1419,6 +1442,7 @@ static int spi_geni_prepare_transfer_hardware(struct spi_master *spi)
 				"resume usage count mismatch:%d", count);
 		}
 	}
+	mas->xfer_status = SPI_XFER_INPROGRESS;
 exit_prepare_transfer_hardware:
 	mas->spi_ssr.xfer_prepared = true;
 	mutex_unlock(&mas->spi_ssr.ssr_lock);
@@ -1469,6 +1493,8 @@ static int spi_geni_unprepare_transfer_hardware(struct spi_master *spi)
 		pm_runtime_mark_last_busy(mas->dev);
 		pm_runtime_put_autosuspend(mas->dev);
 	}
+
+	mas->xfer_status = SPI_XFER_COMPLETED;
 	return 0;
 }
 
@@ -2277,6 +2303,7 @@ static int spi_geni_probe(struct platform_device *pdev)
 			"M - DRIVER GENI_SPI_%d Ready", spi->bus_num);
 	place_marker(boot_marker);
 	dev_info(&pdev->dev, "%s: completed\n", __func__);
+	geni_mas->xfer_status = SPI_XFER_COMPLETED;
 	return ret;
 spi_geni_probe_unmap:
 	devm_iounmap(&pdev->dev, geni_mas->base);
@@ -2414,6 +2441,18 @@ static int spi_geni_resume(struct device *dev)
 static int spi_geni_suspend(struct device *dev)
 {
 	int ret = 0;
+	struct spi_master *spi = get_spi_master(dev);
+	struct spi_geni_master *geni_mas = spi_master_get_devdata(spi);
+
+	if (geni_mas->xfer_status == SPI_XFER_INPROGRESS) {
+		if (!pm_runtime_status_suspended(dev)) {
+			GENI_SE_ERR(geni_mas->ipc, true, dev,
+				":%s: runtime PM is active\n", __func__);
+			ret = -EBUSY;
+			return ret;
+		}
+		return ret;
+	}
 
 	if (!pm_runtime_status_suspended(dev)) {
 		struct spi_master *spi = get_spi_master(dev);
