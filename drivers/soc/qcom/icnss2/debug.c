@@ -421,9 +421,9 @@ static int icnss_stats_show_state(struct seq_file *s, struct icnss_priv *priv)
 			continue;
 		case ICNSS_SLATE_UP:
 			seq_puts(s, "ICNSS SLATE UP");
-			continue;
-		case ICNSS_DEEP_SLEEP:
-			seq_puts(s, "DEEP SLEEP");
+                        continue;
+                case ICNSS_DEEP_SLEEP:
+                        seq_puts(s, "DEEP SLEEP");
 		}
 
 		seq_printf(s, "UNKNOWN-%d", i);

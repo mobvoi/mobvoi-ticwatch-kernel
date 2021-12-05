@@ -55,6 +55,7 @@ enum {
 	HW_PLATFORM_SBC = 24,
 	HW_PLATFORM_ADP = 25,
 	HW_PLATFORM_HDK = 31,
+	HW_PLATFORM_IOT = 32,
 	HW_PLATFORM_ATP = 33,
 	HW_PLATFORM_IDP = 34,
 	HW_PLATFORM_WDP = 36,
@@ -80,6 +81,7 @@ static const char * const hw_platform[] = {
 	[HW_PLATFORM_SBC] = "SBC",
 	[HW_PLATFORM_ADP] = "ADP",
 	[HW_PLATFORM_HDK] = "HDK",
+	[HW_PLATFORM_IOT] = "IOT",
 	[HW_PLATFORM_ATP] = "ATP",
 	[HW_PLATFORM_IDP] = "IDP",
 	[HW_PLATFORM_WDP] = "WDP",
@@ -611,6 +613,14 @@ msm_get_nmodem_supported(struct device *dev,
 }
 ATTR_DEFINE(nmodem_supported);
 
+static ssize_t
+msm_get_vendor(struct device *dev,
+			struct device_attribute *attr,
+			char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "Qualcomm\n");
+}
+
 struct qcom_socinfo {
 	struct soc_device *soc_dev;
 	struct soc_device_attribute attr;
@@ -944,6 +954,8 @@ static struct device_attribute select_image =
 static struct device_attribute images =
 	__ATTR(images, 0444, msm_get_images, NULL);
 
+static struct device_attribute vendor =
+	__ATTR(vendor, 0444, msm_get_vendor, NULL);
 
 static umode_t soc_info_attribute(struct kobject *kobj,
 						   struct attribute *attr,
@@ -1018,6 +1030,7 @@ static void socinfo_populate_sysfs(struct qcom_socinfo *qcom_socinfo)
 	msm_custom_socinfo_attrs[i++] = &image_crm_version.attr;
 	msm_custom_socinfo_attrs[i++] = &select_image.attr;
 	msm_custom_socinfo_attrs[i++] = &images.attr;
+	msm_custom_socinfo_attrs[i++] = &vendor.attr;
 	msm_custom_socinfo_attrs[i++] = NULL;
 	qcom_socinfo->attr.custom_attr_group = &custom_soc_attr_group;
 }
