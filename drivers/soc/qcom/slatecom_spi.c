@@ -57,6 +57,7 @@
 #define WR_BUF_SIZE_IN_BYTES_FOR_USE	(WR_BUF_SIZE_IN_WORDS_FOR_USE * sizeof(uint32_t))
 #define SLATE_RESUME_IRQ_TIMEOUT 1000
 #define SLATE_SPI_AUTOSUSPEND_TIMEOUT 5000
+#define SLATE_SPI_MAX_RETRY 400
 
 /* Master_Command[27] */
 #define SLATE_PAUSE_OK		BIT(27)
@@ -560,6 +561,7 @@ static int is_slate_resume(void *handle)
 	uint8_t tx_buf[8] = {0};
 	uint8_t rx_buf[8] = {0};
 	uint32_t cmnd_reg = 0;
+	int i = 0;
 
 	if (spi_state == SLATECOM_SPI_BUSY) {
 		printk_ratelimited("SPI is held by TZ\n");
@@ -568,10 +570,15 @@ static int is_slate_resume(void *handle)
 
 	txn_len = 0x08;
 	tx_buf[0] = 0x05;
-	ret = slatecom_transfer(handle, tx_buf, rx_buf, txn_len);
-	if (!ret)
-		memcpy(&cmnd_reg, rx_buf+SLATE_SPI_READ_LEN, 0x04);
+	for(i = 0; i < SLATE_SPI_MAX_RETRY; i++) {
+		ret = slatecom_transfer(handle, tx_buf, rx_buf, txn_len);
+		if (!ret)
+			memcpy(&cmnd_reg, rx_buf+SLATE_SPI_READ_LEN, 0x04);
+		if(cmnd_reg & BIT(31))
+			break;
+	}
 
+	pr_debug("%s: status_reg=0x%x read in loop %d\n", __func__, cmnd_reg, i);
 ret_err:
 	return cmnd_reg & BIT(31);
 }
