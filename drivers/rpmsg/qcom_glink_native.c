@@ -24,6 +24,7 @@
 #include <linux/mailbox_client.h>
 #include <linux/ipc_logging.h>
 #include <linux/suspend.h>
+#include <soc/qcom/rpm-smd.h>
 #include <soc/qcom/subsystem_notif.h>
 
 #include "rpmsg_internal.h"
@@ -56,6 +57,9 @@ do {									     \
 #define RPM_GLINK_CID_MAX	65536
 
 static int should_wake;
+#if defined(CONFIG_DEEPSLEEP) && defined(CONFIG_RPMSG_QCOM_GLINK_RPM)
+static int quickboot;
+#endif
 int glink_resume_pkt;
 EXPORT_SYMBOL(glink_resume_pkt);
 
@@ -1428,19 +1432,41 @@ static struct rpmsg_endpoint *qcom_glink_create_ept(struct rpmsg_device *rpdev,
 {
 	struct glink_channel *parent = to_glink_channel(rpdev->ept);
 	struct glink_channel *channel;
+	struct glink_channel *local_channel;
 	struct qcom_glink *glink = parent->glink;
 	struct rpmsg_endpoint *ept;
 	const char *name = chinfo.name;
-	int cid;
+	int rcid;
+#if defined(CONFIG_DEEPSLEEP) && defined(CONFIG_RPMSG_QCOM_GLINK_RPM)
+	int lcid, rcid_exist = 0, lcid_exist = 0;
+#endif
 	int ret;
 	unsigned long flags;
 
 	spin_lock_irqsave(&glink->idr_lock, flags);
-	idr_for_each_entry(&glink->rcids, channel, cid) {
-		if (!strcmp(channel->name, name))
+	idr_for_each_entry(&glink->rcids, channel, rcid) {
+		if (!strcmp(channel->name, name)) {
+#if defined(CONFIG_DEEPSLEEP) && defined(CONFIG_RPMSG_QCOM_GLINK_RPM)
+			rcid_exist = 1;
+#endif
 			break;
+		}
 	}
+
+#if defined(CONFIG_DEEPSLEEP) && defined(CONFIG_RPMSG_QCOM_GLINK_RPM)
+	idr_for_each_entry(&glink->lcids, local_channel, lcid) {
+		if (!strcmp(local_channel->name, name)) {
+			lcid_exist = 1;
+			break;
+		}
+	}
+#endif
 	spin_unlock_irqrestore(&glink->idr_lock, flags);
+
+#if defined(CONFIG_DEEPSLEEP) && defined(CONFIG_RPMSG_QCOM_GLINK_RPM)
+	if (rcid_exist && lcid_exist)
+		return &channel->ept;
+#endif
 
 	if (!channel) {
 		channel = qcom_glink_create_local(glink, name);
@@ -1849,6 +1875,13 @@ static int qcom_glink_rx_open(struct qcom_glink *glink, unsigned int rcid,
 		ret = rpmsg_register_device(rpdev);
 		if (ret)
 			goto rcid_remove;
+
+#if defined(CONFIG_DEEPSLEEP) && defined(CONFIG_RPMSG_QCOM_GLINK_RPM)
+		if (quickboot) {
+			qcom_smd_rpm_quickboot(rpdev, 1);
+			quickboot = 0;
+		}
+#endif
 
 		channel->rpdev = rpdev;
 	}
@@ -2267,7 +2300,12 @@ static int qcom_glink_suspend_no_irq(struct device *dev)
 static int qcom_glink_resume_no_irq(struct device *dev)
 {
 	should_wake = false;
-
+#if defined(CONFIG_DEEPSLEEP) && defined(CONFIG_RPMSG_QCOM_GLINK_RPM)
+	if (mem_sleep_current == PM_SUSPEND_MEM) {
+		quickboot = 1;
+		glink_rpm_resume_noirq(dev);
+	}
+#endif
 	return 0;
 }
 
