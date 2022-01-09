@@ -113,6 +113,9 @@
 #define FDE_FLAG_POS    4
 #define ENABLE_KEY_WRAP_IN_KS    (1 << FDE_FLAG_POS)
 
+#define DS_ENTERED 0x1
+#define DS_EXITED  0x0
+
 enum qseecom_clk_definitions {
 	CLK_DFAB = 0,
 	CLK_SFPB,
@@ -339,6 +342,7 @@ struct qseecom_control {
 	struct task_struct *unload_app_kthread_task;
 	wait_queue_head_t unload_app_kthread_wq;
 	atomic_t unload_app_kthread_state;
+	uint32_t qseecom_ds_state;
 };
 
 struct qseecom_unload_app_pending_list {
@@ -454,6 +458,7 @@ static int qseecom_query_ce_info(struct qseecom_dev_handle *data,
 						void __user *argp);
 static int __qseecom_unload_app(struct qseecom_dev_handle *data,
 				uint32_t app_id);
+static int qseecom_set_ds_state(uint32_t state);
 
 static int __maybe_unused get_qseecom_keymaster_status(char *str)
 {
@@ -3130,7 +3135,8 @@ static int qseecom_unload_app(struct qseecom_dev_handle *data,
 	pr_debug("unload app %d(%s), app_crash flag %d\n", data->client.app_id,
 			data->client.app_name, app_crash);
 
-	if (!memcmp(data->client.app_name, "keymaste", strlen("keymaste"))) {
+	if (!memcmp(data->client.app_name, "keymaste", strlen("keymaste"))
+		&& !(qseecom.qseecom_ds_state == DS_ENTERED)) {
 		pr_debug("Do not unload keymaster app from tz\n");
 		goto unload_exit;
 	}
@@ -3164,7 +3170,7 @@ static int qseecom_unload_app(struct qseecom_dev_handle *data,
 		goto unload_exit;
 	}
 
-	if (!ptr_app->ref_cnt) {
+	if (!ptr_app->ref_cnt || (qseecom.qseecom_ds_state == DS_ENTERED)) {
 		ret = __qseecom_unload_app(data, data->client.app_id);
 		if (ret == -EBUSY) {
 			/*
@@ -8320,6 +8326,23 @@ long qseecom_ioctl(struct file *file,
 				key_data.salt, key_data.salt_len);
 		break;
 	}
+	case QSEECOM_IOCTL_DEEP_SLEEP_STATE: {
+		uint32_t ds_state = 0;
+
+		mutex_lock(&app_access_lock);
+		atomic_inc(&data->ioctl_count);
+		ret = copy_from_user(&ds_state, argp, sizeof(ds_state));
+		if (ret) {
+			pr_err("copy from user failed\n");
+			return -EFAULT;
+		}
+		ret = qseecom_set_ds_state(ds_state);
+		atomic_dec(&data->ioctl_count);
+		mutex_unlock(&app_access_lock);
+		if (ret)
+			pr_err("failed to set deeps sleep state %d\n", ret);
+		break;
+	}
 	default:
 		pr_err("Invalid IOCTL: 0x%x\n", cmd);
 		return -ENOIOCTLCMD;
@@ -9157,6 +9180,21 @@ out:
 	if (copy_to_user(argp, pinfo, sizeof(struct qseecom_ce_info_req))) {
 		pr_err("copy_to_user failed\n");
 		ret = -EFAULT;
+	}
+	return ret;
+}
+
+static int qseecom_set_ds_state(uint32_t state)
+{
+	int ret = -1;
+
+	if (state == DS_ENTERED || state == DS_EXITED) {
+		qseecom.qseecom_ds_state = state;
+		ret = 0;
+	} else {
+		qseecom.qseecom_ds_state = -EINVAL;
+		pr_err("Invalid deep sleep state = %d\n", state);
+		ret = -EINVAL;
 	}
 	return ret;
 }
