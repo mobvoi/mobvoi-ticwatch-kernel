@@ -1078,7 +1078,7 @@ int raydium_read_touchdata(unsigned char *p_u8_tp_status,  unsigned char *p_u8_b
 	unsigned char u8_retry;
 	unsigned char u8_read_size;
 	unsigned char u8_read_buf[MAX_REPORT_PACKET_SIZE];
-	int i = 0;
+//	int i = 0;
 	u8_retry = 3;
 
 	mutex_lock(&g_raydium_ts->lock);
@@ -1240,11 +1240,15 @@ static void raydium_work_handler(struct work_struct *work)
 			g_raydium_ts->is_palm = 0;
 			/*goto exit;*/
 		}
-	} else if (g_raydium_ts->blank == FB_BLANK_VSYNC_SUSPEND ||
-		   g_raydium_ts->blank == FB_BLANK_POWERDOWN) {
+	}
+	//else if (g_raydium_ts->blank == DRM_PANEL_BLANK_LP ||
+		//   g_raydium_ts->blank == DRM_PANEL_BLANK_POWERDOWN)
+	{
+		LOGD(LOG_INFO, "[touch] elseif u8_tp_status:%x\n", u8_tp_status[POS_GES_STATUS]);
 		/*need check small area*/
-		if (u8_tp_status[POS_GES_STATUS] == RAD_WAKE_UP
-		    && g_u8_wakeup_flag == false) {
+		//if (u8_tp_status[POS_GES_STATUS] == RAD_WAKE_UP
+		  // && g_u8_wakeup_flag == false) {
+		if(u8_tp_status[POS_GES_STATUS] == 0){
 			input_report_key(g_raydium_ts->input_dev, KEY_POWER, true);
 			usleep_range(9500, 10500);
 			input_sync(g_raydium_ts->input_dev);
