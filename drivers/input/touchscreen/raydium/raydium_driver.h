@@ -37,6 +37,7 @@
 #define RAYDIUM_RESET_INTERVAL_MSEC   5
 #define RAYDIUM_RESET_RESTORE_USEC    200
 #define RAYDIUM_RESET_DELAY_MSEC      100
+#define RAYDIUM_RESET_INTERVAL_10MSEC   10
 
 /* I2C bus slave address(ID) */
 #define RAYDIUM_I2C_EID		(0x5A)
@@ -203,6 +204,7 @@
 #define RAD_FW_3X_SIZE			0x7300
 #define RAD_PARA_3X_SIZE		0x174
 #define RAD_TESTFW_3X_SIZE		(RAD_FW_3X_SIZE + RAD_PARA_3X_SIZE + 4)
+#define RAD_ALLFW_3X_SIZE		0xF170
 
 #define RAD_CMD_UPDATE_BIN		0x80
 #define RAD_CMD_UPDATE_END		0x81
@@ -232,7 +234,7 @@
 #define GESTURE_EN
 
 /* Enable FW update */
-/* #define FW_UPDATE_EN */
+#define FW_UPDATE_EN
 /* #define FW_MAPPING_EN */
 #define MSM_NEW_VER
 
@@ -241,6 +243,9 @@
 
 #define RAD_SELFTEST
 #define PARA_FW_VERSION_OFFSET	4
+
+#define ENABLE_FW_LOADER	1
+#define FW_NAME      "RM6D030.bin"
 
 #define PINCTRL_STATE_ACTIVE     "pmx_ts_active"
 #define PINCTRL_STATE_SUSPEND    "pmx_ts_suspend"
@@ -398,7 +403,8 @@ extern int raydium_burn_comp(struct i2c_client *client);
 extern int raydium_burn_fw(struct i2c_client *client);
 
 extern int raydium_load_test_fw(struct i2c_client *client);
-extern int raydium_fw_update_check(unsigned short u16_i2c_data);
+extern int raydium_fw_update_init(unsigned short u16_i2c_data);
+extern int raydium_fw_update_check(unsigned int u32_check_version);
 extern int raydium_i2c_pda_set_address(unsigned int u32_address,
 				       unsigned char u8_mode);
 extern void raydium_mem_table_init(unsigned short u16_id);
