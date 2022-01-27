@@ -21,6 +21,7 @@
 #include <linux/spi/spi-msm-geni.h>
 #include <linux/pinctrl/consumer.h>
 #include <soc/qcom/boot_stats.h>
+#include <linux/suspend.h>
 
 #define SPI_NUM_CHIPSELECT	(4)
 #define SPI_XFER_TIMEOUT_MS	(250)
@@ -187,6 +188,7 @@ struct spi_geni_master {
 	bool use_fixed_timeout;
 	struct spi_geni_ssr spi_ssr;
 	bool master_cross_connect;
+	bool is_deep_sleep;
 };
 
 static void spi_slv_setup(struct spi_geni_master *mas);
@@ -2313,6 +2315,7 @@ static int spi_geni_probe(struct platform_device *pdev)
 	place_marker(boot_marker);
 	dev_info(&pdev->dev, "%s: completed\n", __func__);
 	geni_mas->is_xfer_in_progress = false;
+	geni_mas->is_deep_sleep = false;
 	return ret;
 spi_geni_probe_unmap:
 	devm_iounmap(&pdev->dev, geni_mas->base);
@@ -2341,21 +2344,25 @@ static int spi_geni_remove(struct platform_device *pdev)
 
 static int spi_geni_gpi_suspend_resume(struct spi_geni_master *geni_mas, bool flag)
 {
-	int tx_ret = 0, rx_ret = 0;
+	int tx_ret = 0;
 
-	if ((geni_mas->tx != NULL) && (geni_mas->rx != NULL)) {
+	if (geni_mas->tx != NULL) {
 		if (flag) {
 			tx_ret = dmaengine_pause(geni_mas->tx);
-			rx_ret = dmaengine_pause(geni_mas->rx);
 		} else {
+			if (geni_mas->is_deep_sleep)
+				geni_mas->tx_event.cmd = MSM_GPI_DEEP_SLEEP_INIT;
 			tx_ret = dmaengine_resume(geni_mas->tx);
-			rx_ret = dmaengine_resume(geni_mas->rx);
+			if (geni_mas->is_deep_sleep) {
+				geni_mas->tx_event.cmd = MSM_GPI_DEFAULT;
+				geni_mas->is_deep_sleep = false;
+			}
 		}
 
-		if (tx_ret || rx_ret) {
+		if (tx_ret) {
 			GENI_SE_ERR(geni_mas->ipc, true, geni_mas->dev,
 			"%s failed: tx:%d rx:%d flag:%d\n",
-			__func__, tx_ret, rx_ret, flag);
+			__func__, tx_ret, flag);
 			return -EINVAL;
 		}
 	}
@@ -2532,6 +2539,15 @@ static int spi_geni_suspend(struct device *dev)
 			ret = -EBUSY;
 		}
 	}
+	
+#ifdef CONFIG_DEEPSLEEP
+	if (mem_sleep_current == PM_SUSPEND_MEM) {
+        GENI_SE_ERR(geni_mas->ipc, true, dev,
+				"%s:DEEP SLEEP EXIT", __func__);
+		geni_mas->is_deep_sleep = true;
+	}
+#endif
+
 	return ret;
 }
 #else

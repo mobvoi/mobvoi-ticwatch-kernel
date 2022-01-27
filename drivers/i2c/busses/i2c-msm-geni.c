@@ -141,6 +141,8 @@ struct geni_i2c_dev {
 	bool gpi_reset;
 	bool disable_dma_mode;
 	bool prev_cancel_pending; //Halt cancel till IOS in good state
+	bool is_levm_gpi_pause;
+	bool is_deep_sleep;
 	struct geni_i2c_ssr i2c_ssr;
 };
 
@@ -494,11 +496,11 @@ static void gi2c_ev_cb(struct dma_chan *ch, struct msm_gpi_cb const *cb_str,
 			geni_i2c_err(gi2c, I2C_BUS_PROTO);
 		if (m_stat & M_GP_IRQ_4_EN)
 			geni_i2c_err(gi2c, I2C_ARB_LOST);
-		complete(&gi2c->xfer);
 		break;
 	default:
 		break;
 	}
+	complete(&gi2c->xfer);
 	if (cb_str->cb_event != MSM_GPI_QUP_NOTIFY)
 		GENI_SE_ERR(gi2c->ipcl, true, gi2c->dev,
 				"GSI QN err:0x%x, status:0x%x, err:%d\n",
@@ -855,6 +857,19 @@ static int geni_i2c_gsi_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
 	struct msm_gpi_tre *unlock_t = NULL;
 	struct msm_gpi_tre *cfg0_t = NULL;
 
+	/* During i2c error NACK/timeout for levm we are doing gpi_pause
+	 * for next xfer we should do gpi_resume if gpi_pause hapens.
+	 */
+	if (gi2c->is_levm_gpi_pause) {
+		gi2c->is_levm_gpi_pause = false;
+		ret = dmaengine_resume(gi2c->tx_c);
+		if (ret) {
+			GENI_SE_ERR(gi2c->ipcl, true, gi2c->dev,
+			"%s levm dmaengine_resume failed ret:%d\n", __func__, ret);
+			return ret;
+		}
+	}
+
 	if (!gi2c->req_chan) {
 		ret = geni_i2c_gsi_request_channel(gi2c);
 		if (ret)
@@ -1035,6 +1050,7 @@ geni_i2c_err_prep_sg:
 						"Channel cancel failed\n");
 					goto geni_i2c_gsi_xfer_out;
 				}
+				gi2c->is_levm_gpi_pause = true;
 			}
 		}
 		if (gi2c->is_shared)
@@ -1393,6 +1409,7 @@ static int geni_i2c_probe(struct platform_device *pdev)
 	if (of_property_read_bool(pdev->dev.of_node, "qcom,le-vm")) {
 		gi2c->is_le_vm = true;
 		gi2c->first_resume = true;
+		gi2c->is_levm_gpi_pause = false;
 		dev_info(&pdev->dev, "LE-VM usecase\n");
 	}
 
@@ -1509,6 +1526,8 @@ static int geni_i2c_probe(struct platform_device *pdev)
 		}
 	}
 
+	gi2c->is_deep_sleep = false;
+
 	gi2c->adap.algo = &geni_i2c_algo;
 	init_completion(&gi2c->xfer);
 	platform_set_drvdata(pdev, gi2c);
@@ -1561,8 +1580,10 @@ static int geni_i2c_resume_early(struct device *device)
 	struct geni_i2c_dev *gi2c = dev_get_drvdata(device);
 
 #ifdef CONFIG_DEEPSLEEP
-	if (mem_sleep_current == PM_SUSPEND_MEM)
+	if (mem_sleep_current == PM_SUSPEND_MEM) {
 		gi2c->se_mode = UNINITIALIZED;
+		gi2c->is_deep_sleep = true;
+	}
 #endif
 	GENI_SE_DBG(gi2c->ipcl, false, gi2c->dev, "%s\n", __func__);
 	return 0;
@@ -1579,21 +1600,31 @@ static int geni_i2c_hib_resume_noirq(struct device *device)
 
 static int geni_i2c_gpi_suspend_resume(struct geni_i2c_dev *gi2c, bool flag)
 {
-	int tx_ret = 0, rx_ret = 0;
+	int tx_ret = 0;
 
-	if ((gi2c->tx_c != NULL) && (gi2c->rx_c != NULL)) {
+	if (gi2c->tx_c != NULL) {
 		if (flag) {
 			tx_ret = dmaengine_pause(gi2c->tx_c);
-			rx_ret = dmaengine_pause(gi2c->rx_c);
 		} else {
+			if (gi2c->is_deep_sleep)
+				gi2c->tx_ev.cmd = MSM_GPI_DEEP_SLEEP_INIT;
+
 			tx_ret = dmaengine_resume(gi2c->tx_c);
-			rx_ret = dmaengine_resume(gi2c->rx_c);
+
+			if (gi2c->is_deep_sleep) {
+				gi2c->tx_ev.cmd = MSM_GPI_DEFAULT;
+				gi2c->is_deep_sleep = false;
+			}
+
+			/* if resume happens for levm clearing gpi_pause flag */
+			if (gi2c->is_levm_gpi_pause)
+				gi2c->is_levm_gpi_pause = false;
 		}
 
-		if (tx_ret || rx_ret) {
+		if (tx_ret) {
 			GENI_SE_ERR(gi2c->ipcl, true, gi2c->dev,
-			"%s failed: tx:%d rx:%d flag:%d\n",
-			__func__, tx_ret, rx_ret, flag);
+			"%s failed: tx:%d flag:%d\n",
+			__func__, tx_ret, flag);
 			return -EINVAL;
 		}
 	}
