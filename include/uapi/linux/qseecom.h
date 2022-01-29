@@ -410,4 +410,7 @@ struct file;
 #define QSEECOM_IOCTL_FBE_CLEAR_KEY \
 	_IOWR(QSEECOM_IOC_MAGIC, 44, struct qseecom_ice_key_data_t)
 
+#define QSEECOM_IOCTL_DEEP_SLEEP_STATE \
+	_IOWR(QSEECOM_IOC_MAGIC, 45, int)
+
 #endif /* _QSEECOM_H_ */
