@@ -694,13 +694,12 @@ void raydium_irq_control(bool enable)
 
 		/* Clear interrupts first */
 		if (g_raydium_ts->blank != DRM_PANEL_BLANK_POWERDOWN) {
-					if (g_u8_i2c_mode == PDA2_MODE) {
+			if (g_u8_i2c_mode == PDA2_MODE) {
 				mutex_lock(&g_raydium_ts->lock);
 				if (raydium_i2c_pda2_set_page(g_raydium_ts->client,
-							      g_raydium_ts->is_suspend,
-							      RAYDIUM_PDA2_PAGE_0) < 0)
-					LOGD(LOG_ERR, "[touch]set page fail%s\n",
-					     __func__);
+								g_raydium_ts->is_suspend,
+								RAYDIUM_PDA2_PAGE_0) < 0)
+					LOGD(LOG_ERR, "[touch]set page fail%s\n", __func__);
 				mutex_unlock(&g_raydium_ts->lock);
 				usleep_range(500, 1500);
 			}
@@ -1248,7 +1247,7 @@ static void raydium_work_handler(struct work_struct *work)
 		/*need check small area*/
 		//if (u8_tp_status[POS_GES_STATUS] == RAD_WAKE_UP
 		  // && g_u8_wakeup_flag == false) {
-		if(u8_tp_status[POS_GES_STATUS] == 0){
+		if (u8_tp_status[POS_GES_STATUS] == 0)	{
 			input_report_key(g_raydium_ts->input_dev, KEY_POWER, true);
 			usleep_range(9500, 10500);
 			input_sync(g_raydium_ts->input_dev);
@@ -1603,10 +1602,10 @@ static int raydium_ts_resume(struct device *dev)
  * data   - pointer to fb_event structure
  ******************************************************************************/
 static int drm_notifier_callback(struct notifier_block *self,
-                 unsigned long event, void *data)
+			unsigned long event, void *data)
 {
-	struct raydium_ts_data * g_raydium_ts =
-	container_of(self, struct raydium_ts_data, fb_notif);
+	struct raydium_ts_data *g_raydium_ts =
+		container_of(self, struct raydium_ts_data, fb_notif);
 	struct drm_panel_notifier *evdata = data;
 	int *blank;
 
@@ -1689,7 +1688,7 @@ static void raydium_setup_drm_notifier(struct raydium_ts_data *g_raydium_ts)
 
 	if (active_panel && drm_panel_notifier_register(active_panel,
 		&g_raydium_ts->fb_notif) < 0)
-			LOGD(LOG_ERR, "%s: Register notifier failed!\n", __func__);
+		LOGD(LOG_ERR, "%s: Register notifier failed!\n", __func__);
 }
 #endif /*end of CONFIG_DRM*/
 
@@ -1860,8 +1859,8 @@ static int raydium_check_dsi_panel_dt(struct device_node *np, struct drm_panel *
 
 		if (node != NULL)
 			pr_info("%s: Node handle successfully parsed !\n", __func__);
-			panel = of_drm_find_panel(node);
-			of_node_put(node);
+		panel = of_drm_find_panel(node);
+		of_node_put(node);
 
 		if (!IS_ERR(panel)) {
 			pr_info("%s: Active panel selected !\n", __func__);
@@ -1870,7 +1869,7 @@ static int raydium_check_dsi_panel_dt(struct device_node *np, struct drm_panel *
 		}
 	}
 	pr_err("%s: Active panel NOT selected !\n", __func__);
-	return PTR_ERR(panel);
+	return 0;
 }
 
 static int raydium_parse_dt(struct device *dev,
@@ -2152,7 +2151,7 @@ exit:
 	return rc;
 }
 static int raydium_ts_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+		const struct i2c_device_id *id)
 {
 	struct raydium_ts_platform_data *pdata =
 		(struct raydium_ts_platform_data *)client->dev.platform_data;
