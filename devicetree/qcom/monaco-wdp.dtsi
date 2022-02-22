@@ -1,0 +1,9 @@
+&thermal_zones {
+	pa-therm0-step {
+		status = "ok";
+	};
+
+	quiet-therm-step {
+		status = "ok";
+	};
+};

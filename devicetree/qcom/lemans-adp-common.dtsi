@@ -1,0 +1,7 @@
+#include "lemans.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Lemans ADP";
+	compatible =  "qcom,lemans", "qcom,adp";
+	qcom,board-id = <25 0>;
+};
