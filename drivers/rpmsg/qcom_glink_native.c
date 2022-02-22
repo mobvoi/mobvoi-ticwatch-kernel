@@ -1432,12 +1432,12 @@ static struct rpmsg_endpoint *qcom_glink_create_ept(struct rpmsg_device *rpdev,
 {
 	struct glink_channel *parent = to_glink_channel(rpdev->ept);
 	struct glink_channel *channel;
-	struct glink_channel *local_channel;
 	struct qcom_glink *glink = parent->glink;
 	struct rpmsg_endpoint *ept;
 	const char *name = chinfo.name;
 	int rcid;
 #if defined(CONFIG_DEEPSLEEP) && defined(CONFIG_RPMSG_QCOM_GLINK_RPM)
+	struct glink_channel *local_channel;
 	int lcid, rcid_exist = 0, lcid_exist = 0;
 #endif
 	int ret;
@@ -1877,7 +1877,9 @@ static int qcom_glink_rx_open(struct qcom_glink *glink, unsigned int rcid,
 			goto rcid_remove;
 
 #if defined(CONFIG_DEEPSLEEP) && defined(CONFIG_RPMSG_QCOM_GLINK_RPM)
-		if (quickboot) {
+		ret = !strcmp(glink->name, "rpm-glink") &&
+			!strcmp(channel->name, "rpm_requests");
+		if (quickboot && ret) {
 			qcom_smd_rpm_quickboot(rpdev, 1);
 			quickboot = 0;
 		}

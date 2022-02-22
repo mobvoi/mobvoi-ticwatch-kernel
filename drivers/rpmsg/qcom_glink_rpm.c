@@ -376,13 +376,16 @@ static int glink_rpm_remove(struct platform_device *pdev)
 #if defined(CONFIG_DEEPSLEEP)
 int glink_rpm_resume_noirq(struct device *dev)
 {
+	struct qcom_glink *glink;
+
 	if (!of_device_is_compatible(dev->of_node, "qcom,glink-rpm"))
 		return 0;
 
 	dev_info(dev, "Deep sleep exit path\n");
 
 	glink_rpm_unregister(dev);
-	glink_rpm_register(dev, dev->of_node);
+	glink = glink_rpm_register(dev, dev->of_node);
+	dev_set_drvdata(dev, glink);
 
 	return 0;
 }
