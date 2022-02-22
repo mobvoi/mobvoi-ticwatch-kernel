@@ -3,6 +3,7 @@
  * QTI Secure Execution Environment Communicator (QSEECOM) driver
  *
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #define pr_fmt(fmt) "QSEECOM: %s: " fmt, __func__
@@ -7607,6 +7608,7 @@ long qseecom_ioctl(struct file *file,
 	struct qseecom_dev_handle *data = file->private_data;
 	void __user *argp = (void __user *) arg;
 	bool perf_enabled = false;
+	uint32_t ds_state = 0;
 
 	if (!data) {
 		pr_err("Invalid/uninitialized device handle\n");
@@ -8327,8 +8329,6 @@ long qseecom_ioctl(struct file *file,
 		break;
 	}
 	case QSEECOM_IOCTL_DEEP_SLEEP_STATE: {
-		uint32_t ds_state = 0;
-
 		mutex_lock(&app_access_lock);
 		atomic_inc(&data->ioctl_count);
 		ret = copy_from_user(&ds_state, argp, sizeof(ds_state));
@@ -8340,7 +8340,7 @@ long qseecom_ioctl(struct file *file,
 		atomic_dec(&data->ioctl_count);
 		mutex_unlock(&app_access_lock);
 		if (ret)
-			pr_err("failed to set deeps sleep state %d\n", ret);
+			pr_err("failed to set deep sleep state %d\n", ret);
 		break;
 	}
 	default:
@@ -9186,11 +9186,10 @@ out:
 
 static int qseecom_set_ds_state(uint32_t state)
 {
-	int ret = -1;
+	int ret = 0;
 
 	if (state == DS_ENTERED || state == DS_EXITED) {
 		qseecom.qseecom_ds_state = state;
-		ret = 0;
 	} else {
 		qseecom.qseecom_ds_state = -EINVAL;
 		pr_err("Invalid deep sleep state = %d\n", state);
