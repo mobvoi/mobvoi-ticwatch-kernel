@@ -33,6 +33,7 @@
 #include <soc/qcom/rpm-smd.h>
 #include <linux/rpmsg.h>
 #include <linux/suspend.h>
+#include <soc/qcom/msm_glink_ssr.h>
 #include <linux/syscore_ops.h>
 #include "rpmsg_internal.h"
 
@@ -65,8 +66,7 @@
 #define RPM_DATA_LEN_OFFSET 0
 #define RPM_DATA_LEN_SIZE 16
 #define ACTIVE 0
-#define HIBERNATE 1
-#define DEEPSLEEP 2
+#define CLOSED 1
 #define RPM_HDR_SIZE ((rpm_msg_fmt_ver == RPM_MSG_V0_FMT) ?\
 		sizeof(struct rpm_v0_hdr) : sizeof(struct rpm_v1_hdr))
 #define CLEAR_FIELD(offset, size) (~GENMASK(offset + size - 1, offset))
@@ -127,9 +127,8 @@ struct qcom_smd_rpm *rpm;
 static ATOMIC_NOTIFIER_HEAD(msm_rpm_sleep_notifier);
 static bool standalone;
 static int probe_status = -EPROBE_DEFER;
-static int system_status = ACTIVE;
+static int channel_status = ACTIVE;
 static int quickboot_done;
-extern void glink_ssr_notify_rpm(void);
 static void msm_rpm_process_ack(uint32_t msg_id, int errno);
 
 int msm_rpm_register_notifier(struct notifier_block *nb)
@@ -466,9 +465,6 @@ static inline void *get_data(struct kvp *k)
 {
 	return (void *)k + sizeof(*k);
 }
-
-
-
 
 static void delete_kvp(char *buf, struct kvp *d)
 {
@@ -1516,7 +1512,7 @@ int msm_rpm_enter_sleep(bool print, const struct cpumask *cpumask)
 			smd_mask_receive_interrupt(false, NULL);
 	}
 
-	if (system_status != ACTIVE) {
+	if (channel_status != ACTIVE) {
 		probe_status = -EPROBE_DEFER;
 		glink_ssr_notify_rpm();
 	}
@@ -1582,7 +1578,7 @@ static int qcom_smd_rpm_callback(struct rpmsg_device *rpdev, void *ptr,
 
 static int qcom_smd_rpm_suspend(struct device *dev)
 {
-	system_status = HIBERNATE;
+	channel_status = CLOSED;
 	return 0;
 }
 
@@ -1590,24 +1586,18 @@ static int qcom_smd_rpm_deep_suspend(void)
 {
 #ifdef CONFIG_DEEPSLEEP
 	if (mem_sleep_current == PM_SUSPEND_MEM)
-		system_status = DEEPSLEEP;
+		channel_status = CLOSED;
 #endif
-	return 0;
-}
-static int qcom_smd_rpm_resume(struct device *dev)
-{
-	system_status = ACTIVE;
 	return 0;
 }
 
 static void qcom_smd_rpm_deep_resume(void)
 {
-	system_status = ACTIVE;
+	channel_status = ACTIVE;
 }
 
 static const struct dev_pm_ops qcom_smd_rpm_dev_pm_ops = {
 	.poweroff_noirq = qcom_smd_rpm_suspend,
-	.restore_noirq = qcom_smd_rpm_resume,
 };
 
 static struct syscore_ops rpm_syscore_ops = {
