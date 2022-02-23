@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/atomic.h>
@@ -593,6 +594,8 @@ struct gpii {
 	bool reg_table_dump;
 	u32 dbg_gpi_irq_cnt;
 	bool unlock_tre_set;
+	bool dual_ee_sync_flag;
+	bool is_resumed;
 };
 
 struct gpi_desc {
@@ -616,7 +619,7 @@ static irqreturn_t gpi_handle_irq(int irq, void *data);
 static void gpi_ring_recycle_ev_element(struct gpi_ring *ring);
 static int gpi_ring_add_element(struct gpi_ring *ring, void **wp);
 static void gpi_process_events(struct gpii *gpii);
-static int gpi_deep_sleep_config(struct dma_chan *chan,
+static int gpi_deep_sleep_exit_config(struct dma_chan *chan,
 		      struct dma_slave_config *config);
 
 static inline struct gpii_chan *to_gpii_chan(struct dma_chan *dma_chan)
@@ -1352,6 +1355,7 @@ static irqreturn_t gpi_handle_irq(int irq, void *data)
 	u32 gpii_id = gpii->gpii_id;
 
 	GPII_VERB(gpii, GPI_DBG_COMMON, "enter\n");
+	gpii->dual_ee_sync_flag = true;
 
 	read_lock_irqsave(&gpii->pm_lock, flags);
 
@@ -1443,6 +1447,7 @@ static irqreturn_t gpi_handle_irq(int irq, void *data)
 exit_irq:
 	read_unlock_irqrestore(&gpii->pm_lock, flags);
 	GPII_VERB(gpii, GPI_DBG_COMMON, "exit\n");
+	gpii->dual_ee_sync_flag = false;
 	return IRQ_HANDLED;
 }
 
@@ -2344,9 +2349,18 @@ static int gpi_pause(struct dma_chan *chan)
 	void *rp, *rp1;
 	union gpi_event *gpi_event;
 	u32 chid, type;
+	int iter = 0;
+	unsigned long total_iter = 1000; //waiting10ms 1000*udelay(10)
+
 	GPII_INFO(gpii, gpii_chan->chid, "Enter\n");
 	mutex_lock(&gpii->ctrl_lock);
 
+	/* if gpi_pause already done we are not doing agian*/
+	if (!gpii->is_resumed) {
+		GPII_INFO(gpii, gpii_chan->chid, "Already in suspend/pause state\n");
+		mutex_unlock(&gpii->ctrl_lock);
+		return 0;
+	}
 	/* dump the GPII IRQ register at the time of error */
 	offset1 = GPI_GPII_n_CNTXT_TYPE_IRQ_OFFS(gpii->gpii_id);
 	offset2 = GPI_GPII_n_CNTXT_SRC_IEOB_IRQ_MSK_OFFS(gpii->gpii_id);
@@ -2360,6 +2374,7 @@ static int gpi_pause(struct dma_chan *chan)
 	cntxt_rp = gpi_read_reg(gpii, gpii->ev_ring_rp_lsb_reg);
 	if (!cntxt_rp) {
 		GPII_ERR(gpii, GPI_DBG_COMMON, "invalid cntxt_rp");
+		mutex_unlock(&gpii->ctrl_lock);
 		return -EINVAL;
 	}
 
@@ -2367,6 +2382,7 @@ static int gpi_pause(struct dma_chan *chan)
 	local_rp = to_physical(ev_ring, ev_ring->rp);
 	if (!local_rp) {
 		GPII_ERR(gpii, GPI_DBG_COMMON, "invalid local_rp");
+		mutex_unlock(&gpii->ctrl_lock);
 		return -EINVAL;
 	}
 
@@ -2420,7 +2436,18 @@ static int gpi_pause(struct dma_chan *chan)
 		}
 	}
 
+	if (gpii->dual_ee_sync_flag) {
+		while (iter < total_iter) {
+			iter++;
+			/* Ensure ISR completed, so no more activity from GSI pending */
+			if (!gpii->dual_ee_sync_flag)
+				break;
+			udelay(10);
+		}
+	}
+	GPII_INFO(gpii, gpii_chan->chid, "iter:%d\n", iter);
 	disable_irq(gpii->irq);
+	gpii->is_resumed = false;
 	mutex_unlock(&gpii->ctrl_lock);
 	return 0;
 }
@@ -2437,10 +2464,23 @@ static int gpi_resume(struct dma_chan *chan)
 	GPII_INFO(gpii, gpii_chan->chid, "enter\n");
 
 	mutex_lock(&gpii->ctrl_lock);
+	/* if gpi_pause not done we are not doing resume */
+	if (gpii->is_resumed) {
+		GPII_INFO(gpii, gpii_chan->chid, "Already resumed\n");
+		mutex_unlock(&gpii->ctrl_lock);
+		return 0;
+	}
 	enable_irq(gpii->irq);
+	/* We are updating is_resumed flag in middle of funciton, because
+	 * enable_irq should happen only one time otherwise we may get
+	 * unbalanced irq results. Without enable_irq we cannot issue commands
+	 * to the gsi hw.
+	 */
+	gpii->is_resumed = true;
+	/* For deep sleep restore the configuration similar to the probe.*/
 	if (gpi_ctrl->cmd == MSM_GPI_DEEP_SLEEP_INIT) {
 		GPII_INFO(gpii, gpii_chan->chid, "deep sleep config\n");
-		ret = gpi_deep_sleep_config(chan, NULL);
+		ret = gpi_deep_sleep_exit_config(chan, NULL);
 		if (ret) {
 			GPII_ERR(gpii, gpii_chan->chid,
 				 "Err deep sleep config, ret:%d\n", ret);
@@ -2601,7 +2641,7 @@ static void gpi_issue_pending(struct dma_chan *chan)
 	read_unlock_irqrestore(&gpii->pm_lock, pm_lock_flags);
 }
 
-static int gpi_deep_sleep_config(struct dma_chan *chan,
+static int gpi_deep_sleep_exit_config(struct dma_chan *chan,
 		      struct dma_slave_config *config)
 {
 	struct gpii_chan *gpii_chan = to_gpii_chan(chan);
@@ -2630,7 +2670,7 @@ static int gpi_deep_sleep_config(struct dma_chan *chan,
 	ret = gpi_config_interrupts(gpii, DEFAULT_IRQ_SETTINGS, 0);
 	if (ret) {
 		GPII_ERR(gpii, gpii_chan->chid,
-		"error config. interrupts, ret:%d\n", ret);
+			"error config. interrupts, ret:%d\n", ret);
 		return ret;
 	}
 
@@ -2638,7 +2678,7 @@ static int gpi_deep_sleep_config(struct dma_chan *chan,
 	ret = gpi_alloc_ev_chan(gpii);
 	if (ret) {
 		GPII_ERR(gpii, gpii_chan->chid,
-		"error alloc_ev_chan:%d\n", ret);
+			"error alloc_ev_chan:%d\n", ret);
 		goto error_alloc_ev_ring;
 	}
 
@@ -2661,7 +2701,6 @@ static int gpi_deep_sleep_config(struct dma_chan *chan,
 			goto error_start_chan;
 		}
 	}
-
 	return ret;
 
 error_start_chan:
@@ -3163,6 +3202,7 @@ static int gpi_probe(struct platform_device *pdev)
 		struct gpii *gpii = &gpi_dev->gpiis[i];
 		int chan;
 
+		gpii->is_resumed = true;
 		if (!(((1 << i) & gpi_dev->gpii_mask)  ||
 				((1 << i) & gpi_dev->static_gpii_mask)))
 			continue;

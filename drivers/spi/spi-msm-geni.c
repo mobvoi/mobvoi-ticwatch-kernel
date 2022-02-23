@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -188,7 +189,7 @@ struct spi_geni_master {
 	bool use_fixed_timeout;
 	struct spi_geni_ssr spi_ssr;
 	bool master_cross_connect;
-	bool is_deep_sleep;
+	bool is_deep_sleep; /* For deep sleep restore the config similar to the probe. */
 };
 
 static void spi_slv_setup(struct spi_geni_master *mas);
@@ -2277,6 +2278,7 @@ static int spi_geni_probe(struct platform_device *pdev)
 		spi->slave_abort = spi_slv_abort;
 	}
 
+	geni_mas->is_deep_sleep = false;
 	geni_mas->slave_cross_connected =
 		of_property_read_bool(pdev->dev.of_node, "slv-cross-connected");
 	spi->mode_bits = (SPI_CPOL | SPI_CPHA | SPI_LOOP | SPI_CS_HIGH);
@@ -2315,7 +2317,6 @@ static int spi_geni_probe(struct platform_device *pdev)
 	place_marker(boot_marker);
 	dev_info(&pdev->dev, "%s: completed\n", __func__);
 	geni_mas->is_xfer_in_progress = false;
-	geni_mas->is_deep_sleep = false;
 	return ret;
 spi_geni_probe_unmap:
 	devm_iounmap(&pdev->dev, geni_mas->base);
@@ -2342,16 +2343,26 @@ static int spi_geni_remove(struct platform_device *pdev)
 	return ret;
 }
 
-static int spi_geni_gpi_suspend_resume(struct spi_geni_master *geni_mas, bool flag)
+static int spi_geni_gpi_suspend_resume(struct spi_geni_master *geni_mas, bool is_suspend)
 {
 	int tx_ret = 0;
 
+	/* Do dma operations only for tx channel here, as it takes care of rx channel
+	 * also internally from the GPI driver functions. if we call for both channels,
+	 * will see channels in wrong state due to double operations.
+	 */
 	if (geni_mas->tx != NULL) {
-		if (flag) {
+		if (is_suspend) {
 			tx_ret = dmaengine_pause(geni_mas->tx);
 		} else {
+			/* For deep sleep need to restore the config similar to the probe,
+			 * hence using MSM_GPI_DEEP_SLEEP_INIT flag, in gpi_resume it wil
+			 * do similar to the probe. After this we should set this flag to
+			 * MSM_GPI_DEFAULT, means gpi probe state is restored.
+			 */
 			if (geni_mas->is_deep_sleep)
 				geni_mas->tx_event.cmd = MSM_GPI_DEEP_SLEEP_INIT;
+
 			tx_ret = dmaengine_resume(geni_mas->tx);
 			if (geni_mas->is_deep_sleep) {
 				geni_mas->tx_event.cmd = MSM_GPI_DEFAULT;
@@ -2361,8 +2372,8 @@ static int spi_geni_gpi_suspend_resume(struct spi_geni_master *geni_mas, bool fl
 
 		if (tx_ret) {
 			GENI_SE_ERR(geni_mas->ipc, true, geni_mas->dev,
-			"%s failed: tx:%d rx:%d flag:%d\n",
-			__func__, tx_ret, flag);
+				"%s failed: tx:%d status:%d\n",
+				__func__, tx_ret, is_suspend);
 			return -EINVAL;
 		}
 	}
@@ -2430,20 +2441,29 @@ static int spi_geni_levm_resume_proc(struct spi_geni_master *geni_mas, struct sp
 {
 	int ret = 0;
 
-	if (!geni_mas->setup) {
-		ret = spi_geni_mas_setup(spi);
-		if (ret) {
-			GENI_SE_ERR(geni_mas->ipc, true, geni_mas->dev,
-			"%s mas_setup failed: %d\n", __func__, ret);
-			return ret;
-		}
-	}
-
 	if (geni_mas->gsi_mode) {
+		/* Required after spi_geni_mas_setup for each LE VM suspend/resume.
+		 * Very first time not required when master setup is not completed
+		 * as basic HW initialization is pending. This flag is set by the
+		 * spi_geni_mas_setup() function only.
+		 */
 		ret = spi_geni_gpi_suspend_resume(geni_mas, false);
 		if (ret) {
 			GENI_SE_ERR(geni_mas->ipc, false, geni_mas->dev,
 				    "%s:\n", __func__);
+			return ret;
+		}
+	}
+
+	if (!geni_mas->setup) {
+		/* It will take care of all GPI /DMA initialization and generic SW/HW
+		 * initializations required for a spi transfer. Gets called once per
+		 * Bootup session.
+		 */
+		ret = spi_geni_mas_setup(spi);
+		if (ret) {
+			GENI_SE_ERR(geni_mas->ipc, true, geni_mas->dev,
+			"%s mas_setup failed: %d\n", __func__, ret);
 			return ret;
 		}
 	}
