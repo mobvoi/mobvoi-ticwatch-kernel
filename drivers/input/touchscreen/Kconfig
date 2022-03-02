@@ -1349,6 +1349,19 @@ config TOUCHSCREEN_RM_TS
 	  To compile this driver as a module, choose M here: the
 	  module will be called raydium_i2c_ts.
 
+config TOUCHSCREEN_ZINITIX_TS
+        tristate "Zinitix I2C Touchscreen"
+        depends on I2C
+        depends on GPIOLIB || COMPILE_TEST
+        help
+          Say Y here if you have Zinitix series I2C touchscreen,
+          such as ZTW622, connected to your system.
+
+          If unsure, say N.
+
+          To compile this driver as a module, choose M here: the
+          module will be called zinitix_i2c_ts.
+
 config TOUCHSCREEN_SILEAD
 	tristate "Silead I2C touchscreen"
 	depends on I2C

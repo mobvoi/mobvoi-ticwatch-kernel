@@ -2193,10 +2193,33 @@ qcom,msm-adsprpc-mem {
 &qupv3_se1_i2c {
 	status = "ok";
 
+      zinitix_ts@20 {
+                compatible = "zinitix,zinitix-ts";
+                reg = <0x20>;
+                status = "ok";
+                interrupt-parent = <&tlmm>;
+                interrupts = <13 0x2008>;
+                vdd-supply = <&L29A>;
+                vcc_i2c-supply = <&L21A>;
+                pinctrl-names = "pmx_ts_active","pmx_ts_suspend","pmx_ts_release";
+                pinctrl-0 = <&ts_int_active &ts_reset_active>;
+                pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+                pinctrl-2 = <&ts_release>;
+                zinitix,reset-gpio = <&tlmm 12 0x00>;
+                zinitix,irq-gpio = <&tlmm 13 0x00>;
+                zinitix,num-max-touches = <2>;
+                zinitix,soft-reset-delay-ms = <50>;
+                zinitix,hard-reset-delay-ms = <100>;
+                zinitix,x_max = <416>;
+                zinitix,y_max = <416>;
+                zinitix,display-coords= <0 0 320 360>;
+        };
+
+
 	tsc@24 {
 		compatible = "parade,pt_i2c_adapter";
 		reg = <0x24>;
-		status = "ok";
+		status = "disable";
 		interrupt-parent = <&tlmm>;
 		interrupts = <80 0x2008>;
 		parade,adapter_id = "pt_i2c_adapter";

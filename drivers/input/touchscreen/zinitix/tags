@@ -1,0 +1,1111 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ABS	Config.h	28;"	d
+ACTIVE_MODE	zinitix_driver.h	225;"	d
+AMBIENT_MODE	zinitix_driver.h	226;"	d
+BASELINE_CRC_CHK	chip_raydium/f303_ic_reg.h	44;"	d
+BASEL_AREA	chip_raydium/f303_ic_reg.h	33;"	d
+BASEL_AREA	zinitix_driver.h	177;"	d
+BASEL_LOCK	chip_raydium/f303_ic_reg.h	25;"	d
+BASEL_LOCK	zinitix_driver.h	169;"	d
+BIT_DEBUG	zinitix_touch.h	116;"	d
+BIT_DOWN	zinitix_touch.h	103;"	d
+BIT_ICON_EVENT	zinitix_touch.h	117;"	d
+BIT_MOVE	zinitix_touch.h	104;"	d
+BIT_MUST_ZERO	zinitix_touch.h	115;"	d
+BIT_PALM	zinitix_touch.h	106;"	d
+BIT_PALM_REJECT	zinitix_touch.h	107;"	d
+BIT_PT_CNT_CHANGE	zinitix_touch.h	102;"	d
+BIT_PT_EXIST	zinitix_touch.h	113;"	d
+BIT_PT_NO_CHANGE	zinitix_touch.h	111;"	d
+BIT_REJECT	zinitix_touch.h	112;"	d
+BIT_UP	zinitix_touch.h	105;"	d
+BIT_WAKEUP	zinitix_touch.h	108;"	d
+BIT_WEIGHT_CHANGE	zinitix_touch.h	110;"	d
+BL0_CRC_ERR	chip_raydium/f303_ic_reg.h	51;"	d
+BLDR_FINISH	chip_raydium/f303_ic_reg.h	37;"	d
+BLKRST_SW_RST	chip_raydium/f303_ic_reg.h	100;"	d
+BL_BURNING_STATE	chip_raydium/f303_ic_reg.h	/^} BL_BURNING_STATE;$/;"	t	typeref:enum:__anon11
+BL_CRC_CHK	chip_raydium/f303_ic_reg.h	103;"	d
+BL_CRC_CHK	chip_raydium/f303_ic_reg.h	40;"	d
+BL_NORMAL_STATE	chip_raydium/f303_ic_reg.h	/^} BL_NORMAL_STATE;$/;"	t	typeref:enum:__anon12
+BOOTLOADER	Config.h	35;"	d
+BOOT_BURNING_STATE_ADDR	chip_raydium/f303_ic_reg.h	146;"	d
+BOOT_CMD_TYPE_ADDR	chip_raydium/f303_ic_reg.h	147;"	d
+BOOT_MAIN_STATE_ADDR	chip_raydium/f303_ic_reg.h	144;"	d
+BOOT_NORMAL_STATE_ADDR	chip_raydium/f303_ic_reg.h	145;"	d
+BOOT_REGION	chip_raydium/f303_ic_reg.h	39;"	d
+BOOT_RET_DATA_ADDR	chip_raydium/f303_ic_reg.h	148;"	d
+BOOT_SYNC_DATA_ADDR	chip_raydium/f303_ic_reg.h	143;"	d
+BOOT_TEST_MODE_ADDR	chip_raydium/f303_ic_reg.h	149;"	d
+BOTLR_AREA	chip_raydium/f303_ic_reg.h	29;"	d
+BOTLR_AREA	zinitix_driver.h	173;"	d
+BOTLR_LOCK	chip_raydium/f303_ic_reg.h	21;"	d
+BOTLR_LOCK	zinitix_driver.h	165;"	d
+BURNING_CHECK_ADDR	chip_raydium/f303_ic_reg.h	/^	BURNING_CHECK_ADDR,$/;"	e	enum:__anon11
+BURNING_STATE_HALT	chip_raydium/f303_ic_reg.h	/^	BURNING_STATE_HALT,$/;"	e	enum:__anon11
+BURNING_STATE_INIT	chip_raydium/f303_ic_reg.h	/^	BURNING_STATE_INIT = 0,$/;"	e	enum:__anon11
+BURNING_UNLOCK_PRAM	chip_raydium/f303_ic_reg.h	/^	BURNING_UNLOCK_PRAM,$/;"	e	enum:__anon11
+BURNING_WRT_FLASH_EXCUTE	chip_raydium/f303_ic_reg.h	/^	BURNING_WRT_FLASH_EXCUTE,$/;"	e	enum:__anon11
+BURNING_WRT_FLASH_FINISH	chip_raydium/f303_ic_reg.h	/^	BURNING_WRT_FLASH_FINISH,$/;"	e	enum:__anon11
+BURNING_WRT_FLASH_PREPARE	chip_raydium/f303_ic_reg.h	/^	BURNING_WRT_FLASH_PREPARE,$/;"	e	enum:__anon11
+BURNING_WRT_PRAM	chip_raydium/f303_ic_reg.h	/^	BURNING_WRT_PRAM,$/;"	e	enum:__anon11
+BYTE_SHIFT	zinitix_driver.h	192;"	d
+CHIP_OFF_DELAY	zinitix_touch.h	34;"	d
+CHIP_ON_DELAY	zinitix_touch.h	33;"	d
+COMP_AREA	chip_raydium/f303_ic_reg.h	32;"	d
+COMP_AREA	zinitix_driver.h	176;"	d
+COMP_CRC_CHK	chip_raydium/f303_ic_reg.h	43;"	d
+COMP_LOCK	chip_raydium/f303_ic_reg.h	24;"	d
+COMP_LOCK	zinitix_driver.h	168;"	d
+CONFIG_AREA	chip_raydium/f303_ic_reg.h	31;"	d
+CONFIG_AREA	zinitix_driver.h	175;"	d
+CONFIG_LOCK	chip_raydium/f303_ic_reg.h	23;"	d
+CONFIG_LOCK	zinitix_driver.h	167;"	d
+CONFIG_RM_SYSFS_DEBUG	zinitix_driver.h	230;"	d
+COORDS_ARR_SIZE	zinitix_driver.h	24;"	d
+CRC_CHECK_FAIL	chip_raydium/f303_ic_reg.h	/^	CRC_CHECK_FAIL = 0x80,$/;"	e	enum:__anon9
+CRC_CHECK_PASS	chip_raydium/f303_ic_reg.h	/^	CRC_CHECK_PASS = 0x81,$/;"	e	enum:__anon9
+DATA_BUFFER_SIZE	chip_raydium/ic_drv_global.h	48;"	d
+DATA_REMAP_TO_IC_PIN	chip_raydium/ic_drv_interface.h	43;"	d
+DATA_REMAP_TO_SENSOR_PAD	chip_raydium/ic_drv_interface.h	44;"	d
+DEBUGOUT	drv_interface.h	22;"	d
+DEVICE_ID_2X	chip_raydium/ic_drv_interface.h	21;"	d
+DEVICE_ID_3X	chip_raydium/ic_drv_interface.h	22;"	d
+DISABLE	chip_raydium/ic_drv_global.h	/^	DISABLE = 0,$/;"	e	enum:__anon3
+DISABLE	zinitix_driver.h	93;"	d
+DISABLE	zinitix_touch.h	37;"	d
+DISABLE_PDA2_MODE_AND_INT	raydium_selftest.h	19;"	d
+DISABLE_TOUCH_INT	raydium_selftest.h	21;"	d
+DISPLAY_MIPI_MODE	chip_raydium/ic_drv_interface.h	40;"	d
+DISPLAY_SPI_MODE	chip_raydium/ic_drv_interface.h	39;"	d
+DISPLAY_TOUCH_2_DRIVER_MODE	chip_raydium/ic_drv_interface.h	41;"	d
+DIS_BASELINE_UPDATE	chip_raydium/f303_ic_reg.h	119;"	d
+ENABLE	chip_raydium/ic_drv_global.h	/^	ENABLE = 1$/;"	e	enum:__anon3
+ENABLE	zinitix_driver.h	94;"	d
+ENABLE	zinitix_touch.h	36;"	d
+ENABLE_AUO_VERIFY_LOG	Config.h	48;"	d
+ENABLE_CONTROL_OPENSHORT_WDT	Config.h	49;"	d
+ENABLE_PDA2_MODE_AND_INT	raydium_selftest.h	20;"	d
+ENABLE_TEST_GPIO_MEASURMENT	Config.h	50;"	d
+ENABLE_TEST_RSU_DATA_SHOW	Config.h	47;"	d
+ENABLE_TEST_TIME_MEASURMENT	Config.h	44;"	d
+ENABLE_TEST_TIME_MEASURMENT_CC	Config.h	45;"	d
+ENABLE_TIME_MEASURMENT	raydium_selftest.h	24;"	d
+ENABLE_TOUCH_INT	raydium_selftest.h	22;"	d
+ENABLE_WDT	Config.h	46;"	d
+ENG_MODE	zinitix_driver.h	222;"	d
+ERROR	chip_raydium/ic_drv_global.h	/^	ERROR = 0,$/;"	e	enum:__anon2
+ERROR	zinitix_driver.h	91;"	d
+F302_DONGLE_FLASH_INI_ADDR	chip_raydium/ic_drv_global.h	50;"	d
+F302_INITIAL_CODE_START_ADDR	chip_raydium/ic_drv_global.h	67;"	d
+F302_INI_PARA_ADDR	chip_raydium/ic_drv_global.h	52;"	d
+F302_INI_RAW_DATA2_BL_ADDR	chip_raydium/ic_drv_global.h	53;"	d
+F302_INI_RAW_DATA_3_CC_ADDR	chip_raydium/ic_drv_global.h	54;"	d
+F302_INI_THRESHOLD_ADDR	chip_raydium/ic_drv_global.h	51;"	d
+F302_INI_UC_CC_ADDR	chip_raydium/ic_drv_global.h	55;"	d
+F302_MAX_IMAGE_BUFFER_SIZE	chip_raydium/ic_drv_global.h	47;"	d
+F302_NA_P	chip_raydium/ic_drv_global.h	56;"	d
+F303_DONGLE_FLASH_INI_ADDR	chip_raydium/ic_drv_global.h	58;"	d
+F303_DRAM_FT_DBG_START	chip_raydium/ic_drv_global.h	91;"	d
+F303_INITIAL_CODE_START_ADDR	chip_raydium/ic_drv_global.h	68;"	d
+F303_INI_PARA_ADDR	chip_raydium/ic_drv_global.h	60;"	d
+F303_INI_RAW_DATA2_BL_ADDR	chip_raydium/ic_drv_global.h	61;"	d
+F303_INI_RAW_DATA_3_CC_ADDR	chip_raydium/ic_drv_global.h	62;"	d
+F303_INI_THRESHOLD_ADDR	chip_raydium/ic_drv_global.h	59;"	d
+F303_INI_UC_CC_ADDR	chip_raydium/ic_drv_global.h	63;"	d
+F303_MAX_SENSING_PIN_NUM	chip_raydium/ic_drv_global.h	64;"	d
+F303_NA_P	chip_raydium/ic_drv_global.h	65;"	d
+FAIL	zinitix_driver.h	90;"	d
+FALSE	drv_interface.h	35;"	d
+FIRMWARE_ON_DELAY	zinitix_touch.h	35;"	d
+FLASH_NORMAL_FW_CC_TABLE_ADDR	chip_raydium/f303_ic_reg.h	195;"	d
+FLASH_NORMAL_FW_CUST_VERSION_ADDR	chip_raydium/f303_ic_reg.h	193;"	d
+FLASH_NORMAL_FW_FW_VERSION_ADDR	chip_raydium/f303_ic_reg.h	192;"	d
+FLASH_OFFSET	chip_raydium/f303_ic_reg.h	151;"	d
+FLASH_TEST_FW_FW_VERSION_ADDR	chip_raydium/f303_ic_reg.h	194;"	d
+FLH_RELEASE_PD	chip_raydium/f303_ic_reg.h	102;"	d
+FLKEY1_KEY	chip_raydium/f303_ic_reg.h	55;"	d
+FLKEY1_LOCK	chip_raydium/f303_ic_reg.h	54;"	d
+FLKEY2_KEY	chip_raydium/f303_ic_reg.h	59;"	d
+FLKEY2_LOCK	chip_raydium/f303_ic_reg.h	58;"	d
+FT_ALG_RAWDATA	chip_raydium/f303_ic_reg.h	232;"	d
+FT_BASELINE_PS	chip_raydium/f303_ic_reg.h	225;"	d
+FT_BASELINE_SF	chip_raydium/f303_ic_reg.h	224;"	d
+FT_CMD_DO_FT_TEST	chip_raydium/f303_ic_test.h	24;"	d
+FT_CMD_DO_FT_TEST	chip_raydium/ic_drv_interface.h	51;"	d
+FT_CMD_INIT	chip_raydium/ic_drv_interface.h	50;"	d
+FT_COMPENSATION_PS	chip_raydium/f303_ic_reg.h	227;"	d
+FT_COMPENSATION_SF	chip_raydium/f303_ic_reg.h	226;"	d
+FT_DEBUG_MESSAGE	chip_raydium/f303_ic_reg.h	234;"	d
+FT_OPEN_BL_BUF_ADDR	chip_raydium/f303_ic_reg.h	181;"	d
+FT_PS_SEL	chip_raydium/f303_ic_reg.h	233;"	d
+FT_RAWDATA1_SHORT_BUF_ADDR	chip_raydium/f303_ic_reg.h	176;"	d
+FT_RAWDATA2_OPEN_BUF_ADDR	chip_raydium/f303_ic_reg.h	177;"	d
+FT_RAWDATA3_CC_BUF_ADDR	chip_raydium/f303_ic_reg.h	178;"	d
+FT_RAWDATA_WO_BL_PS	chip_raydium/f303_ic_reg.h	231;"	d
+FT_RAWDATA_WO_BL_SF	chip_raydium/f303_ic_reg.h	230;"	d
+FT_RAWDATA_W_BL_PS	chip_raydium/f303_ic_reg.h	229;"	d
+FT_RAWDATA_W_BL_SF	chip_raydium/f303_ic_reg.h	228;"	d
+FT_STATUS_PURE_AF_DC	chip_raydium/f303_ic_reg.h	238;"	d
+FT_STATUS_PURE_RAW	chip_raydium/f303_ic_reg.h	237;"	d
+FT_TEST_INFO_ADDR	chip_raydium/f303_ic_reg.h	184;"	d
+FT_TEST_ITEM_RESULT	chip_raydium/f303_ic_reg.h	183;"	d
+FT_TEST_PARA_ADDR	chip_raydium/f303_ic_reg.h	186;"	d
+FT_TEST_RESULT_BUF_ADDR	chip_raydium/f303_ic_reg.h	182;"	d
+FT_TEST_STUATUS_PATTERN	chip_raydium/ic_drv_interface.h	48;"	d
+FT_TEST_THD_ADDR	chip_raydium/f303_ic_reg.h	185;"	d
+FT_UC_BUF_ADDR	chip_raydium/f303_ic_reg.h	179;"	d
+FT_UPDATE	chip_raydium/f303_ic_reg.h	223;"	d
+FT_UPDATE_CASE	chip_raydium/f303_ic_reg.h	235;"	d
+FW_CG_ERR	chip_raydium/f303_ic_reg.h	49;"	d
+FW_CRC_CHK	chip_raydium/f303_ic_reg.h	41;"	d
+FW_CRC_ERR	chip_raydium/f303_ic_reg.h	50;"	d
+FW_FT_ARG0_ADDR	chip_raydium/f303_ic_reg.h	113;"	d
+FW_FT_ARG1_ADDR	chip_raydium/f303_ic_reg.h	114;"	d
+FW_FT_CHANNEL_X_ADDR	chip_raydium/f303_ic_reg.h	135;"	d
+FW_FT_CHANNEL_Y_ADDR	chip_raydium/f303_ic_reg.h	136;"	d
+FW_FT_CMD_ADDR	chip_raydium/f303_ic_reg.h	112;"	d
+FW_FT_FW_VERSION	chip_raydium/f303_ic_reg.h	139;"	d
+FW_FT_IMG_ADDR	chip_raydium/ic_drv_global.h	88;"	d
+FW_FT_PIN_ADDR	chip_raydium/f303_ic_reg.h	137;"	d
+FW_FT_PWR_MODE_ADDR	chip_raydium/f303_ic_reg.h	138;"	d
+FW_FT_SRAM_FW_VERSION	chip_raydium/f303_ic_reg.h	140;"	d
+FW_INICO_ERR	chip_raydium/f303_ic_reg.h	48;"	d
+FW_SYS_CMD_ADDR	chip_raydium/ic_drv_global.h	79;"	d
+FW_TP_POINT_DATA_ADDR	chip_raydium/ic_drv_global.h	86;"	d
+FW_TP_SEQ_NUM_ADDR	chip_raydium/ic_drv_global.h	85;"	d
+FunctionalState	chip_raydium/ic_drv_global.h	/^} FunctionalState;$/;"	t	typeref:enum:__anon3
+GET_UNLOCK_FAIL	chip_raydium/f303_ic_reg.h	/^	GET_UNLOCK_FAIL = 0xA9,$/;"	e	enum:__anon9
+GET_WRT_ACK	chip_raydium/f303_ic_reg.h	/^	GET_WRT_ACK = 0xA7,$/;"	e	enum:__anon9
+GET_WRT_UNLOCK	chip_raydium/f303_ic_reg.h	/^	GET_WRT_UNLOCK = 0xA8,$/;"	e	enum:__anon9
+GPIO_DEGLITCH_EN	chip_raydium/f303_ic_reg.h	86;"	d
+GPIO_PULLH_EN	chip_raydium/f303_ic_reg.h	85;"	d
+HEADER_LENGTH	chip_raydium/f303_ic_control.h	21;"	d
+I2CENG_AUTO_I2C_DGF_MODE	chip_raydium/f303_ic_reg.h	67;"	d
+I2CENG_AUTO_I2C_DGF_MODE2	chip_raydium/f303_ic_reg.h	65;"	d
+I2CENG_DGF_OSC_AUTOSEL	chip_raydium/f303_ic_reg.h	66;"	d
+I2CENG_FIRST_DAT_SEL	chip_raydium/f303_ic_reg.h	72;"	d
+I2CENG_I2CS_DEGFIR_NUM	chip_raydium/f303_ic_reg.h	69;"	d
+I2CENG_I2CS_DGFEN_DLY_NUM	chip_raydium/f303_ic_reg.h	68;"	d
+I2CENG_RB_I2C_DGF_EN	chip_raydium/f303_ic_reg.h	71;"	d
+I2CENG_RB_MANUAL_I2C_DGF	chip_raydium/f303_ic_reg.h	70;"	d
+I2CTB_LOCK	chip_raydium/f303_ic_reg.h	20;"	d
+I2CTB_LOCK	zinitix_driver.h	164;"	d
+I2C_BYTE_MODE	chip_raydium/ic_drv_interface.h	26;"	d
+I2C_INTERFACE	chip_raydium/ic_drv_interface.h	36;"	d
+I2C_INTERFACE	drv_interface.h	25;"	d
+I2C_MCU_MODE	chip_raydium/ic_drv_interface.h	28;"	d
+I2C_PDA2_BYTE_MODE	chip_raydium/ic_drv_interface.h	24;"	d
+I2C_PDA2_BYTE_MODE	zinitix_driver.h	76;"	d
+I2C_PDA2_MODE	chip_raydium/ic_drv_interface.h	29;"	d
+I2C_PDA2_WORD_MODE	chip_raydium/ic_drv_interface.h	25;"	d
+I2C_PDA2_WORD_MODE	zinitix_driver.h	77;"	d
+I2C_PDA_MODE	chip_raydium/ic_drv_interface.h	30;"	d
+I2C_SYNC_CMD	chip_raydium/f303_ic_reg.h	/^} I2C_SYNC_CMD;$/;"	t	typeref:enum:__anon9
+I2C_VTG_MAX_UV	zinitix_driver.h	26;"	d
+I2C_VTG_MIN_UV	zinitix_driver.h	25;"	d
+I2C_WORD_MODE	chip_raydium/ic_drv_interface.h	27;"	d
+IC_ENTER_NORMAL_FW	chip_raydium/ic_drv_interface.h	/^	IC_ENTER_NORMAL_FW,				\/\/8$/;"	e	enum:__anon5
+IC_TEST_BURN_CC	chip_raydium/ic_drv_interface.h	/^	IC_TEST_BURN_CC,				\/\/3$/;"	e	enum:__anon5
+IC_TEST_BURN_FW	chip_raydium/ic_drv_interface.h	/^	IC_TEST_BURN_FW,				\/\/2$/;"	e	enum:__anon5
+IC_TEST_ENG_ITEMS_PANEL_TEST_JIG	chip_raydium/ic_drv_interface.h	78;"	d
+IC_TEST_ENG_ITEMS_RESV_1	chip_raydium/ic_drv_interface.h	70;"	d
+IC_TEST_ENG_ITEMS_RESV_10	chip_raydium/ic_drv_interface.h	79;"	d
+IC_TEST_ENG_ITEMS_RESV_11	chip_raydium/ic_drv_interface.h	80;"	d
+IC_TEST_ENG_ITEMS_RESV_12	chip_raydium/ic_drv_interface.h	81;"	d
+IC_TEST_ENG_ITEMS_RESV_13	chip_raydium/ic_drv_interface.h	82;"	d
+IC_TEST_ENG_ITEMS_RESV_14	chip_raydium/ic_drv_interface.h	83;"	d
+IC_TEST_ENG_ITEMS_RESV_15	chip_raydium/ic_drv_interface.h	84;"	d
+IC_TEST_ENG_ITEMS_RESV_16	chip_raydium/ic_drv_interface.h	85;"	d
+IC_TEST_ENG_ITEMS_RESV_2	chip_raydium/ic_drv_interface.h	71;"	d
+IC_TEST_ENG_ITEMS_RESV_3	chip_raydium/ic_drv_interface.h	72;"	d
+IC_TEST_ENG_ITEMS_RESV_5	chip_raydium/ic_drv_interface.h	74;"	d
+IC_TEST_ENG_ITEMS_RESV_6	chip_raydium/ic_drv_interface.h	75;"	d
+IC_TEST_ENG_ITEMS_RESV_7	chip_raydium/ic_drv_interface.h	76;"	d
+IC_TEST_ENG_ITEMS_RESV_8	chip_raydium/ic_drv_interface.h	77;"	d
+IC_TEST_ENG_ITEMS_TEST_ALL	chip_raydium/ic_drv_interface.h	73;"	d
+IC_TEST_ENTER_FW_TEST_MODE	chip_raydium/ic_drv_interface.h	/^	IC_TEST_ENTER_FW_TEST_MODE,		\/\/5$/;"	e	enum:__anon5
+IC_TEST_EXIT	chip_raydium/ic_drv_interface.h	/^	IC_TEST_EXIT,					\/\/11$/;"	e	enum:__anon5
+IC_TEST_INIT	chip_raydium/ic_drv_interface.h	/^	IC_TEST_INIT = 0,$/;"	e	enum:__anon5
+IC_TEST_ITEMS_BURN_CC	chip_raydium/ic_drv_interface.h	59;"	d
+IC_TEST_ITEMS_BURN_FW	chip_raydium/ic_drv_interface.h	54;"	d
+IC_TEST_ITEMS_OPEN	chip_raydium/ic_drv_interface.h	55;"	d
+IC_TEST_ITEMS_PANEL_TEST_1	chip_raydium/ic_drv_interface.h	60;"	d
+IC_TEST_ITEMS_PANEL_TEST_2	chip_raydium/ic_drv_interface.h	61;"	d
+IC_TEST_ITEMS_PANEL_TEST_3	chip_raydium/ic_drv_interface.h	62;"	d
+IC_TEST_ITEMS_RESV_0	chip_raydium/ic_drv_interface.h	63;"	d
+IC_TEST_ITEMS_RESV_1	chip_raydium/ic_drv_interface.h	64;"	d
+IC_TEST_ITEMS_RESV_2	chip_raydium/ic_drv_interface.h	65;"	d
+IC_TEST_ITEMS_RESV_3	chip_raydium/ic_drv_interface.h	66;"	d
+IC_TEST_ITEMS_RESV_4	chip_raydium/ic_drv_interface.h	67;"	d
+IC_TEST_ITEMS_RESV_5	chip_raydium/ic_drv_interface.h	68;"	d
+IC_TEST_ITEMS_SHORT	chip_raydium/ic_drv_interface.h	56;"	d
+IC_TEST_ITEMS_SYSTEM	chip_raydium/ic_drv_interface.h	53;"	d
+IC_TEST_ITEMS_UB	chip_raydium/ic_drv_interface.h	58;"	d
+IC_TEST_ITEMS_UC	chip_raydium/ic_drv_interface.h	57;"	d
+IC_TEST_LOAD_TEST_FW	chip_raydium/ic_drv_interface.h	/^	IC_TEST_LOAD_TEST_FW,			\/\/4$/;"	e	enum:__anon5
+IC_TEST_OPEN_SHORT	chip_raydium/ic_drv_interface.h	/^	IC_TEST_OPEN_SHORT,				\/\/6$/;"	e	enum:__anon5
+IC_TEST_PANEL_PATTERN_TEST	chip_raydium/ic_drv_interface.h	/^	IC_TEST_PANEL_PATTERN_TEST,     \/\/10$/;"	e	enum:__anon5
+IC_TEST_READ_TEST_FW_DATA	chip_raydium/ic_drv_interface.h	/^	IC_TEST_READ_TEST_FW_DATA,	    \/\/7$/;"	e	enum:__anon5
+IC_TEST_RETRY_TIME	chip_raydium/ic_drv_interface.h	46;"	d
+IC_TEST_STATE	chip_raydium/ic_drv_interface.h	/^} IC_TEST_STATE;$/;"	t	typeref:enum:__anon5
+IC_TEST_SYSTEM	chip_raydium/ic_drv_interface.h	/^	IC_TEST_SYSTEM,					\/\/1$/;"	e	enum:__anon5
+IC_TEST_TIME_OUT	chip_raydium/ic_drv_interface.h	47;"	d
+IC_TEST_UC_UB	chip_raydium/ic_drv_interface.h	/^	IC_TEST_UC_UB,					\/\/9$/;"	e	enum:__anon5
+IIC_RETRY_NUM	zinitix_touch.h	16;"	d
+INICO_AREA	chip_raydium/f303_ic_reg.h	34;"	d
+INICO_AREA	zinitix_driver.h	178;"	d
+INICO_LOCK	chip_raydium/f303_ic_reg.h	26;"	d
+INICO_LOCK	zinitix_driver.h	170;"	d
+INITIAL_CRC_CHK	chip_raydium/f303_ic_reg.h	45;"	d
+INT_FLAG	zinitix_driver.h	221;"	d
+LEN_PT	zinitix_driver.h	/^	LEN_PT = 11$/;"	e	enum:zinitix_pt_report_idx
+LOGD	zinitix_driver.h	433;"	d
+LOG_ALERT	zinitix_driver.h	/^	LOG_ALERT,$/;"	e	enum:zinitix_log_level
+LOG_DEBUG	zinitix_driver.h	/^	LOG_DEBUG = 5$/;"	e	enum:zinitix_log_level
+LOG_ERR	zinitix_driver.h	/^	LOG_ERR,$/;"	e	enum:zinitix_log_level
+LOG_INFO	zinitix_driver.h	/^	LOG_INFO,$/;"	e	enum:zinitix_log_level
+LOG_NONE	zinitix_driver.h	/^	LOG_NONE = 0,$/;"	e	enum:zinitix_log_level
+LOG_WARNING	zinitix_driver.h	/^	LOG_WARNING,$/;"	e	enum:zinitix_log_level
+MAIN_STATE_BURNING_MODE	chip_raydium/f303_ic_reg.h	/^	MAIN_STATE_BURNING_MODE,$/;"	e	enum:__anon10
+MAIN_STATE_FIRWARE_MODE	chip_raydium/f303_ic_reg.h	/^	MAIN_STATE_FIRWARE_MODE,$/;"	e	enum:__anon10
+MAIN_STATE_NORMAL_MODE	chip_raydium/f303_ic_reg.h	/^	MAIN_STATE_NORMAL_MODE = 0,$/;"	e	enum:__anon10
+MASK_8BIT	zinitix_driver.h	66;"	d
+MAXIMUM	Config.h	27;"	d
+MAX_IMAGE_BUFFER_SIZE	chip_raydium/ic_drv_global.h	45;"	d
+MAX_PAGE_AMOUNT	zinitix_driver.h	98;"	d
+MAX_READ_PACKET_SIZE	zinitix_driver.h	52;"	d
+MAX_REPORT_PACKET_SIZE	zinitix_driver.h	188;"	d
+MAX_SENSING_PIN_NUM	chip_raydium/ic_drv_global.h	46;"	d
+MAX_SUPPORTED_FINGER_NUM	zinitix_touch.h	26;"	d
+MAX_TCH_STATUS_PACKET_SIZE	zinitix_driver.h	189;"	d
+MAX_TOUCH_NUM	zinitix_driver.h	187;"	d
+MAX_WRITE_PACKET_SIZE	zinitix_driver.h	51;"	d
+MCU_HOLD	chip_raydium/f303_ic_reg.h	46;"	d
+MCU_HOLD	chip_raydium/f303_ic_reg.h	98;"	d
+MCU_HOLD_STATUS	chip_raydium/f303_ic_reg.h	101;"	d
+MCU_HOLD_STATUS	chip_raydium/f303_ic_reg.h	38;"	d
+MINIMUM	Config.h	26;"	d
+MSM_NEW_VER	zinitix_driver.h	238;"	d
+M_RX_BUF	drv_interface.h	28;"	d
+M_TX_BUF	drv_interface.h	29;"	d
+NORMAL_CRC_CALC	chip_raydium/f303_ic_reg.h	/^	NORMAL_CRC_CALC,$/;"	e	enum:__anon12
+NORMAL_CRC_NOTIFY	chip_raydium/f303_ic_reg.h	/^	NORMAL_CRC_NOTIFY,$/;"	e	enum:__anon12
+NORMAL_FW_CRC	chip_raydium/f303_ic_reg.h	/^	NORMAL_FW_CRC,$/;"	e	enum:__anon12
+NORMAL_MODE	zinitix_driver.h	223;"	d
+NORMAL_MODE_CHANGE	chip_raydium/f303_ic_reg.h	/^	NORMAL_MODE_CHANGE,$/;"	e	enum:__anon12
+NORMAL_MODE_IDLE	chip_raydium/f303_ic_reg.h	/^	NORMAL_MODE_IDLE,$/;"	e	enum:__anon12
+NORMAL_SHORT_VALUE	zinitix_touch.h	63;"	d
+NORMAL_STATE_CHECK	chip_raydium/f303_ic_reg.h	/^	NORMAL_STATE_CHECK = 0,$/;"	e	enum:__anon12
+PARA_CRC_CHK	chip_raydium/f303_ic_reg.h	42;"	d
+PARA_FW_VERSION_OFFSET	zinitix_driver.h	244;"	d
+PARTITION_CRC	chip_raydium/f303_ic_reg.h	/^	PARTITION_CRC = 0xA0,$/;"	e	enum:__anon9
+PDA2CTL_PDA2_EN	chip_raydium/f303_ic_reg.h	78;"	d
+PDA2CTL_SI2	chip_raydium/f303_ic_reg.h	80;"	d
+PDA2CTL_SIE2	chip_raydium/f303_ic_reg.h	79;"	d
+PDA2_MODE	zinitix_driver.h	69;"	d
+PDA_MODE	zinitix_driver.h	68;"	d
+PINCTRL_STATE_ACTIVE	zinitix_driver.h	246;"	d
+PINCTRL_STATE_RELEASE	zinitix_driver.h	248;"	d
+PINCTRL_STATE_SUSPEND	zinitix_driver.h	247;"	d
+POS_FW_STATE	zinitix_driver.h	/^	POS_FW_STATE,$/;"	e	enum:zinitix_pt_report_status
+POS_GES_STATUS	zinitix_driver.h	/^	POS_GES_STATUS,$/;"	e	enum:zinitix_pt_report_status
+POS_PRESSURE_H	zinitix_driver.h	/^	POS_PRESSURE_H,$/;"	e	enum:zinitix_pt_report_idx
+POS_PRESSURE_L	zinitix_driver.h	/^	POS_PRESSURE_L,$/;"	e	enum:zinitix_pt_report_idx
+POS_PT_AMOUNT	zinitix_driver.h	/^	POS_PT_AMOUNT,$/;"	e	enum:zinitix_pt_report_status
+POS_PT_ID	zinitix_driver.h	/^	POS_PT_ID = 0,$/;"	e	enum:zinitix_pt_report_idx
+POS_SEQ	zinitix_driver.h	/^	POS_SEQ = 0,\/*1:touch, 0:no touch*\/$/;"	e	enum:zinitix_pt_report_status
+POS_WX_H	zinitix_driver.h	/^	POS_WX_H,$/;"	e	enum:zinitix_pt_report_idx
+POS_WX_L	zinitix_driver.h	/^	POS_WX_L,$/;"	e	enum:zinitix_pt_report_idx
+POS_WY_H	zinitix_driver.h	/^	POS_WY_H,$/;"	e	enum:zinitix_pt_report_idx
+POS_WY_L	zinitix_driver.h	/^	POS_WY_L,$/;"	e	enum:zinitix_pt_report_idx
+POS_X_H	zinitix_driver.h	/^	POS_X_H,$/;"	e	enum:zinitix_pt_report_idx
+POS_X_L	zinitix_driver.h	/^	POS_X_L,$/;"	e	enum:zinitix_pt_report_idx
+POS_Y_H	zinitix_driver.h	/^	POS_Y_H,$/;"	e	enum:zinitix_pt_report_idx
+POS_Y_L	zinitix_driver.h	/^	POS_Y_L,$/;"	e	enum:zinitix_pt_report_idx
+PRAM_ADDR_CC_INFO	chip_raydium/f303_ic_reg.h	214;"	d
+PRAM_BASEINE_START	chip_raydium/f303_ic_reg.h	168;"	d
+PRAM_BASELINE_LENGTH	chip_raydium/f303_ic_reg.h	152;"	d
+PRAM_BOOT_CRC_LENGTH	chip_raydium/f303_ic_reg.h	169;"	d
+PRAM_BOOT_LENGTH	chip_raydium/f303_ic_reg.h	157;"	d
+PRAM_BOOT_START	chip_raydium/f303_ic_reg.h	159;"	d
+PRAM_CB_CRC_LENGTH	chip_raydium/f303_ic_reg.h	173;"	d
+PRAM_CB_CRC_START	chip_raydium/f303_ic_reg.h	172;"	d
+PRAM_CC_TABLE_ADDR	chip_raydium/f303_ic_reg.h	166;"	d
+PRAM_COMP_LENGTH	chip_raydium/f303_ic_reg.h	153;"	d
+PRAM_COMP_START	chip_raydium/f303_ic_reg.h	161;"	d
+PRAM_DIS_INIT_LENGTH	chip_raydium/f303_ic_reg.h	154;"	d
+PRAM_DIS_INIT_START	chip_raydium/f303_ic_reg.h	160;"	d
+PRAM_FW_CRC_LENGTH	chip_raydium/f303_ic_reg.h	171;"	d
+PRAM_FW_CRC_START	chip_raydium/f303_ic_reg.h	170;"	d
+PRAM_FW_LENGTH	chip_raydium/f303_ic_reg.h	156;"	d
+PRAM_FW_START	chip_raydium/f303_ic_reg.h	163;"	d
+PRAM_PARA_DC_THD_ADDR	chip_raydium/f303_ic_reg.h	165;"	d
+PRAM_PARA_LENGTH	chip_raydium/f303_ic_reg.h	155;"	d
+PRAM_PARA_START	chip_raydium/f303_ic_reg.h	162;"	d
+PRAM_RESERVE_START	chip_raydium/f303_ic_reg.h	164;"	d
+PRESS_MAX	zinitix_driver.h	190;"	d
+PRINT_DEBUG_MSG_TYPE_1	chip_raydium/ic_drv_global.h	70;"	d
+PRINT_DEBUG_MSG_TYPE_2	chip_raydium/ic_drv_global.h	71;"	d
+PRINT_DEBUG_MSG_TYPE_3	chip_raydium/ic_drv_global.h	72;"	d
+PRINT_DEBUG_MSG_TYPE_4	chip_raydium/ic_drv_global.h	73;"	d
+PRINT_DEBUG_MSG_TYPE_5	chip_raydium/ic_drv_global.h	74;"	d
+PRINT_DEBUG_MSG_TYPE_6	chip_raydium/ic_drv_global.h	75;"	d
+PRINT_DEBUG_MSG_TYPE_7	chip_raydium/ic_drv_global.h	76;"	d
+PRINT_DEBUG_MSG_TYPE_8	chip_raydium/ic_drv_global.h	77;"	d
+RAD_30	rad_fw_image_30.h	19;"	d
+RAD_BOOT_3X_SIZE	zinitix_driver.h	202;"	d
+RAD_CMD_BURN_FINISH	drv_interface.h	44;"	d
+RAD_CMD_BURN_FINISH	zinitix_driver.h	210;"	d
+RAD_CMD_LOAD_TESTFW	drv_interface.h	41;"	d
+RAD_CMD_START_BURN	drv_interface.h	40;"	d
+RAD_CMD_UPDATE_BIN	drv_interface.h	42;"	d
+RAD_CMD_UPDATE_BIN	zinitix_driver.h	208;"	d
+RAD_CMD_UPDATE_END	drv_interface.h	43;"	d
+RAD_CMD_UPDATE_END	zinitix_driver.h	209;"	d
+RAD_CUSTOMER_VERSION	zinitix_driver.h	33;"	d
+RAD_ENABLE_PDA2	zinitix_driver.h	62;"	d
+RAD_ENABLE_SI2	zinitix_driver.h	63;"	d
+RAD_FT_CMD_LENGTH	zinitix_driver.h	215;"	d
+RAD_FT_CMD_POS	zinitix_driver.h	214;"	d
+RAD_FW_3X_SIZE	zinitix_driver.h	204;"	d
+RAD_GESTURE_DISABLE	zinitix_driver.h	58;"	d
+RAD_GESTURE_ENABLE	zinitix_driver.h	59;"	d
+RAD_GESTURE_RESULT_CMD	zinitix_driver.h	61;"	d
+RAD_GESTURE_STATE_CMD	zinitix_driver.h	57;"	d
+RAD_HOST_CMD_POS	zinitix_driver.h	213;"	d
+RAD_I2C_PDA_2_MODE_DISABLE	zinitix_driver.h	74;"	d
+RAD_I2C_PDA_ADDRESS_LENGTH	zinitix_driver.h	67;"	d
+RAD_I2C_PDA_MODE_DISABLE	zinitix_driver.h	70;"	d
+RAD_I2C_PDA_MODE_ENABLE	zinitix_driver.h	71;"	d
+RAD_I2C_PDA_MODE_WORD_MODE	zinitix_driver.h	73;"	d
+RAD_INIT_3X_SIZE	zinitix_driver.h	203;"	d
+RAD_MAIN_VERSION	zinitix_driver.h	31;"	d
+RAD_MINOR_VERSION	zinitix_driver.h	32;"	d
+RAD_PALM_DISABLE	zinitix_driver.h	79;"	d
+RAD_PALM_ENABLE	zinitix_driver.h	80;"	d
+RAD_PARA_3X_SIZE	zinitix_driver.h	205;"	d
+RAD_READ_FT_DATA_CMD	zinitix_driver.h	55;"	d
+RAD_SELFTEST	zinitix_driver.h	243;"	d
+RAD_SELFTEST_30	tpselftest_30.h	19;"	d
+RAD_TESTFW_3X_SIZE	zinitix_driver.h	206;"	d
+RAD_WAKE_UP	zinitix_driver.h	81;"	d
+RAM_READ_TEST_ADDR1	chip_raydium/f303_ic_reg.h	219;"	d
+RAM_READ_TEST_ADDR2	chip_raydium/f303_ic_reg.h	220;"	d
+RAM_READ_TEST_ADDR3	chip_raydium/f303_ic_reg.h	221;"	d
+RAM_WRITE_TEST_ADDR1	chip_raydium/f303_ic_reg.h	216;"	d
+RAM_WRITE_TEST_ADDR2	chip_raydium/f303_ic_reg.h	217;"	d
+RAM_WRITE_TEST_ADDR3	chip_raydium/f303_ic_reg.h	218;"	d
+RAWDATA_DELAY_FOR_HOST	zinitix_touch.h	136;"	d
+RAYDIUM_INTERRUPT_FLAG	raydium_selftest.h	26;"	d
+REG_FLASHCTL_DEVID_ADDR	chip_raydium/f303_ic_reg.h	210;"	d
+REG_FLASHCTL_FLASH_ADDR	chip_raydium/f303_ic_reg.h	201;"	d
+REG_FLASHCTL_FLASH_DATA	chip_raydium/f303_ic_reg.h	206;"	d
+REG_FLASHCTL_FLASH_ENG3	chip_raydium/f303_ic_reg.h	207;"	d
+REG_FLASHCTL_FLASH_FLKEY1	chip_raydium/f303_ic_reg.h	204;"	d
+REG_FLASHCTL_FLASH_FLKEY2	chip_raydium/f303_ic_reg.h	205;"	d
+REG_FLASHCTL_FLASH_ISPCTL	chip_raydium/f303_ic_reg.h	202;"	d
+REG_FLASHCTL_FLASH_PRAM_ADDR	chip_raydium/f303_ic_reg.h	199;"	d
+REG_FLASHCTL_FLASH_PRAM_LENGTH	chip_raydium/f303_ic_reg.h	200;"	d
+REG_FLASHCTL_FLASH_PRAM_LOCK	chip_raydium/f303_ic_reg.h	197;"	d
+REG_FLASHCTL_FLASH_PRAM_STORE_TYPE	chip_raydium/f303_ic_reg.h	198;"	d
+REG_FLASHCTL_FLASH_PRGCHKSUM_ADDR	chip_raydium/f303_ic_reg.h	208;"	d
+REG_FLASHCTL_FLASH_PRGCHKSUM_RESULT	chip_raydium/f303_ic_reg.h	209;"	d
+REG_FLASHCTL_FLASH_STATE_REG_ADDR	chip_raydium/f303_ic_reg.h	203;"	d
+REG_GPIO_DEGLITCH_ENABLE	chip_raydium/f303_ic_reg.h	84;"	d
+REG_I2CENG_ADDR	chip_raydium/f303_ic_reg.h	64;"	d
+REG_I2C_I2CFLASHPRO	chip_raydium/f303_ic_reg.h	74;"	d
+REG_PDA2CTL_ADDR	chip_raydium/f303_ic_reg.h	77;"	d
+REG_SPI_SLAVE_SPIFLASHPRO	chip_raydium/f303_ic_reg.h	212;"	d
+REG_SYSCON_BLKEN_ADDR	chip_raydium/f303_ic_reg.h	88;"	d
+REG_SYSCON_BLKRST_ADDR	chip_raydium/f303_ic_reg.h	89;"	d
+REG_SYSCON_MISCIER_ADDR	chip_raydium/ic_drv_global.h	87;"	d
+REG_T2D_CONFIG_1	chip_raydium/f303_ic_reg.h	92;"	d
+REG_T2D_CONFIG_2	chip_raydium/f303_ic_reg.h	93;"	d
+REG_T2D_CONFIG_3	chip_raydium/f303_ic_reg.h	94;"	d
+REG_T2D_R_CONFIG_1	chip_raydium/f303_ic_reg.h	95;"	d
+REG_T2D_R_CONFIG_2	chip_raydium/f303_ic_reg.h	96;"	d
+RELATIVE_PATH	raydium_selftest.c	46;"	d	file:
+RESERVED_1	zinitix_touch.h	109;"	d
+RESERVED_2	zinitix_touch.h	114;"	d
+RESULT_NG	raydium_selftest.c	44;"	d	file:
+RESULT_SUCCESS	raydium_selftest.c	43;"	d	file:
+RM_AHB_BASE	chip_raydium/f303_ic_reg.h	108;"	d
+RM_APB_BASE	chip_raydium/f303_ic_reg.h	109;"	d
+RM_DATAMEM0_BASE	chip_raydium/ic_drv_global.h	89;"	d
+RM_F303_MAX_STR_LENGTH	chip_raydium/f303_ic_test.c	33;"	d	file:
+RM_PRAM_BASE	chip_raydium/f303_ic_reg.h	106;"	d
+RM_RAM_BASE	chip_raydium/f303_ic_reg.h	107;"	d
+RM_SELF_TEST_CUSTOMER_VERSION	raydium_selftest.c	37;"	d	file:
+RM_SELF_TEST_LOGFILE	raydium_selftest.h	30;"	d
+RM_SELF_TEST_MAIN_VERSION	raydium_selftest.c	40;"	d	file:
+RM_SELF_TEST_MAX_STR_LENGTH	raydium_selftest.c	48;"	d	file:
+RM_SELF_TEST_PLATFORM_VERSION	raydium_selftest.c	38;"	d	file:
+RM_SELF_TEST_PROJECT_VERSION	raydium_selftest.c	39;"	d	file:
+RM_SELF_TEST_SUB_VERSION	raydium_selftest.c	41;"	d	file:
+RM_SELF_TEST_THRESHOLD_FILE	raydium_selftest.h	29;"	d
+ReadFromDriver_3x	chip_raydium/f303_ic_control.c	/^unsigned char ReadFromDriver_3x(unsigned char *p_u8_addr, unsigned char u8_read_len, unsigned char *p_u8_output_buf)$/;"	f
+SEC_DND_FREQUENCY	zinitix_touch.h	129;"	d
+SEC_DND_N_COUNT	zinitix_touch.h	127;"	d
+SEC_DND_U_COUNT	zinitix_touch.h	128;"	d
+SEC_PDND_FREQUENCY	zinitix_touch.h	132;"	d
+SEC_PDND_N_COUNT	zinitix_touch.h	130;"	d
+SEC_PDND_U_COUNT	zinitix_touch.h	131;"	d
+SELFTEST	Config.h	36;"	d
+SELFTEST_2X	Config.h	39;"	d
+SELFTEST_2X	Config.h	42;"	d
+SELFTEST_3X	Config.h	38;"	d
+SELFTEST_3X	Config.h	41;"	d
+SET_ADDR_FAIL	chip_raydium/f303_ic_reg.h	/^	SET_ADDR_FAIL = 0xA2,$/;"	e	enum:__anon9
+SET_ADDR_READY	chip_raydium/f303_ic_reg.h	/^	SET_ADDR_READY = 0xA1,$/;"	e	enum:__anon9
+SKIP_LOAD	chip_raydium/f303_ic_reg.h	47;"	d
+SKIP_LOAD	chip_raydium/f303_ic_reg.h	99;"	d
+SLEEP_MODE	zinitix_driver.h	227;"	d
+SPI_BYTE_MODE	chip_raydium/ic_drv_interface.h	32;"	d
+SPI_INTERFACE	chip_raydium/ic_drv_interface.h	37;"	d
+SPI_INTERFACE	drv_interface.h	26;"	d
+SPI_MCU_MODE	chip_raydium/ic_drv_interface.h	34;"	d
+SPI_WORD_MODE	chip_raydium/ic_drv_interface.h	33;"	d
+SRAM_FT_RAWDATA_3_CC_ADDR	chip_raydium/f303_ic_reg.h	189;"	d
+SRAM_FT_UC_CC_ADDR	chip_raydium/f303_ic_reg.h	190;"	d
+STATUS	chip_raydium/ic_drv_global.h	/^} STATUS;$/;"	t	typeref:enum:__anon1
+STATUS	chip_raydium/ic_drv_global.h	/^} STATUS;$/;"	t	typeref:enum:__anon2
+SUB_BIT_DOWN	zinitix_touch.h	120;"	d
+SUB_BIT_EXIST	zinitix_touch.h	119;"	d
+SUB_BIT_MOVE	zinitix_touch.h	121;"	d
+SUB_BIT_UP	zinitix_touch.h	122;"	d
+SUB_BIT_UPDATE	zinitix_touch.h	123;"	d
+SUB_BIT_WAIT	zinitix_touch.h	124;"	d
+SUCCESS	chip_raydium/ic_drv_global.h	/^	SUCCESS = 1$/;"	e	enum:__anon2
+SUCCESS	zinitix_driver.h	92;"	d
+SUPPORTED_PALM_TOUCH	zinitix_touch.h	30;"	d
+SYN_I2C_RETRY_TIMES	zinitix_driver.h	50;"	d
+SYS_CMD_CAL_WAIT	chip_raydium/f303_ic_reg.h	124;"	d
+SYS_CMD_DO_BL_CAL	chip_raydium/f303_ic_reg.h	121;"	d
+SYS_CMD_DO_BL_CAL	chip_raydium/ic_drv_global.h	82;"	d
+SYS_CMD_DO_CC_CAL	chip_raydium/f303_ic_reg.h	123;"	d
+SYS_CMD_DO_CC_CAL	chip_raydium/ic_drv_global.h	83;"	d
+SYS_CMD_FT_DC_DISABLE	chip_raydium/f303_ic_reg.h	131;"	d
+SYS_CMD_FT_DIG_GAIN_ENABLE	chip_raydium/f303_ic_reg.h	132;"	d
+SYS_CMD_FT_FUN_FLAG	chip_raydium/f303_ic_reg.h	130;"	d
+SYS_CMD_FT_GET_DSP_NS_PARAM	chip_raydium/f303_ic_reg.h	129;"	d
+SYS_CMD_FT_TEST_LOG_EN	chip_raydium/f303_ic_reg.h	133;"	d
+SYS_CMD_FUNC_DIS_BS_UPDATE	chip_raydium/f303_ic_reg.h	118;"	d
+SYS_CMD_READ_CAL_FLAG	chip_raydium/f303_ic_reg.h	122;"	d
+SYS_CMD_TP_MANUAL_MODE	chip_raydium/ic_drv_global.h	81;"	d
+SYS_CMD_WAKEUP_GESTURE_DISABLE	chip_raydium/f303_ic_reg.h	127;"	d
+SYS_CMD_WAKEUP_GESTURE_ENABLE	chip_raydium/f303_ic_reg.h	126;"	d
+TCH_BOOTLOADER_STATE	chip_raydium/f303_ic_reg.h	/^} TCH_BOOTLOADER_STATE;$/;"	t	typeref:enum:__anon10
+TOUCH_CHECK_SHORT_MODE	zinitix_touch.h	62;"	d
+TOUCH_COVER	zinitix_driver.h	196;"	d
+TOUCH_DBG_LEVEL	zinitix_touch.h	14;"	d
+TOUCH_EVENT_DOWN	zinitix_touch.h	19;"	d
+TOUCH_EVENT_EXIST	zinitix_touch.h	21;"	d
+TOUCH_EVENT_MOVE	zinitix_touch.h	20;"	d
+TOUCH_EVENT_NONE	zinitix_touch.h	22;"	d
+TOUCH_EVENT_UP	zinitix_touch.h	18;"	d
+TOUCH_MOVE	zinitix_driver.h	195;"	d
+TOUCH_ONESHOT_UPGRADE	zinitix_touch.h	24;"	d
+TOUCH_POINT_MODE	zinitix_touch.h	25;"	d
+TOUCH_PRESS	zinitix_driver.h	193;"	d
+TOUCH_RELEASE	zinitix_driver.h	194;"	d
+TOUCH_SHORTCLICK	zinitix_driver.h	197;"	d
+TPD_RES_MAX_X	zinitix_touch.h	27;"	d
+TPD_RES_MAX_Y	zinitix_touch.h	28;"	d
+TP_POWERON_DELAY	zinitix_touch.h	32;"	d
+TRUE	drv_interface.h	36;"	d
+USEFW_AREA	chip_raydium/f303_ic_reg.h	30;"	d
+USEFW_AREA	zinitix_driver.h	174;"	d
+USEFW_LOCK	chip_raydium/f303_ic_reg.h	22;"	d
+USEFW_LOCK	zinitix_driver.h	166;"	d
+VDD_ANALOG_ENABLE	zinitix_driver.h	23;"	d
+VTG_MAX_UV	zinitix_driver.h	29;"	d
+VTG_MIN_UV	zinitix_driver.h	28;"	d
+WAIT_ACK_FAIL	chip_raydium/f303_ic_reg.h	/^	WAIT_ACK_FAIL = 0xA6,$/;"	e	enum:__anon9
+WAIT_TEST_MODE	chip_raydium/f303_ic_reg.h	/^	WAIT_TEST_MODE = 0x82,$/;"	e	enum:__anon9
+WAIT_WRT_ACK	chip_raydium/f303_ic_reg.h	/^	WAIT_WRT_ACK = 0xA5,$/;"	e	enum:__anon9
+WEARABLE_FT_TEST_RESULT_AUO_JIG_NG	chip_raydium/ic_drv_interface.h	119;"	d
+WEARABLE_FT_TEST_RESULT_AUO_JIG_NG	drv_interface.h	46;"	d
+WEARABLE_FT_TEST_RESULT_BURN_CC_NG	chip_raydium/ic_drv_interface.h	100;"	d
+WEARABLE_FT_TEST_RESULT_BURN_FW_NG	chip_raydium/ic_drv_interface.h	112;"	d
+WEARABLE_FT_TEST_RESULT_CB_NG	chip_raydium/ic_drv_interface.h	97;"	d
+WEARABLE_FT_TEST_RESULT_CC_CALIBRATION_NG	chip_raydium/ic_drv_interface.h	109;"	d
+WEARABLE_FT_TEST_RESULT_CMD_NG	chip_raydium/ic_drv_interface.h	123;"	d
+WEARABLE_FT_TEST_RESULT_EXT_FLASH_EMPTY_NG	chip_raydium/ic_drv_interface.h	114;"	d
+WEARABLE_FT_TEST_RESULT_FLASH_ID_NG	chip_raydium/ic_drv_interface.h	103;"	d
+WEARABLE_FT_TEST_RESULT_GET_DATA_NG	chip_raydium/ic_drv_interface.h	102;"	d
+WEARABLE_FT_TEST_RESULT_I2C_NG	chip_raydium/ic_drv_interface.h	93;"	d
+WEARABLE_FT_TEST_RESULT_IC_FW_VERIFY_NG	chip_raydium/ic_drv_interface.h	113;"	d
+WEARABLE_FT_TEST_RESULT_IC_INIT_STATE	chip_raydium/ic_drv_interface.h	87;"	d
+WEARABLE_FT_TEST_RESULT_IC_SUB_VERSION_NG	chip_raydium/ic_drv_interface.h	124;"	d
+WEARABLE_FT_TEST_RESULT_IC_VERSION_NG	chip_raydium/ic_drv_interface.h	125;"	d
+WEARABLE_FT_TEST_RESULT_INT_NG	chip_raydium/ic_drv_interface.h	94;"	d
+WEARABLE_FT_TEST_RESULT_LOAD_TESTFW_NG	chip_raydium/ic_drv_interface.h	111;"	d
+WEARABLE_FT_TEST_RESULT_MCU_HOLD_NG	chip_raydium/ic_drv_interface.h	115;"	d
+WEARABLE_FT_TEST_RESULT_NORMAL_FW_NG	chip_raydium/ic_drv_interface.h	99;"	d
+WEARABLE_FT_TEST_RESULT_NORMAL_FW_RESET_NG	chip_raydium/ic_drv_interface.h	121;"	d
+WEARABLE_FT_TEST_RESULT_NORMAL_FW_VER_NG	chip_raydium/ic_drv_interface.h	104;"	d
+WEARABLE_FT_TEST_RESULT_OPEN_NG	chip_raydium/ic_drv_interface.h	90;"	d
+WEARABLE_FT_TEST_RESULT_PANEL_INIT_STATE	chip_raydium/ic_drv_interface.h	88;"	d
+WEARABLE_FT_TEST_RESULT_PANEL_TEST_1_NG	chip_raydium/ic_drv_interface.h	95;"	d
+WEARABLE_FT_TEST_RESULT_PANEL_TEST_3_NG	chip_raydium/ic_drv_interface.h	101;"	d
+WEARABLE_FT_TEST_RESULT_PASS	chip_raydium/ic_drv_interface.h	89;"	d
+WEARABLE_FT_TEST_RESULT_POWER_ON_NG	chip_raydium/ic_drv_interface.h	122;"	d
+WEARABLE_FT_TEST_RESULT_PRAM_NG	chip_raydium/ic_drv_interface.h	98;"	d
+WEARABLE_FT_TEST_RESULT_RESET_NG	chip_raydium/ic_drv_interface.h	96;"	d
+WEARABLE_FT_TEST_RESULT_SHORT_NG	chip_raydium/ic_drv_interface.h	91;"	d
+WEARABLE_FT_TEST_RESULT_SINGLE_CC_OPEN_NG	chip_raydium/ic_drv_interface.h	107;"	d
+WEARABLE_FT_TEST_RESULT_SINGLE_CC_SHORT_NG	chip_raydium/ic_drv_interface.h	108;"	d
+WEARABLE_FT_TEST_RESULT_SYSFS_NG	chip_raydium/ic_drv_interface.h	117;"	d
+WEARABLE_FT_TEST_RESULT_TEST_FW_VER_NG	chip_raydium/ic_drv_interface.h	105;"	d
+WEARABLE_FT_TEST_RESULT_TEST_INIT_NG	chip_raydium/ic_drv_interface.h	110;"	d
+WEARABLE_FT_TEST_RESULT_UB_NG	chip_raydium/ic_drv_interface.h	92;"	d
+WEARABLE_FT_TEST_RESULT_UC_NG	chip_raydium/ic_drv_interface.h	106;"	d
+WEARBLE_FT_BURN_CC_SYSTEM_NG_CASE	chip_raydium/ic_drv_interface.h	127;"	d
+WEARBLE_FT_FW_VER_SYSTEM_NG_CASE	chip_raydium/ic_drv_interface.h	128;"	d
+WEARBLE_FT_I2C_SYSTEM_NG_CASE	chip_raydium/ic_drv_interface.h	129;"	d
+WEARBLE_FT_INT_SYSTEM_NG_CASE	chip_raydium/ic_drv_interface.h	130;"	d
+WEARBLE_FT_LOAD_TEST_FW_SYSTEM_NG_CASE	chip_raydium/ic_drv_interface.h	131;"	d
+WEARBLE_FT_PRAM_SYSTEM_NG_CASE	chip_raydium/ic_drv_interface.h	132;"	d
+WEARBLE_FT_RESET_PIN_SYSTEM_NG_CASE	chip_raydium/ic_drv_interface.h	133;"	d
+WIDTH_MAX	zinitix_driver.h	191;"	d
+WORD	drv_interface.h	38;"	d
+WRT_PRAM_DATA	chip_raydium/f303_ic_reg.h	/^	WRT_PRAM_DATA = 0xA3,$/;"	e	enum:__anon9
+WRT_PRAM_FAIL	chip_raydium/f303_ic_reg.h	/^	WRT_PRAM_FAIL = 0xA4,$/;"	e	enum:__anon9
+WriteDriverByTouchMode	chip_raydium/f303_ic_control.c	/^unsigned char WriteDriverByTouchMode(const unsigned char *p_u8_data, uint16_t u16DataLength)$/;"	f
+WriteToDriver_3x	chip_raydium/f303_ic_control.c	/^unsigned char WriteToDriver_3x(unsigned char *p_u8_data, unsigned char u8_data_length)$/;"	f
+ZINITIX_AFE_FREQUENCY	zinitix_touch.h	87;"	d
+ZINITIX_BASELINE	zinitix_driver.h	88;"	d
+ZINITIX_BOOTLOADER	zinitix_driver.h	84;"	d
+ZINITIX_BUTTON_SENSITIVITY	zinitix_touch.h	82;"	d
+ZINITIX_BUTTON_SUPPORTED_NUM	zinitix_touch.h	81;"	d
+ZINITIX_CALIBRATE_CMD	zinitix_touch.h	54;"	d
+ZINITIX_CHECKSUM_RESULT	zinitix_touch.h	94;"	d
+ZINITIX_CHIP_REVISION	zinitix_touch.h	70;"	d
+ZINITIX_CHK_I2C_CMD	zinitix_driver.h	161;"	d
+ZINITIX_CLEAR_INT_STATUS_CMD	zinitix_touch.h	53;"	d
+ZINITIX_COMP	zinitix_driver.h	87;"	d
+ZINITIX_DATA_VERSION_REG	zinitix_touch.h	73;"	d
+ZINITIX_DEBUG_REG	zinitix_touch.h	68;"	d
+ZINITIX_DELAY_RAW_FOR_HOST	zinitix_touch.h	80;"	d
+ZINITIX_DND_N_COUNT	zinitix_touch.h	88;"	d
+ZINITIX_DND_U_COUNT	zinitix_touch.h	89;"	d
+ZINITIX_EEPROM_INFO	zinitix_touch.h	76;"	d
+ZINITIX_EEPROM_INFO_REG	zinitix_touch.h	91;"	d
+ZINITIX_FIRMWARE	zinitix_driver.h	85;"	d
+ZINITIX_FIRMWARE_VERSION	zinitix_touch.h	71;"	d
+ZINITIX_FT_UPDATE	zinitix_driver.h	218;"	d
+ZINITIX_FW_BIN_PATH_LENGTH	zinitix_driver.h	200;"	d
+ZINITIX_HOST_CMD_CALIBRATION	zinitix_driver.h	124;"	d
+ZINITIX_HOST_CMD_DISPLAY_MODE	zinitix_driver.h	123;"	d
+ZINITIX_HOST_CMD_FT_MODE	zinitix_driver.h	126;"	d
+ZINITIX_HOST_CMD_NO_OP	zinitix_driver.h	121;"	d
+ZINITIX_HOST_CMD_PWR_SLEEP	zinitix_driver.h	122;"	d
+ZINITIX_HOST_CMD_TP_MODE	zinitix_driver.h	125;"	d
+ZINITIX_HW_ID	zinitix_touch.h	74;"	d
+ZINITIX_I2C_CHECKSUM_RESULT	zinitix_touch.h	67;"	d
+ZINITIX_I2C_CHECKSUM_WCNT	zinitix_touch.h	66;"	d
+ZINITIX_I2C_EID	zinitix_driver.h	43;"	d
+ZINITIX_I2C_NID	zinitix_driver.h	44;"	d
+ZINITIX_I2C_PDA2_PAGE_LENGTH	zinitix_driver.h	183;"	d
+ZINITIX_I2C_PDA_CMD	zinitix_driver.h	45;"	d
+ZINITIX_I2C_READ	zinitix_driver.h	49;"	d
+ZINITIX_I2C_WRITE	zinitix_driver.h	48;"	d
+ZINITIX_ICON_STATUS_REG	zinitix_touch.h	86;"	d
+ZINITIX_IDLE_CMD	zinitix_touch.h	51;"	d
+ZINITIX_INIT	zinitix_driver.h	89;"	d
+ZINITIX_INITIAL_TOUCH_MODE	zinitix_touch.h	77;"	d
+ZINITIX_INIT_FLASH	zinitix_touch.h	95;"	d
+ZINITIX_INIT_RETRY_CNT	zinitix_touch.h	46;"	d
+ZINITIX_INTN_CLEAR_CMD	zinitix_touch.h	59;"	d
+ZINITIX_INT_ENABLE_FLAG	zinitix_touch.h	92;"	d
+ZINITIX_MINOR_FW_VERSION	zinitix_touch.h	72;"	d
+ZINITIX_NAME	zinitix_driver.h	22;"	d
+ZINITIX_NVM_INIT_CMD	zinitix_touch.h	60;"	d
+ZINITIX_NVM_REG	zinitix_touch.h	100;"	d
+ZINITIX_PARA	zinitix_driver.h	86;"	d
+ZINITIX_PDA2_2_PDA	zinitix_driver.h	118;"	d
+ZINITIX_PDA2_DISPLAY_INFO_ADDR	zinitix_driver.h	109;"	d
+ZINITIX_PDA2_ENABLE_PDA	zinitix_driver.h	116;"	d
+ZINITIX_PDA2_FW_VERSION_ADDR	zinitix_driver.h	107;"	d
+ZINITIX_PDA2_GESTURE_RPT_ADDR	zinitix_driver.h	105;"	d
+ZINITIX_PDA2_HOST_CMD_ADDR	zinitix_driver.h	103;"	d
+ZINITIX_PDA2_PAGE_0	zinitix_driver.h	114;"	d
+ZINITIX_PDA2_PAGE_ADDR	zinitix_driver.h	113;"	d
+ZINITIX_PDA2_PALM_AREA_ADDR	zinitix_driver.h	104;"	d
+ZINITIX_PDA2_PALM_STATUS_ADDR	zinitix_driver.h	106;"	d
+ZINITIX_PDA2_PANEL_VERSION_ADDR	zinitix_driver.h	108;"	d
+ZINITIX_PDA2_PDA_CFG_ADDR	zinitix_driver.h	110;"	d
+ZINITIX_PDA2_RAWDATA_ADDR	zinitix_driver.h	111;"	d
+ZINITIX_PDA2_TCH_RPT_ADDR	zinitix_driver.h	102;"	d
+ZINITIX_PDA2_TCH_RPT_STATUS_ADDR	zinitix_driver.h	101;"	d
+ZINITIX_PDA_BLKEN	zinitix_driver.h	142;"	d
+ZINITIX_PDA_BLKRST	zinitix_driver.h	143;"	d
+ZINITIX_PDA_BOOTENG1	zinitix_driver.h	136;"	d
+ZINITIX_PDA_BOOTENG2	zinitix_driver.h	137;"	d
+ZINITIX_PDA_BOOTENG3	zinitix_driver.h	138;"	d
+ZINITIX_PDA_BOOTENG4	zinitix_driver.h	139;"	d
+ZINITIX_PDA_BOOTMODE	zinitix_driver.h	141;"	d
+ZINITIX_PDA_BOOTREG	zinitix_driver.h	154;"	d
+ZINITIX_PDA_BOOTSTATE	zinitix_driver.h	140;"	d
+ZINITIX_PDA_BOOTVERSION	zinitix_driver.h	129;"	d
+ZINITIX_PDA_CRCLENGTH	zinitix_driver.h	134;"	d
+ZINITIX_PDA_FIRMWAREADDR	zinitix_driver.h	130;"	d
+ZINITIX_PDA_FIRMWARELENGTH	zinitix_driver.h	132;"	d
+ZINITIX_PDA_FLASHPRO	zinitix_driver.h	146;"	d
+ZINITIX_PDA_FLDATA	zinitix_driver.h	157;"	d
+ZINITIX_PDA_FLHADDR	zinitix_driver.h	152;"	d
+ZINITIX_PDA_FLHCTL	zinitix_driver.h	153;"	d
+ZINITIX_PDA_FLKEY1	zinitix_driver.h	155;"	d
+ZINITIX_PDA_FLKEY2	zinitix_driver.h	156;"	d
+ZINITIX_PDA_I2CENG	zinitix_driver.h	145;"	d
+ZINITIX_PDA_I2CREG	zinitix_driver.h	147;"	d
+ZINITIX_PDA_MISCIER	zinitix_driver.h	144;"	d
+ZINITIX_PDA_PARAADDR	zinitix_driver.h	131;"	d
+ZINITIX_PDA_PARALENGTH	zinitix_driver.h	133;"	d
+ZINITIX_PDA_PRAMADDR	zinitix_driver.h	150;"	d
+ZINITIX_PDA_PRAMLENGTH	zinitix_driver.h	151;"	d
+ZINITIX_PDA_PRAMLOCK	zinitix_driver.h	148;"	d
+ZINITIX_PDA_PRAMTYPE	zinitix_driver.h	149;"	d
+ZINITIX_PDA_PRGCHKSUMADDR	zinitix_driver.h	159;"	d
+ZINITIX_PDA_PRGCHKSUMENG	zinitix_driver.h	158;"	d
+ZINITIX_PDA_PRGCHKSUMRESULT	zinitix_driver.h	160;"	d
+ZINITIX_PDA_SYNCDATA	zinitix_driver.h	135;"	d
+ZINITIX_PERIODICAL_INTERRUPT_INTERVAL	zinitix_touch.h	93;"	d
+ZINITIX_POINT_STATUS_REG	zinitix_touch.h	85;"	d
+ZINITIX_POWERON_DELAY_USEC	zinitix_driver.h	37;"	d
+ZINITIX_PROGRAM_START_CMD	zinitix_touch.h	61;"	d
+ZINITIX_RAWDATA_REG	zinitix_touch.h	90;"	d
+ZINITIX_READ_FLASH	zinitix_touch.h	97;"	d
+ZINITIX_RECALL_FACTORY_CMD	zinitix_touch.h	57;"	d
+ZINITIX_REG_GPIO_DEGLITCH	zinitix_driver.h	162;"	d
+ZINITIX_RESET_DELAY_MSEC	zinitix_driver.h	40;"	d
+ZINITIX_RESET_INTERVAL_MSEC	zinitix_driver.h	38;"	d
+ZINITIX_RESET_RESTORE_USEC	zinitix_driver.h	39;"	d
+ZINITIX_SAVE_CALIBRATION_CMD	zinitix_touch.h	56;"	d
+ZINITIX_SAVE_STATUS_CMD	zinitix_touch.h	55;"	d
+ZINITIX_SENSITIVITY	zinitix_touch.h	65;"	d
+ZINITIX_SLEEP_CMD	zinitix_touch.h	52;"	d
+ZINITIX_SUPPORTED_FINGER_NUM	zinitix_touch.h	75;"	d
+ZINITIX_SWRESET_CMD	zinitix_touch.h	49;"	d
+ZINITIX_TEST_FW	zinitix_driver.h	82;"	d
+ZINITIX_TEST_PARA	zinitix_driver.h	83;"	d
+ZINITIX_TOTAL_NUMBER_OF_X	zinitix_touch.h	78;"	d
+ZINITIX_TOTAL_NUMBER_OF_Y	zinitix_touch.h	79;"	d
+ZINITIX_TOUCH_MODE	zinitix_touch.h	69;"	d
+ZINITIX_VENDOR_CMD	zinitix_touch.h	58;"	d
+ZINITIX_VENDOR_REG	zinitix_touch.h	99;"	d
+ZINITIX_WAKEUP_CMD	zinitix_touch.h	50;"	d
+ZINITIX_WRITE_FLASH	zinitix_touch.h	96;"	d
+ZINITIX_X_RESOLUTION	zinitix_touch.h	83;"	d
+ZINITIX_Y_RESOLUTION	zinitix_touch.h	84;"	d
+ZT7538_CHIP_CODE	zinitix_touch.h	43;"	d
+ZT7548_CHIP_CODE	zinitix_touch.h	42;"	d
+ZT7554_CHIP_CODE	zinitix_touch.h	44;"	d
+ZTW522_CHIP_CODE	zinitix_touch.h	41;"	d
+ZTW523_CHIP_CODE	zinitix_touch.h	40;"	d
+_DRVGLOBAL_H_	chip_raydium/ic_drv_global.h	20;"	d
+__CONFIG_H	Config.h	20;"	d
+__I	drv_interface.h	31;"	d
+__IO	drv_interface.h	33;"	d
+__LINUX_ZINITIX_H	zinitix_driver.h	21;"	d
+__O	drv_interface.h	32;"	d
+__ZINITIX_TOUCH_H__	zinitix_touch.h	11;"	d
+_ts_zinitix_coord	zinitix_touch.h	/^struct _ts_zinitix_coord {$/;"	s
+_ts_zinitix_point_info	zinitix_touch.h	/^struct _ts_zinitix_point_info {$/;"	s
+b_is_auo_jig_testing	chip_raydium/ic_drv_global.c	/^bool b_is_auo_jig_testing;$/;"	v
+baseline_update_control_3x	chip_raydium/f303_ic_test.c	/^STATUS baseline_update_control_3x(bool b_enable_baseline_update)$/;"	f
+bits_reverse	raydium_fw_update.c	/^unsigned int bits_reverse(unsigned int u32_num, unsigned int bit_num)$/;"	f
+blank	zinitix_driver.h	/^	int blank;$/;"	m	struct:zinitix_ts_data
+bool	chip_raydium/ic_drv_global.h	/^} bool;$/;"	t	typeref:enum:__anon4
+burn_cc_3x	chip_raydium/f303_ic_test.c	/^STATUS burn_cc_3x(unsigned short u16_test_items)$/;"	f
+burn_cc_to_ic_flash_3x	chip_raydium/f303_ic_test.c	/^STATUS burn_cc_to_ic_flash_3x(void)$/;"	f
+burn_data_log_to_flash_3x	chip_raydium/f303_ic_test.c	/^STATUS burn_data_log_to_flash_3x(void)$/;"	f
+burn_fw_3x	drv_interface.c	/^STATUS burn_fw_3x(void)$/;"	f
+burn_header_log_to_flash_3x	chip_raydium/f303_ic_test.c	/^STATUS burn_header_log_to_flash_3x(bool is_test_finish, bool is_in_header_data_page)$/;"	f
+check_cc_bl_flag_3x	chip_raydium/f303_ic_test.c	/^STATUS check_cc_bl_flag_3x(void)$/;"	f
+check_dev_id_3x	chip_raydium/f303_ic_control.c	/^unsigned char check_dev_id_3x(unsigned short u16_dev_id)$/;"	f
+check_dev_sub_version_3x	chip_raydium/f303_ic_control.c	/^unsigned char check_dev_sub_version_3x(unsigned char u8_version)$/;"	f
+check_test_fw_status_3x	chip_raydium/f303_ic_test.c	/^STATUS check_test_fw_status_3x(unsigned char u8_target_status, unsigned char *p_u8_result)$/;"	f
+client	zinitix_driver.h	/^	struct i2c_client *client;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::i2c_client
+coord	zinitix_touch.h	/^  struct _ts_zinitix_coord    coord[MAX_SUPPORTED_FINGER_NUM];$/;"	m	struct:_ts_zinitix_point_info	typeref:struct:_ts_zinitix_point_info::_ts_zinitix_coord
+delay_ms	drv_interface.h	23;"	d
+disable_i2c_deglitch_3x	chip_raydium/f303_ic_control.c	/^unsigned char disable_i2c_deglitch_3x(void)$/;"	f
+do_calibration_3x	chip_raydium/f303_ic_test.c	/^STATUS do_calibration_3x(unsigned char u8_do_calibration_cmd, unsigned char u8_burn_flash)$/;"	f
+do_ic_test_3x	chip_raydium/f303_ic_test.c	/^void do_ic_test_3x(void)$/;"	f
+dump_image_data_3x	chip_raydium/f303_ic_test.c	/^void dump_image_data_3x(short *p_image_buf, unsigned char u8_remap)$/;"	f
+dump_image_hex_data_3x	chip_raydium/f303_ic_test.c	/^void dump_image_hex_data_3x(short *p_image_buf)$/;"	f
+early_suspend	zinitix_driver.h	/^	struct early_suspend early_suspend;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::early_suspend
+enable_ic_block_3x	chip_raydium/f303_ic_control.c	/^unsigned char enable_ic_block_3x(void)$/;"	f
+enter_fw_test_mode_3x	chip_raydium/f303_ic_test.c	/^STATUS enter_fw_test_mode_3x(void)$/;"	f
+enter_normal_fw_3x	chip_raydium/f303_ic_test.c	/^STATUS enter_normal_fw_3x(void)$/;"	f
+error	chip_raydium/ic_drv_global.h	/^	error = -1,$/;"	e	enum:__anon1
+event_flag	zinitix_touch.h	/^  uint16_t event_flag;$/;"	m	struct:_ts_zinitix_point_info
+false	chip_raydium/ic_drv_global.h	/^	false = 0,$/;"	e	enum:__anon4
+fb_notif	zinitix_driver.h	/^	struct notifier_block fb_notif;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::notifier_block
+fb_notifier_callback	zinitix_driver.c	/^static int fb_notifier_callback(struct notifier_block *self,$/;"	f	file:
+finger_cnt	zinitix_touch.h	/^  uint8_t    finger_cnt;$/;"	m	struct:_ts_zinitix_point_info
+ft_raw_data_checksum_cal_3x	chip_raydium/f303_ic_test.c	/^void ft_raw_data_checksum_cal_3x(unsigned short *u16_buffer)$/;"	f
+ft_raw_data_checksum_check_3x	chip_raydium/f303_ic_test.c	/^STATUS ft_raw_data_checksum_check_3x(unsigned short *u16_buffer)$/;"	f
+ft_test_connect_test_3x	chip_raydium/f303_ic_test.c	/^STATUS ft_test_connect_test_3x(void)$/;"	f
+ft_test_ctrl_mbist_fun_3x	chip_raydium/f303_ic_test.c	/^STATUS ft_test_ctrl_mbist_fun_3x(unsigned char u8_enable)$/;"	f
+ft_test_do_fw_test_3x	chip_raydium/f303_ic_test.c	/^STATUS ft_test_do_fw_test_3x(unsigned short u16_test_items)$/;"	f
+ft_test_panel_model_check_3x	chip_raydium/f303_ic_test.c	/^STATUS ft_test_panel_model_check_3x(unsigned short u16_version)$/;"	f
+ft_test_ram_test_3x	chip_raydium/f303_ic_test.c	/^STATUS ft_test_ram_test_3x(unsigned char u8_is_stop_mcu)$/;"	f
+ft_test_read_used_pin_infor_3x	chip_raydium/f303_ic_test.c	/^STATUS ft_test_read_used_pin_infor_3x(unsigned char *p_u8_infor)$/;"	f
+ft_test_reset_pin_test_3x	chip_raydium/f303_ic_test.c	/^STATUS ft_test_reset_pin_test_3x(void)$/;"	f
+ft_test_result_checksum_cal_3x	chip_raydium/f303_ic_test.c	/^void ft_test_result_checksum_cal_3x(unsigned char *u8_buffer)$/;"	f
+ft_test_result_checksum_check_3x	chip_raydium/f303_ic_test.c	/^STATUS ft_test_result_checksum_check_3x(unsigned char *u8_buffer)$/;"	f
+fw_id	zinitix_driver.h	/^	u32 fw_id;$/;"	m	struct:zinitix_ts_platform_data
+fw_upgrade	drv_interface.c	/^unsigned char fw_upgrade(unsigned char type)$/;"	f
+fw_version	zinitix_driver.h	/^	unsigned int fw_version;$/;"	m	struct:zinitix_ts_data
+g_i16_raw_data_1_short_buf	chip_raydium/ic_drv_global.c	/^short g_i16_raw_data_1_short_buf[MAX_SENSING_PIN_NUM];$/;"	v
+g_i16_raw_data_2_open_buf	chip_raydium/ic_drv_global.c	/^short g_i16_raw_data_2_open_buf[MAX_SENSING_PIN_NUM];$/;"	v
+g_i8_test_baseline_msg	chip_raydium/ic_drv_global.c	/^char g_i8_test_baseline_msg[30];$/;"	v
+g_rad_boot_image	zinitix_driver.c	/^unsigned char *g_rad_boot_image, *g_rad_para_image;$/;"	v
+g_rad_fw_image	zinitix_driver.c	/^unsigned char *g_rad_fw_image, *g_rad_init_image;$/;"	v
+g_rad_init_image	zinitix_driver.c	/^unsigned char *g_rad_fw_image, *g_rad_init_image;$/;"	v
+g_rad_para_image	zinitix_driver.c	/^unsigned char *g_rad_boot_image, *g_rad_para_image;$/;"	v
+g_rad_testfw_image	zinitix_driver.c	/^unsigned char *g_rad_testfw_image, *g_rad_testpara_image;$/;"	v
+g_rad_testpara_image	zinitix_driver.c	/^unsigned char *g_rad_testfw_image, *g_rad_testpara_image;$/;"	v
+g_st_test_info	chip_raydium/ic_drv_interface.c	/^st_test_info g_st_test_info;$/;"	v
+g_st_test_para_resv	chip_raydium/ic_drv_interface.c	/^st_test_para_resv g_st_test_para_resv;$/;"	v
+g_st_test_thd	chip_raydium/ic_drv_interface.c	/^st_test_threshold g_st_test_thd;$/;"	v
+g_u16_dev_id	chip_raydium/ic_drv_global.c	/^unsigned short g_u16_dev_id;$/;"	v
+g_u16_panel_jig_set_test_items	chip_raydium/ic_drv_global.c	/^volatile unsigned short g_u16_panel_jig_set_test_items;$/;"	v
+g_u16_raw_data3_cc_buf	chip_raydium/ic_drv_global.c	/^unsigned short g_u16_raw_data3_cc_buf[MAX_SENSING_PIN_NUM];$/;"	v
+g_u16_raw_data3_golden_cc_buf	chip_raydium/ic_drv_global.c	/^unsigned short g_u16_raw_data3_golden_cc_buf[MAX_SENSING_PIN_NUM];$/;"	v
+g_u16_raw_data_tmp	chip_raydium/ic_drv_global.c	/^unsigned short g_u16_raw_data_tmp[MAX_IMAGE_BUFFER_SIZE];$/;"	v
+g_u16_test_items_host_cmd	chip_raydium/ic_drv_global.c	/^volatile unsigned short g_u16_test_items_host_cmd;$/;"	v
+g_u16_test_items_tool_cmd	chip_raydium/ic_drv_global.c	/^unsigned short g_u16_test_items_tool_cmd;$/;"	v
+g_u16_uc_buf	chip_raydium/ic_drv_global.c	/^unsigned short g_u16_uc_buf[MAX_SENSING_PIN_NUM];\/\/CC$/;"	v
+g_u16_uc_golden_cc_buf	chip_raydium/ic_drv_global.c	/^unsigned short g_u16_uc_golden_cc_buf[MAX_SENSING_PIN_NUM];$/;"	v
+g_u32_addr	zinitix_driver.c	/^unsigned long g_u32_addr;$/;"	v
+g_u32_dongle_flash_ini_addr	chip_raydium/ic_drv_global.c	/^int g_u32_dongle_flash_ini_addr;\/\/       0xF000$/;"	v
+g_u32_driver_version	zinitix_driver.c	/^unsigned int g_u32_driver_version;$/;"	v
+g_u32_fw_cc_version	chip_raydium/ic_drv_global.c	/^unsigned int g_u32_fw_cc_version;$/;"	v
+g_u32_ini_para_addr	chip_raydium/ic_drv_global.c	/^int  g_u32_ini_para_addr;\/\/               INI_THRESHOLD_ADDR + 36$/;"	v
+g_u32_ini_raw_data_3_cc_addr	chip_raydium/ic_drv_global.c	/^int  g_u32_ini_raw_data_3_cc_addr;\/\/      INI_RAW_DATA2_BL_ADDR+72$/;"	v
+g_u32_ini_threshold_addr	chip_raydium/ic_drv_global.c	/^int  g_u32_ini_threshold_addr;\/\/          DONGLE_FLASH_INI_ADDR + 16$/;"	v
+g_u32_ini_uc_cc_addr	chip_raydium/ic_drv_global.c	/^int  g_u32_ini_uc_cc_addr;\/\/              INI_RAW_DATA_3_CC_ADDR + 72\/\/ INI_RAW_DATA2_ADDR$/;"	v
+g_u32_initial_code_start_addr	chip_raydium/ic_drv_global.c	/^int g_u32_initial_code_start_addr;$/;"	v
+g_u32_length	zinitix_driver.c	/^unsigned int g_u32_length;$/;"	v
+g_u32_raw_data_len	zinitix_driver.c	/^unsigned int g_u32_raw_data_len;    \/* 128 bytes*\/$/;"	v
+g_u32_spend_time	chip_raydium/ic_drv_global.c	/^unsigned int g_u32_spend_time;$/;"	v
+g_u32_test_result	chip_raydium/ic_drv_global.c	/^unsigned int g_u32_test_result[MAX_SENSING_PIN_NUM]; \/\/ each node test result (bit[0]:open ng, bit[1]:short ng, bit[2]:uniformity ng..etc)$/;"	v
+g_u32_wearable_test_result	chip_raydium/ic_drv_global.c	/^unsigned int g_u32_wearable_test_result;$/;"	v
+g_u8_PAGE_ADDR	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_PAGE_ADDR;$/;"	v
+g_u8_addr	zinitix_driver.c	/^unsigned char g_u8_addr;$/;"	v
+g_u8_channel_x	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_channel_x;$/;"	v
+g_u8_channel_y	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_channel_y;$/;"	v
+g_u8_checkflag	zinitix_driver.c	/^unsigned char g_u8_checkflag;$/;"	v
+g_u8_data_buf	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_data_buf[DATA_BUFFER_SIZE];$/;"	v
+g_u8_display_interface	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_display_interface;$/;"	v
+g_u8_drv_interface	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_drv_interface;$/;"	v
+g_u8_gpio_irq_trigger	chip_raydium/ic_drv_global.c	/^volatile unsigned char g_u8_gpio_irq_trigger;$/;"	v
+g_u8_i2c_mode	zinitix_driver.c	/^unsigned char g_u8_i2c_mode;$/;"	v
+g_u8_ic_power_on_ng	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_ic_power_on_ng;$/;"	v
+g_u8_ic_test_state	chip_raydium/ic_drv_interface.c	/^unsigned char g_u8_ic_test_state;$/;"	v
+g_u8_ini_flash	drv_interface.c	/^unsigned char g_u8_ini_flash[0x400];$/;"	v
+g_u8_is_normal_fw	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_is_normal_fw;$/;"	v
+g_u8_log_level	zinitix_driver.c	/^unsigned char g_u8_log_level;$/;"	v
+g_u8_m_buf	drv_interface.c	/^unsigned char g_u8_m_buf[2][128];$/;"	v
+g_u8_mipi_read_buf	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_mipi_read_buf[56];$/;"	v
+g_u8_mute_i2c_err_log	drv_interface.c	/^unsigned char g_u8_mute_i2c_err_log;$/;"	v
+g_u8_normal_fw_version_buf	raydium_selftest.c	/^unsigned char g_u8_normal_fw_version_buf[4];$/;"	v
+g_u8_print_debug_msg	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_print_debug_msg;$/;"	v
+g_u8_raw_data_buffer	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_raw_data_buffer[MAX_IMAGE_BUFFER_SIZE * 2];$/;"	v
+g_u8_raw_data_type	zinitix_driver.c	/^unsigned char g_u8_raw_data_type;$/;"	v
+g_u8_resetflag	zinitix_driver.c	/^unsigned char g_u8_resetflag;$/;"	v
+g_u8_table_init	zinitix_driver.c	/^unsigned char g_u8_table_setting, g_u8_table_init;$/;"	v
+g_u8_table_setting	zinitix_driver.c	/^unsigned char g_u8_table_setting, g_u8_table_init;$/;"	v
+g_u8_test_result	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_test_result[MAX_SENSING_PIN_NUM];$/;"	v
+g_u8_upgrade_type	zinitix_driver.c	/^unsigned char g_u8_upgrade_type;$/;"	v
+g_u8_wakeup_flag	zinitix_driver.c	/^unsigned char g_u8_wakeup_flag;$/;"	v
+g_u8_wearable_pin_map	chip_raydium/ic_drv_global.c	/^unsigned char g_u8_wearable_pin_map[MAX_IMAGE_BUFFER_SIZE];$/;"	v
+g_u8_zinitix_flag	zinitix_driver.c	/^unsigned char g_u8_zinitix_flag;$/;"	v
+g_zinitix_ts	zinitix_driver.c	/^struct zinitix_ts_data *g_zinitix_ts;$/;"	v	typeref:struct:zinitix_ts_data
+get_system_time	drv_interface.c	/^unsigned int get_system_time(void)$/;"	f
+gpio_touch_hw_reset	drv_interface.c	/^void gpio_touch_hw_reset(void)$/;"	f
+gpio_touch_int_access	drv_interface.c	/^unsigned char gpio_touch_int_access(unsigned char u8_is_clear_flag)$/;"	f
+gpio_touch_int_pin_state_access	drv_interface.c	/^unsigned char gpio_touch_int_pin_state_access(void)$/;"	f
+gpio_touch_reset_pin_control	drv_interface.c	/^void gpio_touch_reset_pin_control(unsigned char u8_high)$/;"	f
+gst_slot	zinitix_driver.c	/^struct zinitix_slot_status gst_slot[MAX_TOUCH_NUM * 2];$/;"	v	typeref:struct:zinitix_slot_status
+gst_slot_init	zinitix_driver.c	/^struct zinitix_slot_status gst_slot_init = {0xFF, 0, 0};$/;"	v	typeref:struct:zinitix_slot_status
+handle_burn_log_to_flash	chip_raydium/ic_drv_interface.c	/^STATUS handle_burn_log_to_flash(void)$/;"	f
+handle_display_write	drv_interface.c	/^unsigned char handle_display_write($/;"	f
+handle_i2c_pda_read	zinitix_driver.c	/^int handle_i2c_pda_read(struct i2c_client *client,$/;"	f
+handle_i2c_pda_write	zinitix_driver.c	/^int handle_i2c_pda_write(struct i2c_client *client,$/;"	f
+handle_ic_read	drv_interface.c	/^unsigned char handle_ic_read($/;"	f
+handle_ic_test	chip_raydium/ic_drv_interface.c	/^void handle_ic_test(void)$/;"	f
+handle_ic_write	drv_interface.c	/^unsigned char handle_ic_write($/;"	f
+handle_set_display_interface	chip_raydium/ic_drv_interface.c	/^void handle_set_display_interface(unsigned char u8_interface)$/;"	f
+hard_rst_dly	zinitix_driver.h	/^	u32 hard_rst_dly;$/;"	m	struct:zinitix_ts_platform_data
+hardware_reset_3x	chip_raydium/f303_ic_control.c	/^unsigned char hardware_reset_3x(unsigned char u8_enable_ic_block)$/;"	f
+hw_int_pin_Test_3x	chip_raydium/f303_ic_test.c	/^STATUS hw_int_pin_Test_3x(void)$/;"	f
+i16_ft_test_open_lower_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_open_lower_thd;              \/\/TEST_THD_01$/;"	m	struct:__anon7
+i16_ft_test_panel_test_1_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_panel_test_1_thd;            \/\/TEST_THD_10$/;"	m	struct:__anon7
+i16_ft_test_panel_test_2_s2_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_panel_test_2_s2_thd;         \/\/TEST_THD_13$/;"	m	struct:__anon7
+i16_ft_test_panel_test_2_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_panel_test_2_thd;            \/\/TEST_THD_12$/;"	m	struct:__anon7
+i16_ft_test_panel_test_3_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_panel_test_3_thd;            \/\/TEST_THD_11$/;"	m	struct:__anon7
+i16_ft_test_short_lower_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_short_lower_thd;             \/\/TEST_THD_03$/;"	m	struct:__anon7
+i16_ft_test_short_upper_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_short_upper_thd;             \/\/TEST_THD_02$/;"	m	struct:__anon7
+i16_ft_test_single_cc_lower_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_single_cc_lower_thd;	      \/\/TEST_THD_05$/;"	m	struct:__anon7
+i16_ft_test_single_cc_upper_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_single_cc_upper_thd;         \/\/TEST_THD_04$/;"	m	struct:__anon7
+i16_ft_test_thd_14	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_thd_14;$/;"	m	struct:__anon7
+i16_ft_test_thd_15	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_thd_15;$/;"	m	struct:__anon7
+i16_ft_test_thd_16	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_thd_16;$/;"	m	struct:__anon7
+i16_ft_test_thd_resv	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_thd_resv;$/;"	m	struct:__anon7
+i16_ft_test_uniformity_bl_lower_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_uniformity_bl_lower_thd;     \/\/TEST_THD_07$/;"	m	struct:__anon7
+i16_ft_test_uniformity_bl_upper_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_uniformity_bl_upper_thd;     \/\/TEST_THD_06$/;"	m	struct:__anon7
+i16_ft_test_uniformity_cc_lower_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_uniformity_cc_lower_thd;     \/\/TEST_THD_09$/;"	m	struct:__anon7
+i16_ft_test_uniformity_cc_upper_thd	chip_raydium/ic_drv_interface.h	/^	signed short i16_ft_test_uniformity_cc_upper_thd;	  \/\/TEST_THD_08$/;"	m	struct:__anon7
+i2c_burst_read_pda2	drv_interface.c	/^STATUS i2c_burst_read_pda2(unsigned char u8_addr, unsigned short u16ReadLen, unsigned char *p_u8_output_buf)$/;"	f
+i2c_burst_write_pda2	drv_interface.c	/^STATUS i2c_burst_write_pda2(unsigned char u8_addr, unsigned char bWriteLen, unsigned char *bValue)$/;"	f
+i8_ft_test_thd_30	tpselftest_30.h	/^signed char i8_ft_test_thd_30[36] = {$/;"	v
+ic_drv_init	chip_raydium/ic_drv_global.c	/^void ic_drv_init(void)$/;"	f
+id	zinitix_driver.h	/^	unsigned short id;$/;"	m	struct:zinitix_ts_data
+input_dev	zinitix_driver.h	/^	struct input_dev *input_dev;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::input_dev
+irq	zinitix_driver.h	/^	unsigned int irq;$/;"	m	struct:zinitix_ts_data
+irq_desc	zinitix_driver.h	/^	struct irq_desc *irq_desc;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::irq_desc
+irq_enabled	zinitix_driver.h	/^	bool irq_enabled;$/;"	m	struct:zinitix_ts_data
+irq_gpio	zinitix_driver.h	/^	u32 irq_gpio;$/;"	m	struct:zinitix_ts_platform_data
+irq_gpio	zinitix_driver.h	/^	unsigned int irq_gpio;$/;"	m	struct:zinitix_ts_data
+irq_gpio_flags	zinitix_driver.h	/^	u32 irq_gpio_flags;$/;"	m	struct:zinitix_ts_platform_data
+irq_gpio_number	zinitix_driver.h	/^	int irq_gpio_number;$/;"	m	struct:zinitix_platform_data
+irq_wake	zinitix_driver.h	/^	bool irq_wake;$/;"	m	struct:zinitix_ts_data
+irqflags	zinitix_driver.h	/^	u32 irqflags;$/;"	m	struct:zinitix_ts_platform_data
+is_palm	zinitix_driver.h	/^	unsigned int is_palm;$/;"	m	struct:zinitix_ts_data
+is_sleep	zinitix_driver.h	/^	unsigned int is_sleep;$/;"	m	struct:zinitix_ts_data
+is_suspend	zinitix_driver.h	/^	unsigned int is_suspend;$/;"	m	struct:zinitix_ts_data
+load_test_fw_3x	chip_raydium/f303_ic_test.c	/^STATUS load_test_fw_3x(void)$/;"	f
+lock	zinitix_driver.h	/^	struct mutex lock;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::mutex
+name	zinitix_driver.h	/^	char *name;$/;"	m	struct:zinitix_ts_platform_data
+need_update	zinitix_driver.c	/^	unsigned char need_update;         \/*Mark as info need to be updated*\/$/;"	m	struct:zinitix_slot_status	file:
+num_max_touches	zinitix_driver.h	/^	u32 num_max_touches;$/;"	m	struct:zinitix_ts_platform_data
+pinctrl_state_active	zinitix_driver.h	/^	struct pinctrl_state *pinctrl_state_active;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::pinctrl_state
+pinctrl_state_release	zinitix_driver.h	/^	struct pinctrl_state *pinctrl_state_release;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::pinctrl_state
+pinctrl_state_suspend	zinitix_driver.h	/^	struct pinctrl_state *pinctrl_state_suspend;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::pinctrl_state
+pressure	zinitix_driver.h	/^	unsigned int pressure;$/;"	m	struct:zinitix_ts_data
+pt_id	zinitix_driver.c	/^	unsigned char pt_id;      \/*Occupied point ID*\/$/;"	m	struct:zinitix_slot_status	file:
+pt_report_offset	zinitix_driver.c	/^	unsigned char pt_report_offset;    \/*point info offset in report*\/$/;"	m	struct:zinitix_slot_status	file:
+raydium_boot_upgrade_3X	raydium_fw_update.c	/^static int raydium_boot_upgrade_3X(struct i2c_client *client, unsigned char u8_is_tp_reset)$/;"	f	file:
+raydium_burn_comp	raydium_fw_update.c	/^int raydium_burn_comp(struct i2c_client *client)$/;"	f
+raydium_burn_fw	raydium_fw_update.c	/^int raydium_burn_fw(struct i2c_client *client)$/;"	f
+raydium_check_fw_ready	raydium_fw_update.c	/^int raydium_check_fw_ready(struct i2c_client *client)$/;"	f
+raydium_check_ini_version	raydium_selftest.c	/^static int raydium_check_ini_version(void)$/;"	f	file:
+raydium_check_pram_crc_3X	raydium_fw_update.c	/^static int raydium_check_pram_crc_3X(struct i2c_client *client,$/;"	f	file:
+raydium_do_selftest	raydium_selftest.c	/^int raydium_do_selftest(struct raydium_ts_data *ts)$/;"	f
+raydium_do_software_reset	raydium_fw_update.c	/^int raydium_do_software_reset(struct i2c_client *client)$/;"	f
+raydium_fw_update_check	raydium_fw_update.c	/^int raydium_fw_update_check(unsigned short u16_i2c_data)$/;"	f
+raydium_fw_upgrade_3X	raydium_fw_update.c	/^static int raydium_fw_upgrade_3X(struct i2c_client *client,$/;"	f	file:
+raydium_fw_upgrade_with_image	raydium_fw_update.c	/^int raydium_fw_upgrade_with_image(struct i2c_client *client,$/;"	f
+raydium_id_init	raydium_fw_update.c	/^int raydium_id_init(unsigned char u8_type)$/;"	f
+raydium_load_test_fw	raydium_fw_update.c	/^int raydium_load_test_fw(struct i2c_client *client)$/;"	f
+raydium_mem_table_init	raydium_fw_update.c	/^void raydium_mem_table_init(unsigned short u16_id)$/;"	f
+raydium_mem_table_setting	raydium_fw_update.c	/^int raydium_mem_table_setting(void)$/;"	f
+raydium_stop_mcu_3x	raydium_fw_update.c	/^unsigned char raydium_stop_mcu_3x(unsigned char u8_is_tp_reset)$/;"	f
+raydium_upgrade_test_fw_2x	drv_interface.c	/^unsigned char raydium_upgrade_test_fw_2x(unsigned long ul_fw_addr)$/;"	f
+raydium_upgrade_test_fw_3x	drv_interface.c	/^unsigned char raydium_upgrade_test_fw_3x(unsigned long ul_fw_addr)$/;"	f
+raydium_write_to_pram_3X	raydium_fw_update.c	/^static int raydium_write_to_pram_3X(struct i2c_client *client,$/;"	f	file:
+rc_crc32	raydium_fw_update.c	/^unsigned int rc_crc32(const char *buf, unsigned int u32_len,$/;"	f
+read_flash_data	drv_interface.c	/^unsigned char read_flash_data(unsigned int u32_addr, unsigned short u16_lenth)$/;"	f
+read_fpc_flash_3x	chip_raydium/f303_ic_test.c	/^STATUS read_fpc_flash_3x(unsigned int u32_addr, unsigned int *p_u32_data)$/;"	f
+read_test_fw_data_3x	chip_raydium/f303_ic_test.c	/^STATUS read_test_fw_data_3x(unsigned short u16_test_items)$/;"	f
+reset_gpio	zinitix_driver.h	/^	u32 reset_gpio;$/;"	m	struct:zinitix_ts_platform_data
+reset_gpio_flags	zinitix_driver.h	/^	u32 reset_gpio_flags;$/;"	m	struct:zinitix_ts_platform_data
+reset_gpio_number	zinitix_driver.h	/^	int reset_gpio_number;$/;"	m	struct:zinitix_platform_data
+rst_gpio	zinitix_driver.h	/^	unsigned int rst_gpio;$/;"	m	struct:zinitix_ts_data
+self_test_all	raydium_selftest.c	/^static int self_test_all(void)$/;"	f	file:
+self_test_init	raydium_selftest.c	/^static int self_test_init(void)$/;"	f	file:
+self_test_read_setting_from_file	raydium_selftest.c	/^int self_test_read_setting_from_file(void)$/;"	f
+self_test_save_test_raw_data_to_file	raydium_selftest.c	/^int self_test_save_test_raw_data_to_file(int i32_ng_type)$/;"	f
+self_test_save_to_file	raydium_selftest.c	/^int self_test_save_to_file(char *file_name, char *p_string, short len)$/;"	f
+set_fw_system_cmd_3x	chip_raydium/f303_ic_control.c	/^unsigned char set_fw_system_cmd_3x(unsigned int u32_sysm_cmd)$/;"	f
+set_raydium_ts_data	drv_interface.c	/^void set_raydium_ts_data(struct raydium_ts_data *ts_old)$/;"	f
+set_skip_load	raydium_fw_update.c	/^int set_skip_load(struct i2c_client *client)$/;"	f
+set_test_info_thd_para_3x	chip_raydium/f303_ic_test.c	/^STATUS set_test_info_thd_para_3x(void)$/;"	f
+soft_rst_dly	zinitix_driver.h	/^	u32 soft_rst_dly;$/;"	m	struct:zinitix_ts_platform_data
+spi_read_pda	drv_interface.c	/^unsigned char spi_read_pda(unsigned int u32_addr, unsigned char u8_read_len, unsigned char *p_u8_output_buf)$/;"	f
+spi_write_pda	drv_interface.c	/^unsigned char spi_write_pda(unsigned int u32_addr, unsigned char u8_write_len, unsigned char *bValue, unsigned char u8_trans_mode)$/;"	f
+st_test_info	chip_raydium/ic_drv_interface.h	/^} st_test_info;$/;"	t	typeref:struct:__anon6
+st_test_para_resv	chip_raydium/ic_drv_interface.h	/^} st_test_para_resv;$/;"	t	typeref:struct:__anon8
+st_test_threshold	chip_raydium/ic_drv_interface.h	/^} st_test_threshold;$/;"	t	typeref:struct:__anon7
+status	zinitix_touch.h	/^  uint16_t    status;$/;"	m	struct:_ts_zinitix_point_info
+stop_mcu_3x	chip_raydium/f303_ic_control.c	/^unsigned char stop_mcu_3x(unsigned char u8_is_tp_reset)$/;"	f
+str_ini_path	raydium_selftest.c	/^char str_ini_path[100];$/;"	v
+sub_status	zinitix_touch.h	/^  uint8_t    sub_status;$/;"	m	struct:_ts_zinitix_coord
+success	chip_raydium/ic_drv_global.h	/^	success = 1$/;"	e	enum:__anon1
+sysfs_burn_cc_bl	drv_interface.c	/^unsigned char sysfs_burn_cc_bl(void)$/;"	f
+system_test_3x	chip_raydium/f303_ic_test.c	/^STATUS system_test_3x(void)$/;"	f
+test_item_message_3x	chip_raydium/f303_ic_test.c	/^void test_item_message_3x(void)$/;"	f
+time_stamp	zinitix_touch.h	/^  uint8_t    time_stamp;$/;"	m	struct:_ts_zinitix_point_info
+timer	drv_interface.c	/^struct timeval timer;$/;"	v	typeref:struct:timeval
+touch_i2c_read	zinitix_driver.c	/^int touch_i2c_read(struct i2c_client *client,$/;"	f
+touch_i2c_write	zinitix_driver.c	/^int touch_i2c_write(struct i2c_client *client,$/;"	f
+touch_i2c_write_cmd	zinitix_driver.c	/^int touch_i2c_write_cmd(struct i2c_client *client,$/;"	f
+true	chip_raydium/ic_drv_global.h	/^	true = 1$/;"	e	enum:__anon4
+ts	drv_interface.c	/^struct raydium_ts_data *ts;$/;"	v	typeref:struct:raydium_ts_data
+ts_pinctrl	zinitix_driver.h	/^	struct pinctrl *ts_pinctrl;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::pinctrl
+turn_on_flash_3x	chip_raydium/f303_ic_test.c	/^STATUS turn_on_flash_3x(void)$/;"	f
+u16_ft_eng_item	chip_raydium/ic_drv_interface.h	/^	unsigned short u16_ft_eng_item;$/;"	m	struct:__anon6
+u16_ft_test_info_1	chip_raydium/ic_drv_interface.h	/^	unsigned short u16_ft_test_info_1;$/;"	m	struct:__anon6
+u16_ft_test_info_2	chip_raydium/ic_drv_interface.h	/^	unsigned short u16_ft_test_info_2;$/;"	m	struct:__anon6
+u16_ft_test_info_3	chip_raydium/ic_drv_interface.h	/^	unsigned short u16_ft_test_info_3;$/;"	m	struct:__anon6
+u16_ft_test_info_4	chip_raydium/ic_drv_interface.h	/^	unsigned short u16_ft_test_info_4;$/;"	m	struct:__anon6
+u16_ft_test_item	chip_raydium/ic_drv_interface.h	/^	unsigned short u16_ft_test_item;$/;"	m	struct:__anon6
+u32_normal_fw_version	chip_raydium/ic_drv_interface.h	/^	unsigned int u32_normal_fw_version;$/;"	m	struct:__anon8
+u32_test_fw_version	chip_raydium/ic_drv_interface.h	/^	unsigned int u32_test_fw_version;$/;"	m	struct:__anon8
+u8_company_id	chip_raydium/ic_drv_interface.h	/^	unsigned char u8_company_id;$/;"	m	struct:__anon6
+u8_device_id	chip_raydium/ic_drv_interface.h	/^	unsigned char u8_device_id;$/;"	m	struct:__anon6
+u8_ft_test_company_id	chip_raydium/ic_drv_interface.h	/^	unsigned char u8_ft_test_company_id;$/;"	m	struct:__anon7
+u8_ft_test_station_id	chip_raydium/ic_drv_interface.h	/^	unsigned char u8_ft_test_station_id;$/;"	m	struct:__anon7
+u8_max_touchs	zinitix_driver.h	/^	unsigned char u8_max_touchs;$/;"	m	struct:zinitix_ts_data
+u8_para_resv_0	chip_raydium/ic_drv_interface.h	/^	unsigned char u8_para_resv_0[40];$/;"	m	struct:__anon8
+u8_project_id	chip_raydium/ic_drv_interface.h	/^	unsigned char u8_project_id;$/;"	m	struct:__anon6
+u8_rad_boot_30	rad_fw_image_30.h	/^const unsigned char u8_rad_boot_30[] = {$/;"	v
+u8_rad_fw_30	rad_fw_image_30.h	/^const unsigned char u8_rad_fw_30[] = {$/;"	v
+u8_rad_init_30	rad_fw_image_30.h	/^const unsigned char  u8_rad_init_30[] = {$/;"	v
+u8_rad_para_30	rad_fw_image_30.h	/^const unsigned char u8_rad_para_30[] = {$/;"	v
+u8_rad_testfw_30	rad_fw_image_30.h	/^const unsigned char  u8_rad_testfw_30[] = {$/;"	v
+u8_rad_testpara_30	rad_fw_image_30.h	/^const unsigned char u8_rad_testpara_30[] = {$/;"	v
+u8_raw_data_3_cc_30	tpselftest_30.h	/^unsigned char u8_raw_data_3_cc_30[96] = {$/;"	v
+u8_raw_uc_cc_30	tpselftest_30.h	/^unsigned char u8_raw_uc_cc_30[96] = {$/;"	v
+u8_station_id	chip_raydium/ic_drv_interface.h	/^	unsigned char u8_station_id;$/;"	m	struct:__anon6
+u8_test_info_30	tpselftest_30.h	/^unsigned char u8_test_info_30[16] = {$/;"	v
+u8_test_para_30	tpselftest_30.h	/^unsigned char u8_test_para_30[48] = {$/;"	v
+vcc_i2c	zinitix_driver.h	/^	struct regulator *vcc_i2c;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::regulator
+vcc_name	zinitix_driver.h	/^	char *vcc_name;$/;"	m	struct:zinitix_ts_data
+vdd	zinitix_driver.h	/^	struct regulator *vdd;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::regulator
+vdd_name	zinitix_driver.h	/^	char *vdd_name;$/;"	m	struct:zinitix_platform_data
+wait_T2D_done_state_3x	chip_raydium/f303_ic_control.c	/^unsigned char wait_T2D_done_state_3x(unsigned int u32_addr, unsigned short u16_delay, unsigned short u16_retry)$/;"	f
+wait_fw_init_ready_3x	chip_raydium/f303_ic_test.c	/^STATUS wait_fw_init_ready_3x(void)$/;"	f
+wait_fw_state	raydium_fw_update.c	/^int wait_fw_state(struct i2c_client *client, unsigned int u32_addr,$/;"	f
+wait_fw_state_3x	chip_raydium/f303_ic_control.c	/^unsigned char wait_fw_state_3x(unsigned int u32_addr, unsigned int u32_state, unsigned short u16_delay, unsigned short u16_retry)$/;"	f
+wait_irq_state	raydium_fw_update.c	/^int wait_irq_state(struct i2c_client *client, unsigned int retry_time,$/;"	f
+wearable_ic_test_info_init	chip_raydium/ic_drv_interface.c	/^STATUS wearable_ic_test_info_init(void)$/;"	f
+wearable_ic_test_init	chip_raydium/ic_drv_interface.c	/^STATUS wearable_ic_test_init(void)$/;"	f
+wearable_ic_test_init_buffer	chip_raydium/ic_drv_interface.c	/^void wearable_ic_test_init_buffer(void)$/;"	f
+wearable_ic_test_read_info	chip_raydium/ic_drv_interface.c	/^STATUS wearable_ic_test_read_info(void)$/;"	f
+width	zinitix_touch.h	/^  uint8_t    width;$/;"	m	struct:_ts_zinitix_coord
+work	zinitix_driver.h	/^	struct work_struct  work;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::work_struct
+workqueue	zinitix_driver.h	/^	struct workqueue_struct *workqueue;$/;"	m	struct:zinitix_ts_data	typeref:struct:zinitix_ts_data::workqueue_struct
+x	zinitix_touch.h	/^  uint16_t    x;$/;"	m	struct:_ts_zinitix_coord
+x_max	zinitix_driver.h	/^	int x_max;$/;"	m	struct:zinitix_platform_data
+x_max	zinitix_driver.h	/^	u32 x_max;$/;"	m	struct:zinitix_ts_platform_data
+x_max	zinitix_driver.h	/^	unsigned int x_max;$/;"	m	struct:zinitix_ts_data
+x_min	zinitix_driver.h	/^	u32 x_min;$/;"	m	struct:zinitix_ts_platform_data
+x_pos	zinitix_driver.h	/^	unsigned int x_pos[2];$/;"	m	struct:zinitix_ts_data
+y	zinitix_touch.h	/^  uint16_t    y;$/;"	m	struct:_ts_zinitix_coord
+y_max	zinitix_driver.h	/^	int y_max;$/;"	m	struct:zinitix_platform_data
+y_max	zinitix_driver.h	/^	u32 y_max;$/;"	m	struct:zinitix_ts_platform_data
+y_max	zinitix_driver.h	/^	unsigned int y_max;$/;"	m	struct:zinitix_ts_data
+y_min	zinitix_driver.h	/^	u32 y_min;$/;"	m	struct:zinitix_ts_platform_data
+y_pos	zinitix_driver.h	/^	unsigned int y_pos[2];$/;"	m	struct:zinitix_ts_data
+zinitix_abs	zinitix_driver.c	57;"	d	file:
+zinitix_abs	zinitix_touch.h	145;"	d
+zinitix_attr_group	zinitix_driver.c	/^const struct attribute_group zinitix_attr_group = {$/;"	v	typeref:struct:attribute_group
+zinitix_attr_group	zinitix_driver.c	/^const struct attribute_group zinitix_attr_group;$/;"	v	typeref:struct:attribute_group
+zinitix_attributes	zinitix_sysfs.c	/^struct attribute *zinitix_attributes[] = {$/;"	v	typeref:struct:attribute
+zinitix_bit_clr	zinitix_driver.c	51;"	d	file:
+zinitix_bit_clr	zinitix_touch.h	139;"	d
+zinitix_bit_set	zinitix_driver.c	50;"	d	file:
+zinitix_bit_set	zinitix_touch.h	138;"	d
+zinitix_bit_test	zinitix_driver.c	52;"	d	file:
+zinitix_bit_test	zinitix_touch.h	140;"	d
+zinitix_check_driver_version_show	zinitix_sysfs.c	/^static ssize_t zinitix_check_driver_version_show(struct device *dev,$/;"	f	file:
+zinitix_check_fw_version_show	zinitix_sysfs.c	/^static ssize_t zinitix_check_fw_version_show(struct device *dev,$/;"	f	file:
+zinitix_check_i2c_ready	zinitix_driver.c	/^static int zinitix_check_i2c_ready(unsigned short *u16_i2c_data)$/;"	f	file:
+zinitix_check_i2c_show	zinitix_sysfs.c	/^static ssize_t zinitix_check_i2c_show(struct device *dev,$/;"	f	file:
+zinitix_check_panel_version_show	zinitix_sysfs.c	/^static ssize_t zinitix_check_panel_version_show(struct device *dev,$/;"	f	file:
+zinitix_create_sysfs	zinitix_driver.c	/^static int zinitix_create_sysfs(struct i2c_client *client)$/;"	f	file:
+zinitix_disable_i2c_deglitch	zinitix_driver.c	/^unsigned char zinitix_disable_i2c_deglitch(void)$/;"	f
+zinitix_enable_regulator	zinitix_driver.c	/^static int zinitix_enable_regulator(struct zinitix_ts_data *cd, bool en)$/;"	f	file:
+zinitix_esd_check	zinitix_driver.c	/^int zinitix_esd_check(void)$/;"	f
+zinitix_flag_show	zinitix_sysfs.c	/^static ssize_t zinitix_flag_show(struct device *dev,$/;"	f	file:
+zinitix_flag_store	zinitix_sysfs.c	/^static ssize_t zinitix_flag_store(struct device *dev,$/;"	f	file:
+zinitix_fw_upgrade_show	zinitix_sysfs.c	/^static ssize_t zinitix_fw_upgrade_show(struct device *dev,$/;"	f	file:
+zinitix_fw_upgrade_store	zinitix_sysfs.c	/^static ssize_t zinitix_fw_upgrade_store(struct device *dev,$/;"	f	file:
+zinitix_get_dt_coords	zinitix_driver.c	/^static int zinitix_get_dt_coords(struct device *dev, char *name,$/;"	f	file:
+zinitix_get_regulator	zinitix_driver.c	/^static int zinitix_get_regulator(struct zinitix_ts_data *cd, bool get)$/;"	f	file:
+zinitix_gpio_configure	zinitix_driver.c	/^static int zinitix_gpio_configure(bool on)$/;"	f	file:
+zinitix_hw_reset_fun	zinitix_driver.c	/^static int zinitix_hw_reset_fun(struct i2c_client *client)$/;"	f	file:
+zinitix_hw_reset_show	zinitix_sysfs.c	/^static ssize_t zinitix_hw_reset_show(struct device *dev,$/;"	f	file:
+zinitix_i2c_mode_control	zinitix_driver.c	/^int zinitix_i2c_mode_control(struct i2c_client *client,$/;"	f
+zinitix_i2c_pda2_access_show	zinitix_sysfs.c	/^static ssize_t zinitix_i2c_pda2_access_show(struct device *dev,$/;"	f	file:
+zinitix_i2c_pda2_access_store	zinitix_sysfs.c	/^static ssize_t zinitix_i2c_pda2_access_store(struct device *dev,$/;"	f	file:
+zinitix_i2c_pda2_mode_store	zinitix_sysfs.c	/^static ssize_t zinitix_i2c_pda2_mode_store(struct device *dev,$/;"	f	file:
+zinitix_i2c_pda2_page_store	zinitix_sysfs.c	/^static ssize_t zinitix_i2c_pda2_page_store(struct device *dev,$/;"	f	file:
+zinitix_i2c_pda2_read	zinitix_driver.c	/^int zinitix_i2c_pda2_read(struct i2c_client *client,$/;"	f
+zinitix_i2c_pda2_set_page	zinitix_driver.c	/^int zinitix_i2c_pda2_set_page(struct i2c_client *client,$/;"	f
+zinitix_i2c_pda2_write	zinitix_driver.c	/^int zinitix_i2c_pda2_write(struct i2c_client *client,$/;"	f
+zinitix_i2c_pda_access_show	zinitix_sysfs.c	/^static ssize_t zinitix_i2c_pda_access_show(struct device *dev,$/;"	f	file:
+zinitix_i2c_pda_access_store	zinitix_sysfs.c	/^static ssize_t zinitix_i2c_pda_access_store(struct device *dev,$/;"	f	file:
+zinitix_i2c_pda_access_via_pda2_show	zinitix_sysfs.c	/^static ssize_t zinitix_i2c_pda_access_via_pda2_show(struct device *dev,$/;"	f	file:
+zinitix_i2c_pda_access_via_pda2_store	zinitix_sysfs.c	/^static ssize_t zinitix_i2c_pda_access_via_pda2_store(struct device *dev,$/;"	f	file:
+zinitix_i2c_pda_read	zinitix_driver.c	/^int zinitix_i2c_pda_read(struct i2c_client *client,$/;"	f
+zinitix_i2c_pda_set_address	zinitix_driver.c	/^int zinitix_i2c_pda_set_address(unsigned int u32_address,$/;"	f
+zinitix_i2c_pda_write	zinitix_driver.c	/^int zinitix_i2c_pda_write(struct i2c_client *client,$/;"	f
+zinitix_i2c_raw_data_show	zinitix_sysfs.c	/^static ssize_t zinitix_i2c_raw_data_show(struct device *dev,$/;"	f	file:
+zinitix_i2c_raw_data_store	zinitix_sysfs.c	/^static ssize_t zinitix_i2c_raw_data_store(struct device *dev,$/;"	f	file:
+zinitix_i2c_read_pda_via_pda2	zinitix_driver.c	/^int zinitix_i2c_read_pda_via_pda2(struct i2c_client *client,$/;"	f
+zinitix_i2c_write_pda_via_pda2	zinitix_driver.c	/^int zinitix_i2c_write_pda_via_pda2(struct i2c_client *client,$/;"	f
+zinitix_input_set	zinitix_driver.c	/^static void zinitix_input_set(struct input_dev *input_dev)$/;"	f	file:
+zinitix_irq_control	zinitix_driver.c	/^void zinitix_irq_control(bool enable)$/;"	f
+zinitix_irq_state_show	zinitix_sysfs.c	/^static ssize_t zinitix_irq_state_show(struct device *dev,$/;"	f	file:
+zinitix_log_level	zinitix_driver.h	/^enum zinitix_log_level {$/;"	g
+zinitix_log_level_store	zinitix_sysfs.c	/^static ssize_t zinitix_log_level_store(struct device *dev,$/;"	f	file:
+zinitix_match_table	zinitix_driver.c	/^static const struct of_device_id zinitix_match_table[] = {$/;"	v	typeref:struct:of_device_id	file:
+zinitix_match_table	zinitix_driver.c	2500;"	d	file:
+zinitix_max	zinitix_driver.c	56;"	d	file:
+zinitix_max	zinitix_touch.h	144;"	d
+zinitix_mem_store	zinitix_sysfs.c	/^static ssize_t zinitix_mem_store(struct device *dev,$/;"	f	file:
+zinitix_palm_status_show	zinitix_sysfs.c	/^static ssize_t zinitix_palm_status_show(struct device *dev,$/;"	f	file:
+zinitix_parse_dt	zinitix_driver.c	/^static int zinitix_parse_dt(struct device *dev,$/;"	f	file:
+zinitix_platform_data	zinitix_driver.h	/^struct zinitix_platform_data {$/;"	s
+zinitix_pt_report_idx	zinitix_driver.h	/^enum zinitix_pt_report_idx {$/;"	g
+zinitix_pt_report_status	zinitix_driver.h	/^enum zinitix_pt_report_status {$/;"	g
+zinitix_read_touchdata	zinitix_driver.c	/^int zinitix_read_touchdata(unsigned char *p_u8_tp_status,  unsigned char *p_u8_buf)$/;"	f
+zinitix_receive_fw_store	zinitix_sysfs.c	/^static ssize_t zinitix_receive_fw_store(struct device *dev,$/;"	f	file:
+zinitix_register_notifier	zinitix_driver.c	/^static void zinitix_register_notifier(void)$/;"	f	file:
+zinitix_release_sysfs	zinitix_driver.c	/^static void zinitix_release_sysfs(struct i2c_client *client)$/;"	f	file:
+zinitix_reset_control_store	zinitix_sysfs.c	/^static ssize_t zinitix_reset_control_store(struct device *dev,$/;"	f	file:
+zinitix_selftest_show	zinitix_sysfs.c	/^static ssize_t zinitix_selftest_show(struct device *dev,$/;"	f	file:
+zinitix_set_resolution	zinitix_driver.c	/^static int zinitix_set_resolution(void)$/;"	f	file:
+zinitix_slot_status	zinitix_driver.c	/^struct zinitix_slot_status {$/;"	s	file:
+zinitix_swap_16	zinitix_driver.c	54;"	d	file:
+zinitix_swap_16	zinitix_touch.h	142;"	d
+zinitix_swap_v	zinitix_driver.c	53;"	d	file:
+zinitix_swap_v	zinitix_touch.h	141;"	d
+zinitix_touch_calibration_show	zinitix_sysfs.c	/^static ssize_t zinitix_touch_calibration_show(struct device *dev,$/;"	f	file:
+zinitix_touch_lock_store	zinitix_sysfs.c	/^static ssize_t zinitix_touch_lock_store(struct device *dev,$/;"	f	file:
+zinitix_touch_report	zinitix_driver.c	/^static int zinitix_touch_report(unsigned char *p_u8_buf,$/;"	f	file:
+zinitix_ts_close	zinitix_driver.c	/^static void zinitix_ts_close(struct input_dev *input_dev)$/;"	f	file:
+zinitix_ts_data	zinitix_driver.h	/^struct zinitix_ts_data {$/;"	s
+zinitix_ts_do_resume	zinitix_driver.c	/^static void zinitix_ts_do_resume(void)$/;"	f	file:
+zinitix_ts_do_suspend	zinitix_driver.c	/^static void zinitix_ts_do_suspend(void)$/;"	f	file:
+zinitix_ts_driver	zinitix_driver.c	/^static struct i2c_driver zinitix_ts_driver = {$/;"	v	typeref:struct:i2c_driver	file:
+zinitix_ts_early_suspend	zinitix_driver.c	/^static void zinitix_ts_early_suspend(struct early_suspend *handler)$/;"	f	file:
+zinitix_ts_exit	zinitix_driver.c	/^module_exit(zinitix_ts_exit);$/;"	v
+zinitix_ts_exit	zinitix_driver.c	/^static void __exit zinitix_ts_exit(void)$/;"	f	file:
+zinitix_ts_id	zinitix_driver.c	/^static const struct i2c_device_id zinitix_ts_id[] = {$/;"	v	typeref:struct:i2c_device_id	file:
+zinitix_ts_init	zinitix_driver.c	/^module_init(zinitix_ts_init);$/;"	v
+zinitix_ts_init	zinitix_driver.c	/^static int __init zinitix_ts_init(void)$/;"	f	file:
+zinitix_ts_interrupt	zinitix_driver.c	/^static irqreturn_t zinitix_ts_interrupt(int irq, void *dev_id)$/;"	f	file:
+zinitix_ts_late_resume	zinitix_driver.c	/^static void zinitix_ts_late_resume(struct early_suspend *handler)$/;"	f	file:
+zinitix_ts_open	zinitix_driver.c	/^static int zinitix_ts_open(struct input_dev *input_dev)$/;"	f	file:
+zinitix_ts_pinctrl_init	zinitix_driver.c	/^static int zinitix_ts_pinctrl_init(void)$/;"	f	file:
+zinitix_ts_platform_data	zinitix_driver.h	/^struct zinitix_ts_platform_data {$/;"	s
+zinitix_ts_pm_ops	zinitix_driver.c	/^static const struct dev_pm_ops zinitix_ts_pm_ops = {$/;"	v	typeref:struct:dev_pm_ops	file:
+zinitix_ts_probe	zinitix_driver.c	/^static int zinitix_ts_probe(struct i2c_client *client,$/;"	f	file:
+zinitix_ts_remove	zinitix_driver.c	/^static int zinitix_ts_remove(struct i2c_client *client)$/;"	f	file:
+zinitix_ts_resume	zinitix_driver.c	/^static int zinitix_ts_resume(struct device *dev)$/;"	f	file:
+zinitix_ts_suspend	zinitix_driver.c	/^static int zinitix_ts_suspend(struct device *dev)$/;"	f	file:
+zinitix_unregister_notifier	zinitix_driver.c	/^static void zinitix_unregister_notifier(void)$/;"	f	file:
+zinitix_variable_init	zinitix_driver.c	/^static void zinitix_variable_init(void)$/;"	f	file:
+zinitix_work_handler	zinitix_driver.c	/^static void zinitix_work_handler(struct work_struct *work)$/;"	f	file:
