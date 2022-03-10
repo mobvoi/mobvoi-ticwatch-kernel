@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -141,6 +142,7 @@ struct geni_i2c_dev {
 	bool gpi_reset;
 	bool disable_dma_mode;
 	bool prev_cancel_pending; //Halt cancel till IOS in good state
+	bool is_deep_sleep; /* For deep sleep restore the config similar to the probe. */
 	struct geni_i2c_ssr i2c_ssr;
 };
 
@@ -294,11 +296,18 @@ static int geni_i2c_prepare(struct geni_i2c_dev *gi2c)
 	if (gi2c->se_mode == UNINITIALIZED) {
 		int proto = get_se_proto(gi2c->base);
 		u32 se_mode;
+		int ret = 0;
 
 		if (proto != I2C) {
 			dev_err(gi2c->dev, "Invalid proto %d\n", proto);
-			if (!gi2c->is_le_vm)
-				se_geni_resources_off(&gi2c->i2c_rsc);
+			if (!gi2c->is_le_vm) {
+				ret = se_geni_resources_off(&gi2c->i2c_rsc);
+				if (ret) {
+					dev_err(gi2c->dev, "%s: resource_off Error ret %d\n",
+						__func__, ret);
+					return ret;
+				}
+			}
 			return -ENXIO;
 		}
 
@@ -487,11 +496,11 @@ static void gi2c_ev_cb(struct dma_chan *ch, struct msm_gpi_cb const *cb_str,
 			geni_i2c_err(gi2c, I2C_BUS_PROTO);
 		if (m_stat & M_GP_IRQ_4_EN)
 			geni_i2c_err(gi2c, I2C_ARB_LOST);
-		complete(&gi2c->xfer);
 		break;
 	default:
 		break;
 	}
+	complete(&gi2c->xfer);
 	if (cb_str->cb_event != MSM_GPI_QUP_NOTIFY)
 		GENI_SE_ERR(gi2c->ipcl, true, gi2c->dev,
 				"GSI QN err:0x%x, status:0x%x, err:%d\n",
@@ -1058,6 +1067,7 @@ static int geni_i2c_xfer(struct i2c_adapter *adap,
 {
 	struct geni_i2c_dev *gi2c = i2c_get_adapdata(adap);
 	int i, ret = 0, timeout = 0;
+	u32 geni_ios = 0;
 
 	gi2c->err = 0;
 	mutex_lock(&gi2c->i2c_ssr.ssr_lock);
@@ -1086,14 +1096,36 @@ static int geni_i2c_xfer(struct i2c_adapter *adap,
 			pm_runtime_set_suspended(gi2c->dev);
 			mutex_unlock(&gi2c->i2c_ssr.ssr_lock);
 			return ret;
+		} else if (ret == 1 && gi2c->se_mode == UNINITIALIZED) {
+			/* Prepare the device if PM state is active after Hibernation */
+			GENI_SE_DBG(gi2c->ipcl, false, gi2c->dev,
+				"Prepare the device after Hibernation due to PM state is active\n");
+			ret = geni_i2c_prepare(gi2c);
+			if (ret) {
+				dev_err(gi2c->dev, "I2C prepare failed: %d\n", ret);
+				mutex_unlock(&gi2c->i2c_ssr.ssr_lock);
+				return ret;
+			}
 		}
+	}
+
+	geni_ios = geni_read_reg_nolog(gi2c->base, SE_GENI_IOS);
+	if ((geni_ios & 0x3) != 0x3) { //SCL:b'1, SDA:b'0
+		GENI_SE_ERR(gi2c->ipcl, true, gi2c->dev,
+			"IO lines in bad state, Power the slave\n");
+		pm_runtime_mark_last_busy(gi2c->dev);
+		pm_runtime_put_autosuspend(gi2c->dev);
+		mutex_unlock(&gi2c->i2c_ssr.ssr_lock);
+		return -ENXIO;
 	}
 
 	// WAR : Complete previous pending cancel cmd
 	if (gi2c->prev_cancel_pending) {
 		ret = do_pending_cancel(gi2c);
-		if (ret)
+		if (ret) {
+			mutex_unlock(&gi2c->i2c_ssr.ssr_lock);
 			return ret; //Don't perform xfer is cancel failed
+		}
 	}
 
 	GENI_SE_DBG(gi2c->ipcl, false, gi2c->dev,
@@ -1366,12 +1398,15 @@ static int geni_i2c_probe(struct platform_device *pdev)
 		dev_info(&pdev->dev, "LE-VM usecase\n");
 	}
 
+	gi2c->is_deep_sleep = false;
 	if (of_property_read_bool(pdev->dev.of_node, "qcom,leica-used-i2c"))
 		gi2c->i2c_rsc.skip_bw_vote = true;
 
 	gi2c->i2c_rsc.wrapper_dev = &wrapper_pdev->dev;
 	gi2c->i2c_rsc.ctrl_dev = gi2c->dev;
 
+	gi2c->i2c_rsc.rsc_ssr.ssr_enable = of_property_read_bool(
+				pdev->dev.of_node, "ssr-enable");
 	/*
 	 * For LE, clocks, gpio and icb voting will be provided by
 	 * by LA. The I2C operates in GSI mode only for LE usecase,
@@ -1453,9 +1488,6 @@ static int geni_i2c_probe(struct platform_device *pdev)
 		dev_info(&pdev->dev, "Multi-EE usecase\n");
 	}
 
-	gi2c->i2c_rsc.rsc_ssr.ssr_enable = of_property_read_bool(
-		pdev->dev.of_node, "ssr-enable");
-
 	if (of_property_read_u32(pdev->dev.of_node, "qcom,clk-freq-out",
 				&gi2c->i2c_rsc.clk_freq_out))
 		gi2c->i2c_rsc.clk_freq_out = KHz(400);
@@ -1531,8 +1563,10 @@ static int geni_i2c_resume_early(struct device *device)
 	struct geni_i2c_dev *gi2c = dev_get_drvdata(device);
 
 #ifdef CONFIG_DEEPSLEEP
-	if (mem_sleep_current == PM_SUSPEND_MEM)
+	if (mem_sleep_current == PM_SUSPEND_MEM) {
 		gi2c->se_mode = UNINITIALIZED;
+		gi2c->is_deep_sleep = true;
+	}
 #endif
 	GENI_SE_DBG(gi2c->ipcl, false, gi2c->dev, "%s\n", __func__);
 	return 0;
@@ -1547,6 +1581,43 @@ static int geni_i2c_hib_resume_noirq(struct device *device)
 	return 0;
 }
 
+static int geni_i2c_gpi_suspend_resume(struct geni_i2c_dev *gi2c, bool is_suspend)
+{
+	int tx_ret = 0;
+
+	/* Do dma operations only for tx channel here, as it takes care of rx channel
+	 * also internally from the GPI driver functions. if we call for both channels,
+	 * will see channels in wrong state due to double operations.
+	 */
+	if (gi2c->tx_c != NULL) {
+		if (is_suspend) {
+			tx_ret = dmaengine_pause(gi2c->tx_c);
+		} else {
+			/* For deep sleep need to restore the config similar to the probe,
+			 * hence using MSM_GPI_DEEP_SLEEP_INIT flag, in gpi_resume it wil
+			 * do similar to the probe. After this we should set this flag to
+			 * MSM_GPI_DEFAULT, means gpi probe state is restored.
+			 */
+			if (gi2c->is_deep_sleep)
+				gi2c->tx_ev.cmd = MSM_GPI_DEEP_SLEEP_INIT;
+
+			tx_ret = dmaengine_resume(gi2c->tx_c);
+			if (gi2c->is_deep_sleep) {
+				gi2c->tx_ev.cmd = MSM_GPI_DEFAULT;
+				gi2c->is_deep_sleep = false;
+			}
+		}
+
+		if (tx_ret) {
+			GENI_SE_ERR(gi2c->ipcl, true, gi2c->dev,
+				"%s failed: tx:%d status:%d\n",
+				__func__, tx_ret, is_suspend);
+			return -EINVAL;
+		}
+	}
+	return 0;
+}
+
 /*
  * get sync/put sync in LA-VM -> do resources on/off
  * get sync/put sync in LE-VM -> do lock/unlock gpii
@@ -1554,24 +1625,48 @@ static int geni_i2c_hib_resume_noirq(struct device *device)
 #if IS_ENABLED(CONFIG_PM)
 static int geni_i2c_runtime_suspend(struct device *dev)
 {
+	int ret = 0;
 	struct geni_i2c_dev *gi2c = dev_get_drvdata(dev);
 
 	if (gi2c->se_mode == FIFO_SE_DMA)
 		disable_irq(gi2c->irq);
+
+	if (gi2c->se_mode == GSI_ONLY) {
+		if (!gi2c->is_le_vm) {
+			ret = geni_i2c_gpi_suspend_resume(gi2c, true);
+			if (ret) {
+				GENI_SE_ERR(gi2c->ipcl, false, gi2c->dev, "%s\n", __func__);
+				return ret;
+			}
+		}
+	}
 
 	if (gi2c->is_le_vm) {
 		if (!gi2c->first_resume)
 			geni_i2c_unlock_bus(gi2c);
 		else
 			gi2c->first_resume = false;
+
+		/* for LE VM we are doinggpi_pause after unlocking the bus */
+		if (gi2c->se_mode == GSI_ONLY) {
+			ret = geni_i2c_gpi_suspend_resume(gi2c, true);
+			if (ret) {
+				GENI_SE_ERR(gi2c->ipcl, false, gi2c->dev, "%s\n", __func__);
+				return ret;
+			}
+		}
 	} else if (gi2c->is_shared) {
 		/* Do not unconfigure GPIOs if shared se */
-		se_geni_clks_off(&gi2c->i2c_rsc);
+		ret = se_geni_clks_off(&gi2c->i2c_rsc);
+		if (ret)
+			dev_err(dev, "%s: clks_off Error ret %d\n", __func__, ret);
 	} else {
-		se_geni_resources_off(&gi2c->i2c_rsc);
+		ret = se_geni_resources_off(&gi2c->i2c_rsc);
+		if (ret)
+			dev_err(dev, "%s: resource_off Error ret %d\n", __func__, ret);
 	}
 	GENI_SE_DBG(gi2c->ipcl, false, gi2c->dev, "%s\n", __func__);
-	return 0;
+	return ret;
 }
 
 static int geni_i2c_runtime_resume(struct device *dev)
@@ -1589,8 +1684,10 @@ static int geni_i2c_runtime_resume(struct device *dev)
 	if (!gi2c->is_le_vm) {
 		/* Do not control clk/gpio/icb for LE-VM */
 		ret = se_geni_resources_on(&gi2c->i2c_rsc);
-		if (ret)
+		if (ret) {
+			dev_err(dev, "%s: resource_off Error ret %d\n", __func__, ret);
 			return ret;
+		}
 
 		ret = geni_i2c_prepare(gi2c);
 		if (ret) {
@@ -1600,6 +1697,14 @@ static int geni_i2c_runtime_resume(struct device *dev)
 
 		if (gi2c->se_mode == FIFO_SE_DMA)
 			enable_irq(gi2c->irq);
+
+		if (gi2c->se_mode == GSI_ONLY) {
+			ret = geni_i2c_gpi_suspend_resume(gi2c, false);
+			if (ret) {
+				GENI_SE_ERR(gi2c->ipcl, false, gi2c->dev, "%s\n", __func__);
+				return ret;
+			}
+		}
 	} else if (!gi2c->first_resume) {
 		/*
 		 * For first resume call in le, do nothing, and in
@@ -1611,6 +1716,14 @@ static int geni_i2c_runtime_resume(struct device *dev)
 		if (ret) {
 			dev_err(gi2c->dev, "I2C prepare failed:%d\n", ret);
 			return ret;
+		}
+
+		if (gi2c->se_mode == GSI_ONLY) {
+			ret = geni_i2c_gpi_suspend_resume(gi2c, false);
+			if (ret) {
+				GENI_SE_ERR(gi2c->ipcl, false, gi2c->dev, "%s\n", __func__);
+				return ret;
+			}
 		}
 
 		ret = geni_i2c_lock_bus(gi2c);

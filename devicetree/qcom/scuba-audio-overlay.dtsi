@@ -103,6 +103,7 @@
 			qcom,swr-num-dev = <1>;
 			qcom,swr-clock-stop-mode0 = <1>;
 			qcom,swr-mstr-irq-wakeup-capable = <1>;
+			qcom,is-always-on = <1>;
 			rouleur_tx_slave: rouleur-tx-slave {
 				compatible = "qcom,rouleur-slave";
 				reg = <0x0C 0x01170223>;
@@ -157,7 +158,7 @@
 };
 
 &scuba_snd {
-	qcom,model = "bengal-scubaidp-snd-card";
+	qcom,model = "bengal-scubaqrd-snd-card";
 	qcom,msm-mi2s-master = <1>, <1>, <1>, <1>;
 	qcom,wcn-btfm = <1>;
 	qcom,va-bolero-codec = <1>;
@@ -170,13 +171,13 @@
 		"AMIC3", "Analog Mic3",
 		"Analog Mic3", "MIC BIAS3",
 		"TX DMIC0", "Digital Mic0",
-		"Digital Mic0", "MIC BIAS3",
+		"TX DMIC0", "MIC BIAS3",
 		"TX DMIC1", "Digital Mic1",
-		"Digital Mic1", "MIC BIAS3",
+		"TX DMIC1", "MIC BIAS3",
 		"TX DMIC2", "Digital Mic2",
-		"Digital Mic2", "MIC BIAS1",
+		"TX DMIC2", "MIC BIAS1",
 		"TX DMIC3", "Digital Mic3",
-		"Digital Mic3", "MIC BIAS1",
+		"TX DMIC3", "MIC BIAS1",
 		"IN1_HPHL", "HPHL_OUT",
 		"IN2_HPHR", "HPHR_OUT",
 		"SpkrMono WSA_IN", "LO",
@@ -290,7 +291,7 @@
 		compatible = "qcom,audio-ref-clk";
 		qcom,codec-ext-clk-src = <AUDIO_LPASS_MCLK>;
 		qcom,codec-lpass-ext-clk-freq = <19200000>;
-		qcom,codec-lpass-clk-id = <0x307>;
+		qcom,codec-lpass-clk-id = <0x30B>;
 		#clock-cells = <1>;
 	};
 
@@ -298,7 +299,7 @@
 		compatible = "qcom,audio-ref-clk";
 		qcom,codec-ext-clk-src = <AUDIO_LPASS_MCLK_8>;
 		qcom,codec-lpass-ext-clk-freq = <19200000>;
-		qcom,codec-lpass-clk-id = <0x308>;
+		qcom,codec-lpass-clk-id = <0x310>;
 		#clock-cells = <1>;
 	};
 };

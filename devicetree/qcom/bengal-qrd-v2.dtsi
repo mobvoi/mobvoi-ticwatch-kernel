@@ -1,0 +1,5 @@
+#include "bengal-qrd.dtsi"
+
+&dsi_ili9881c_720p_video {
+	qcom,platform-reset-gpio = <&tlmm 97 0>;
+};

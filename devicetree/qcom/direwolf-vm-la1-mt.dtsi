@@ -1,0 +1,37 @@
+&hab {
+	vmid = <3>;
+};
+
+&reserved_memory {
+	pmem_shared: pmem_shared_region {
+		reg = <0x1 0x66500000 0x0 0x51400000>;
+		label = "pmem_shared_mem";
+	};
+};
+
+/ {
+	rename_blk: rename_blk {
+		compatible = "qcom,blkdev-rename";
+		actual-dev = "vda", "vdb", "vdc",
+				"vdd", "vde", "vdf",
+				"vdg", "vdh", "vdi";
+		rename-dev = "system", "userdata", "vendor",
+				"persist", "modem", "bluetooth",
+				"misc", "vbmeta";
+	};
+};
+
+&firmware {
+	android {
+		boot_devices = "vdevs/1c220000.virtio_blk,vdevs/1c120000.virtio_blk,vdevs/1c210000.virtio_blk,vdevs/1c190000.virtio_blk,vdevs/1c160000.virtio_blk";
+		fstab {
+			vendor {
+				dev="/dev/block/platform/vdevs/1c210000.virtio_blk/vendor";
+			};
+		};
+	};
+};
+
+&qcom_rng_ee4 {
+	status = "okay";
+};

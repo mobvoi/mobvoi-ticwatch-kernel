@@ -231,12 +231,12 @@
 
 		wcd937x_reset_active: wcd937x_reset_active {
 			mux {
-				pins = "gpio92";
+				pins = "gpio82";
 				function = "gpio";
 			};
 
 			config {
-				pins = "gpio92";
+				pins = "gpio82";
 				drive-strength = <16>;
 				output-high;
 			};
@@ -244,12 +244,12 @@
 
 		wcd937x_reset_sleep: wcd937x_reset_sleep {
 			mux {
-				pins = "gpio92";
+				pins = "gpio82";
 				function = "gpio";
 			};
 
 			config {
-				pins = "gpio92";
+				pins = "gpio82";
 				drive-strength = <16>;
 				bias-disable;
 				output-low;
@@ -904,15 +904,43 @@
 			};
 		};
 
+		lt9611_level_shift_active: lt9611_level_shift_active {
+			mux {
+				pins = "gpio36";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio36";
+				bias-disable; /* No PULL */
+				drive-strength = <2>; /* 2 MA */
+				output-high;
+			};
+		};
+
+		lt9611_level_shift_sleep: lt9611_level_shift_sleep {
+			mux {
+				pins = "gpio36";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio36";
+				bias-pull-down; /* PULL DOWN */
+				drive-strength = <2>; /* 2 MA */
+				output-low;
+			};
+		};
+
 		pmx_sde: pmx_sde {
 			sde_dsi_active: sde_dsi_active {
 				mux {
-					pins = "gpio82";
+					pins = "gpio97";
 					function = "gpio";
 				};
 
 				config {
-					pins = "gpio82";
+					pins = "gpio97";
 					drive-strength = <8>;
 					bias-disable = <0>;
 				};
@@ -920,12 +948,12 @@
 
 			sde_dsi_suspend: sde_dsi_suspend {
 				mux {
-					pins = "gpio82";
+					pins = "gpio97";
 					function = "gpio";
 				};
 
 				config {
-					pins = "gpio82";
+					pins = "gpio97";
 					drive-strength = <2>;
 					bias-pull-down;
 				};
@@ -935,12 +963,12 @@
 		pmx_sde_te {
 			sde_te_active: sde_te_active {
 				mux {
-					pins = "gpio81";
-					function = "mdp_vsync";
+					pins = "gpio40";
+					function = "gpio";
 				};
 
 				config {
-					pins = "gpio81";
+					pins = "gpio40";
 					drive-strength = <2>;
 					bias-pull-down;
 				};
@@ -948,12 +976,12 @@
 
 			sde_te_suspend: sde_te_suspend {
 				mux {
-					pins = "gpio81";
-					function = "mdp_vsync";
+					pins = "gpio40";
+					function = "gpio";
 				};
 
 				config {
-					pins = "gpio81";
+					pins = "gpio40";
 					drive-strength = <2>;
 					bias-pull-down;
 				};

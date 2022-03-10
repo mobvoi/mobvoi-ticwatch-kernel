@@ -16,5 +16,10 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 		};
+
+		 pm6155_1_rtc: qcom,pm6155_1_rtc {
+			compatible = "qcom,pm8941-rtc";
+			interrupts = <0x0 0x61 0x1 IRQ_TYPE_NONE>;
+		};
 	};
 };

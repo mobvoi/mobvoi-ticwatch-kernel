@@ -604,6 +604,7 @@
 	};
 
 	hepta-cpu-max-step {
+		status = "disabled";
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
 		thermal-governor = "step_wise";

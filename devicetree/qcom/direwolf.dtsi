@@ -283,6 +283,11 @@
 			reg = <0x0 0x808FF000 0x0 0x1000>;
 		};
 
+		uefi_log: uefi_log@808B0000 {
+			reg = <0x0 0x808B0000 0x0 0x10000>;
+			label = "uefi_log";
+		};
+
 		smem_mem: smem_mem_region@80900000 {
 			no-map;
 			reg = <0x0 0x80900000 0x0 0x200000>;
@@ -1183,6 +1188,7 @@
 
 		rpm-level = <3>;
 		spm-level = <5>;
+		ufs-dev-types = <2>;
 
 		status = "disabled";
 	};
@@ -1318,6 +1324,7 @@
 
 		rpm-level = <3>;
 		spm-level = <5>;
+		ufs-dev-types = <2>;
 
 		secondary-storage;
 		status = "disabled";
@@ -2434,7 +2441,7 @@
 		qcom,minidump-id = <7>;
 		qcom,sysmon-id = <7>;
 		qcom,ssctl-instance-id = <0x17>;
-		qcom,firmware-name = "cdsp0";
+		qcom,firmware-name = "cdsp";
 		memory-region = <&pil_cdsp_mem>;
 		qcom,complete-ramdump;
 		qcom,minidump-as-elf32;

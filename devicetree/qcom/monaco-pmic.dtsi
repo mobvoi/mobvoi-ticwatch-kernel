@@ -183,7 +183,8 @@
 	qcom,chg-term-src = <1>;
 	qcom,chg-term-current-ma = <(-20)>;
 	qcom,fcc-stepping-enable;
-	qcom,fcc-step-delay-ms = <100>;
+	qcom,fcc-step-delay-ms = <1000>;
 	qcom,fcc-step-size-ua = <100000>;
-	qcom,fcc-step-start-ua = <500000>;
+	qcom,fcc-step-start-ua = <200000>;
+	qcom,concurrency-mode-supported;
 };

@@ -100,11 +100,11 @@
 		qcom,msm-cpudai-tdm-data-out = <0>;
 		qcom,msm-cpudai-tdm-invert-sync = <0>;
 		qcom,msm-cpudai-tdm-data-delay = <0>;
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&sec_tdm_active &sec_tdm_din_active
-			     &sec_tdm_dout_active>;
-		pinctrl-1 = <&sec_tdm_sleep &sec_tdm_din_sleep
+		pinctrl-names = "default", "active";
+		pinctrl-0 = <&sec_tdm_sleep &sec_tdm_din_sleep
 			     &sec_tdm_dout_sleep>;
+		pinctrl-1 = <&sec_tdm_active &sec_tdm_din_active
+			     &sec_tdm_dout_active>;
 		#gpio-cells = <0>;
 		dai_sec_tdm_rx_0: qcom,msm-dai-q6-tdm-sec-rx-0 {
 			compatible = "qcom,msm-dai-q6-tdm";
@@ -187,11 +187,11 @@
 		qcom,msm-cpudai-tdm-data-out = <0>;
 		qcom,msm-cpudai-tdm-invert-sync = <0>;
 		qcom,msm-cpudai-tdm-data-delay = <0>;
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&tert_tdm_active &tert_tdm_din_active
-			     &tert_tdm_dout_active>;
-		pinctrl-1 = <&tert_tdm_sleep &tert_tdm_din_sleep
+		pinctrl-names = "default", "active";
+		pinctrl-0 = <&tert_tdm_sleep &tert_tdm_din_sleep
 			     &tert_tdm_dout_sleep>;
+		pinctrl-1 = <&tert_tdm_active &tert_tdm_din_active
+			     &tert_tdm_dout_active>;
 		#gpio-cells = <0>;
 		dai_tert_tdm_rx_0: qcom,msm-dai-q6-tdm-tert-rx-0 {
 			compatible = "qcom,msm-dai-q6-tdm";
@@ -282,11 +282,11 @@
 		qcom,msm-cpudai-tdm-data-out = <0>;
 		qcom,msm-cpudai-tdm-invert-sync = <0>;
 		qcom,msm-cpudai-tdm-data-delay = <0>;
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&quat_tdm_active &quat_tdm_din_active
-			     &quat_tdm_dout_active>;
-		pinctrl-1 = <&quat_tdm_sleep &quat_tdm_din_sleep
+		pinctrl-names = "default", "active";
+		pinctrl-0 = <&quat_tdm_sleep &quat_tdm_din_sleep
 			     &quat_tdm_dout_sleep>;
+		pinctrl-1 = <&quat_tdm_active &quat_tdm_din_active
+			     &quat_tdm_dout_active>;
 		#gpio-cells = <0>;
 		dai_quat_tdm_rx_0: qcom,msm-dai-q6-tdm-quat-rx-0 {
 			compatible = "qcom,msm-dai-q6-tdm";
@@ -377,11 +377,11 @@
 		qcom,msm-cpudai-tdm-data-out = <0>;
 		qcom,msm-cpudai-tdm-invert-sync = <0>;
 		qcom,msm-cpudai-tdm-data-delay = <0>;
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&quin_tdm_active &quin_tdm_din_active
-			     &quin_tdm_dout_active>;
-		pinctrl-1 = <&quin_tdm_sleep &quin_tdm_din_sleep
+		pinctrl-names = "default", "active";
+		pinctrl-0 = <&quin_tdm_sleep &quin_tdm_din_sleep
 			     &quin_tdm_dout_sleep>;
+		pinctrl-1 = <&quin_tdm_active &quin_tdm_din_active
+			     &quin_tdm_dout_active>;
 		#gpio-cells = <0>;
 		dai_quin_tdm_rx_0: qcom,msm-dai-q6-tdm-quin-rx-0 {
 			compatible = "qcom,msm-dai-q6-tdm";

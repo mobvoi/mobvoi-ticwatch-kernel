@@ -218,7 +218,6 @@
 		qcom,msm-cpudai-tdm-data-out = <0>;
 		qcom,msm-cpudai-tdm-invert-sync = <0>;
 		qcom,msm-cpudai-tdm-data-delay = <1>;
-		qcom,msm-cpudai-tdm-clk-attribute = /bits/ 16 <1>;
 		dai_tert_tdm_tx_0: qcom,msm-dai-q6-tdm-tert-tx-0 {
 			compatible = "qcom,msm-dai-q6-tdm";
 			qcom,msm-cpudai-tdm-dev-id = <36897>;
@@ -1255,3 +1254,11 @@
 	};
 };
 
+&soc {
+	snd_8295_ar: sound-adp-star {
+		compatible = "qcom,gvm-auto-spf-asoc-snd-adp-star";
+		qcom,model = "gvmauto8295-adp-star-snd-card";
+		asoc-codec = <&stub_codec>;
+		asoc-codec-names = "msm-stub-codec.1";
+	};
+};

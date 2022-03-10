@@ -1008,10 +1008,23 @@
 		qcom,qsee-reentrancy-support = <2>;
 	};
 
+	qtee_shmbridge {
+		compatible = "qcom,tee-shared-memory-bridge";
+	};
+
 	qcom_smcinvoke: smcinvoke@61800000 {
 		compatible = "qcom,smcinvoke";
+		qcom,support-legacy_smc;
 		reg = <0x61800000 0x2100000>;
 		reg-names = "secapp-region";
+	};
+
+	qcom_tzlog: tz-log@c125720 {
+		compatible = "qcom,tz-log";
+		reg = <0xc125720 0x3000>;
+		qcom,hyplog-enabled;
+		hyplog-address-offset = <0x410>;
+		hyplog-size-offset = <0x414>;
 	};
 
 	qcom_rng: qrng@1b53000 {
@@ -2682,12 +2695,8 @@
 };
 
 &pm8008_8 {
-	/* PM8008 IRQ STAT */
-	interrupt-parent = <&tlmm>;
-	interrupts = <25 IRQ_TYPE_EDGE_RISING>;
-
 	pinctrl-names = "default";
-	pinctrl-0 = <&pm8008_active &pm8008_interrupt>;
+	pinctrl-0 = <&pm8008_active>;
 };
 
 &pm8008_regulators {

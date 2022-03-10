@@ -89,8 +89,8 @@
 		resets = <&gcc GCC_QUSB2PHY_PRIM_BCR>;
 		reset-names = "phy_reset";
 		qcom,param-override-seq =
-			<0xe6 0x6c	/* override_x0 */
-			 0x0b 0x70	/* override_x1 */
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
 			 0x17 0x74>;	/* override x2 */
 	};
 
@@ -377,8 +377,8 @@
 		resets = <&gcc GCC_USB2_PHY_SEC_BCR>;
 		reset-names = "phy_reset";
 		qcom,param-override-seq =
-			<0xe6 0x6c	/* override_x0 */
-			 0x0b 0x70	/* override_x1 */
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
 			 0x17 0x74>;	/* override x2 */
 	};
 
@@ -667,8 +667,8 @@
 		resets = <&gcc GCC_QUSB2PHY_HS0_MP_BCR>;
 		reset-names = "phy_reset";
 		qcom,param-override-seq =
-			<0xe6 0x6c	/* override_x0 */
-			 0x0b 0x70	/* override_x1 */
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
 			 0x17 0x74>;	/* override x2 */
 	};
 
@@ -823,8 +823,8 @@
 		resets = <&gcc GCC_QUSB2PHY_HS1_MP_BCR>;
 		reset-names = "phy_reset";
 		qcom,param-override-seq =
-			<0xe6 0x6c	/* override_x0 */
-			 0x0b 0x70	/* override_x1 */
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
 			 0x17 0x74>;	/* override x2 */
 	};
 
@@ -979,8 +979,8 @@
 		resets = <&gcc GCC_QUSB2PHY_HS2_MP_BCR>;
 		reset-names = "phy_reset";
 		qcom,param-override-seq =
-			<0xe6 0x6c	/* override_x0 */
-			 0x0b 0x70	/* override_x1 */
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
 			 0x17 0x74>;	/* override x2 */
 	};
 
@@ -1001,8 +1001,8 @@
 		resets = <&gcc GCC_QUSB2PHY_HS3_MP_BCR>;
 		reset-names = "phy_reset";
 		qcom,param-override-seq =
-			<0xe6 0x6c	/* override_x0 */
-			 0x0b 0x70	/* override_x1 */
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
 			 0x17 0x74>;	/* override x2 */
 	};
 };

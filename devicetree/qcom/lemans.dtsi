@@ -22,7 +22,9 @@
 
 	chosen: chosen { };
 
-	aliases { };
+	aliases {
+		serial0 = &qupv3_se10_2uart;
+	 };
 
 	soc: soc { };
 
@@ -37,7 +39,7 @@
 			compatible = "qcom,kryo";
 			reg = <0x0 0x0>;
 			enable-method = "spin-table";
-			cpu-release-addr = <0x0 0x90000000>;
+			cpu-release-addr = <0x0 0xC0000000>;
 			cache-size = <0x20000>;
 			next-level-cache = <&L2_0>;
 			L2_0: l2-cache {
@@ -59,7 +61,7 @@
 			compatible = "qcom,kryo";
 			reg = <0x0 0x100>;
 			enable-method = "spin-table";
-			cpu-release-addr = <0x0 0x90000000>;
+			cpu-release-addr = <0x0 0xC0000000>;
 			cache-size = <0x20000>;
 			next-level-cache = <&L2_1>;
 			L2_1: l2-cache {
@@ -75,7 +77,7 @@
 			compatible = "qcom,kryo";
 			reg = <0x0 0x200>;
 			enable-method = "spin-table";
-			cpu-release-addr = <0x0 0x90000000>;
+			cpu-release-addr = <0x0 0xC0000000>;
 			cache-size = <0x20000>;
 			next-level-cache = <&L2_2>;
 			L2_2: l2-cache {
@@ -91,7 +93,7 @@
 			compatible = "qcom,kryo";
 			reg = <0x0 0x300>;
 			enable-method = "spin-table";
-			cpu-release-addr = <0x0 0x90000000>;
+			cpu-release-addr = <0x0 0xC0000000>;
 			cache-size = <0x20000>;
 			next-level-cache = <&L2_3>;
 			L2_3: l2-cache {
@@ -102,13 +104,13 @@
 			};
 		};
 
-		CPU4: cpu@400 {
+		CPU4: cpu@10000 {
 			device_type = "cpu";
 			compatible = "qcom,kryo";
-			reg = <0x0 0x400>;
+			reg = <0x0 0x10000>;
 			enable-method = "spin-table";
 			cache-size = <0x20000>;
-			cpu-release-addr = <0x0 0x90000000>;
+			cpu-release-addr = <0x0 0xC0000000>;
 			next-level-cache = <&L2_4>;
 			L2_4: l2-cache {
 			      compatible = "arm,arch-cache";
@@ -124,12 +126,12 @@
 			};
 		};
 
-		CPU5: cpu@500 {
+		CPU5: cpu@10100 {
 			device_type = "cpu";
 			compatible = "qcom,kryo";
-			reg = <0x0 0x500>;
+			reg = <0x0 0x10100>;
 			enable-method = "spin-table";
-			cpu-release-addr = <0x0 0x90000000>;
+			cpu-release-addr = <0x0 0xC0000000>;
 			cache-size = <0x20000>;
 			next-level-cache = <&L2_5>;
 			L2_5: l2-cache {
@@ -140,12 +142,12 @@
 			};
 		};
 
-		CPU6: cpu@600 {
+		CPU6: cpu@10200 {
 			device_type = "cpu";
 			compatible = "qcom,kryo";
-			reg = <0x0 0x600>;
+			reg = <0x0 0x10200>;
 			enable-method = "spin-table";
-			cpu-release-addr = <0x0 0x90000000>;
+			cpu-release-addr = <0x0 0xC0000000>;
 			cache-size = <0x20000>;
 			next-level-cache = <&L2_6>;
 			L2_6: l2-cache {
@@ -156,12 +158,12 @@
 			};
 		};
 
-		CPU7: cpu@700 {
+		CPU7: cpu@10300 {
 			device_type = "cpu";
 			compatible = "qcom,kryo";
-			reg = <0x0 0x700>;
+			reg = <0x0 0x10300>;
 			enable-method = "spin-table";
-			cpu-release-addr = <0x0 0x90000000>;
+			cpu-release-addr = <0x0 0xC0000000>;
 			cache-size = <0x20000>;
 			next-level-cache = <&L2_7>;
 			L2_7: l2-cache {
@@ -444,6 +446,49 @@
 		};
 	};
 
+	qcom,msm-imem@146d8000 {
+		compatible = "qcom,msm-imem";
+		reg = <0x146d8000 0x1000>;
+		ranges = <0x0 0x146d8000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mem_dump_table@10 {
+			compatible = "qcom,msm-imem-mem_dump_table";
+			reg = <0x10 0x8>;
+		};
+
+		restart_reason@65c {
+			compatible = "qcom,msm-imem-restart_reason";
+			reg = <0x65c 0x4>;
+		};
+
+		dload_type@1c {
+			compatible = "qcom,msm-imem-dload-type";
+			reg = <0x1c 0x4>;
+		};
+
+		boot_stats@6b0 {
+			compatible = "qcom,msm-imem-boot_stats";
+			reg = <0x6b0 0x20>;
+		};
+
+		kaslr_offset@6d0 {
+			compatible = "qcom,msm-imem-kaslr_offset";
+			reg = <0x6d0 0xc>;
+		};
+
+		pil@94c {
+			compatible = "qcom,msm-imem-pil";
+			reg = <0x94c 0xc8>;
+		};
+
+		diag_dload@c8 {
+			compatible = "qcom,msm-imem-diag-dload";
+			reg = <0xc8 0xc8>;
+		};
+	};
+
 	clocks {
 		xo_board: xo_board {
 			compatible = "fixed-clock";
@@ -626,25 +671,31 @@
 
 	config_noc: interconnect@014C0000 {
 		compatible = "qcom,lemans-config_noc";
-		reg = <0x014C0000 0x25400>;
+		reg = <0x014C0000 0x13080>;
 		#interconnect-cells = <1>;
 	};
 
 	system_noc: interconnect@01680000 {
 		compatible = "qcom,lemans-system_noc";
-		reg = <0x01680000 0x1B200>;
+		reg = <0x01680000 0x15080>;
 		#interconnect-cells = <1>;
 	};
 
 	aggre1_noc:interconnect@016C0000 {
 		compatible = "qcom,lemans-aggre1_noc";
-		reg = <0x016C0000 0xE080>;
+		reg = <0x016C0000 0x18080>;
 		#interconnect-cells = <1>;
 	};
 
 	aggre2_noc: interconnect@01700000 {
 		compatible = "qcom,lemans-aggre2_noc";
-		reg = <0x01700000 0xD400>;
+		reg = <0x01700000 0x1B080>;
+		#interconnect-cells = <1>;
+	};
+
+	pcie_anoc: interconnect@01760000 {
+		compatible = "qcom,lemans-pcie_anoc";
+		reg = <0x01760000 0xC080>;
 		#interconnect-cells = <1>;
 	};
 
@@ -674,13 +725,13 @@
 
 	nspa_noc: interconnect@260C0000 {
 		compatible = "qcom,lemans-nspa_noc";
-		reg = <0x260C0000 0x15080>;
+		reg = <0x260C0000 0x16080>;
 		#interconnect-cells = <1>;
 	};
 
 	nspb_noc: interconnect@2A0C0000 {
 		compatible = "qcom,lemans-nspb_noc";
-		reg = <0x2A0C0000 0x15080>;
+		reg = <0x2A0C0000 0x16080>;
 		#interconnect-cells = <1>;
 	};
 
@@ -692,6 +743,8 @@
 
 #include "direwolf-gdsc.dtsi"
 #include "lemans-pinctrl.dtsi"
+#include "lemans-qupv3.dtsi"
+#include "lemans-usb.dtsi"
 
 &cam_cc_titan_top_gdsc {
 	compatible = "regulator-fixed";

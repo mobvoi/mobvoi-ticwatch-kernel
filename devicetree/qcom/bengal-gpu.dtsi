@@ -500,12 +500,6 @@
 
 		vddcx-supply = <&gpu_cx_gdsc>;
 
-		clocks = <&gcc GCC_BIMC_GPU_AXI_CLK>,
-			<&gcc GCC_GPU_MEMNOC_GFX_CLK>,
-			<&gpucc GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK>;
-
-		clock-names = "mem_clk", "mem_iface_clk", "smmu_vote";
-
 		gfx3d_user: gfx3d_user {
 			compatible = "qcom,smmu-kgsl-cb";
 			iommus = <&kgsl_smmu 0 1>;

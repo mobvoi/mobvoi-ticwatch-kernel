@@ -5,7 +5,7 @@
 
 / {
 	model = "Qualcomm Technologies, Inc. SA8195 Multi LV Virtual Machine";
-	compatible = "qcom,sa8195p";
+	compatible = "qcom,sa8195p", "qcom,quinvm";
 	qcom,pmic-name = "PM8195";
-	qcom,board-id = <0x2000002 0>;
+	qcom,board-id = <0 0x2000002>;
 };

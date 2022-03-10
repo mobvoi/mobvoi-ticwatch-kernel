@@ -1193,6 +1193,7 @@ int zinitix_read_touchdata(unsigned char *p_u8_tp_status,  unsigned char *p_u8_b
 	struct _ts_zinitix_point_info touch_info;
 	unsigned short x,y;
 	int i;
+    int ret = 0;
 	if (touch_i2c_read(g_zinitix_ts->client, ZINITIX_POINT_STATUS_REG,(uint8_t *)&(touch_info),sizeof(touch_info))) {	
 		LOGD(LOG_ERR, "[touch]%s: failed to read point\n", __func__);
 	}
@@ -1222,7 +1223,7 @@ int zinitix_read_touchdata(unsigned char *p_u8_tp_status,  unsigned char *p_u8_b
 		input_sync(g_zinitix_ts->input_dev);
         }
 
-
+    return ret;
 }
 #if 0
 int zinitix_read_touchdata(unsigned char *p_u8_tp_status,  unsigned char *p_u8_buf)

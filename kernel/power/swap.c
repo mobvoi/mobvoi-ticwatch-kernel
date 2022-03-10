@@ -511,10 +511,10 @@ static int swap_writer_finish(struct swap_map_handle *handle,
 		unsigned int flags, int error)
 {
 	if (!error) {
-		flush_swap_writer(handle);
 		pr_info("S");
 		error = mark_swapfiles(handle, flags);
 		pr_cont("|\n");
+		flush_swap_writer(handle);
 	}
 
 	if (error)
@@ -976,6 +976,7 @@ int swsusp_write(unsigned int flags)
 	}
 out_finish:
 	error = swap_writer_finish(&handle, flags, error);
+	deinit_aes_encrypt();
 	return error;
 }
 

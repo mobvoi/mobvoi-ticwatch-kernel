@@ -417,6 +417,15 @@ bool icnss_is_pdr(void)
 }
 EXPORT_SYMBOL(icnss_is_pdr);
 
+bool icnss_is_low_power(void)
+{
+	if (!penv)
+		return false;
+	else
+		return test_bit(ICNSS_LOW_POWER, &penv->state);
+}
+EXPORT_SYMBOL(icnss_is_low_power);
+
 static irqreturn_t fw_error_fatal_handler(int irq, void *ctx)
 {
 	struct icnss_priv *priv = ctx;
@@ -661,6 +670,16 @@ static int icnss_driver_event_server_arrive(struct icnss_priv *priv,
 		goto fail;
 	}
 
+	/*
+	 * If no_vote_on_wifi_active parameter is set for any regulator then
+	 * it will not be enabled from icnss_hw_power_on().
+	 *
+	 * Enable all regulators whose no_vote_on_wifi_active parameter is set.
+	 * For those regulators which have not set this parameter are enabled
+	 * from icnss_hw_power_on().
+	 */
+	icnss_enable_regulator(priv);
+
 	ret = icnss_hw_power_on(priv);
 	if (ret)
 		goto fail;
@@ -811,6 +830,7 @@ static int icnss_pd_restart_complete(struct icnss_priv *priv)
 	clear_bit(ICNSS_PDR, &priv->state);
 	clear_bit(ICNSS_REJUVENATE, &priv->state);
 	clear_bit(ICNSS_PD_RESTART, &priv->state);
+	clear_bit(ICNSS_LOW_POWER, &priv->state);
 	priv->early_crash_ind = false;
 	priv->is_ssr = priv->is_low_pwr_mode = false;
 
@@ -1716,6 +1736,8 @@ static char *icnss_subsys_notify_state_to_str(enum subsys_notif_type code)
 		return "PROXY_UNVOTE";
 	case SUBSYS_SOC_RESET:
 		return "SOC_RESET";
+	case SUBSYS_NOTIF_TYPE_COUNT:
+		return "NOTIF_TYPE_COUNT";
 	case SUBSYS_BEFORE_DS_ENTRY:
 		return "BEFORE_DS_ENTRY";
 	case SUBSYS_AFTER_DS_ENTRY:
@@ -1728,8 +1750,6 @@ static char *icnss_subsys_notify_state_to_str(enum subsys_notif_type code)
 		return "AFTER_DS_EXIT";
 	case SUBSYS_DS_EXIT_FAIL:
 		return "DS_EXIT_FAIL";
-	case SUBSYS_NOTIF_TYPE_COUNT:
-		return "NOTIF_TYPE_COUNT";
 	default:
 		return "UNKNOWN";
 	}
@@ -1807,35 +1827,45 @@ static int icnss_modem_notifier_nb(struct notifier_block *nb,
 		      icnss_subsys_notify_state_to_str(code), code);
 
 	switch (code) {
+	case SUBSYS_BEFORE_SHUTDOWN:
+		if (!notif->crashed &&
+		    priv->low_power_support) { /* Hibernate */
+			if (test_bit(ICNSS_MODE_ON, &priv->state))
+				icnss_driver_event_post(
+					priv, ICNSS_DRIVER_EVENT_IDLE_SHUTDOWN,
+					ICNSS_EVENT_SYNC_UNINTERRUPTIBLE, NULL);
+			set_bit(ICNSS_LOW_POWER, &priv->state);
+		}
+		break;
 	case SUBSYS_AFTER_SHUTDOWN:
 		/* Collect ramdump only when there was a crash. */
-		if (priv->early_crash_ind) {
+		if (notif->crashed) {
 			icnss_pr_info("Collecting msa0 segment dump\n");
 			icnss_msa0_ramdump(priv);
 		}
+
+		if (test_bit(ICNSS_LOW_POWER, &priv->state) &&
+			     priv->low_power_support)
+			clear_bit(ICNSS_LOW_POWER, &priv->state);
 		goto out;
 	case SUBSYS_BEFORE_DS_ENTRY:
-		priv->is_low_pwr_mode = true;
-		set_bit(ICNSS_DEEP_SLEEP, &priv->state);
-		break;
-	case SUBSYS_BEFORE_SHUTDOWN:
-		if (notif->crashed) /* SSR */
-			priv->is_ssr = true;
-		else                /* Hibernate */
-			priv->is_low_pwr_mode = true;
+		if (test_bit(ICNSS_MODE_ON, &priv->state))
+			icnss_driver_event_post(
+					priv, ICNSS_DRIVER_EVENT_IDLE_SHUTDOWN,
+					ICNSS_EVENT_SYNC_UNINTERRUPTIBLE, NULL);
+		set_bit(ICNSS_LOW_POWER, &priv->state);
 		break;
 	case SUBSYS_AFTER_DS_ENTRY:
-		goto out;
 	case SUBSYS_DS_ENTRY_FAIL:
-		/* May need to handle if wlan needs to respond to it. */
 	case SUBSYS_BEFORE_DS_EXIT:
+		goto out;
 	case SUBSYS_AFTER_DS_EXIT:
-		if (!test_and_clear_bit(ICNSS_DEEP_SLEEP, &priv->state))
-			goto out;
-		priv->is_low_pwr_mode = false;
+		clear_bit(ICNSS_LOW_POWER, &priv->state);
 	default:
 		goto out;
 	}
+
+	priv->is_ssr = true;
 
 	icnss_update_state_send_modem_shutdown(priv, data);
 
@@ -3714,6 +3744,13 @@ static int icnss_resource_parse(struct icnss_priv *priv)
 			priv->is_slate_rfa = true;
 			icnss_pr_err("SLATE rfa is enabled\n");
 		}
+
+		if (of_property_read_bool(pdev->dev.of_node,
+					  "qcom,is_low_power")) {
+			priv->low_power_support = true;
+			icnss_pr_dbg("Deep Sleep/Hibernate mode supported\n");
+		}
+
 	} else if (priv->device_id == WCN6750_DEVICE_ID) {
 		res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
 						   "msi_addr");

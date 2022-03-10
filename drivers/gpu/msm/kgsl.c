@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2008-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <uapi/linux/msm_ion.h>
@@ -1349,9 +1350,9 @@ kgsl_sharedmem_find(struct kgsl_process_private *private, uint64_t gpuaddr)
 	if (!private)
 		return NULL;
 
-	if (!kgsl_mmu_gpuaddr_in_range(private->pagetable, gpuaddr) &&
+	if (!kgsl_mmu_gpuaddr_in_range(private->pagetable, gpuaddr, 0) &&
 		!kgsl_mmu_gpuaddr_in_range(
-			private->pagetable->mmu->securepagetable, gpuaddr))
+			private->pagetable->mmu->securepagetable, gpuaddr, 0))
 		return NULL;
 
 	spin_lock(&private->mem_lock);
@@ -2567,6 +2568,15 @@ static int memdesc_sg_virt(struct kgsl_memdesc *memdesc, unsigned long useraddr)
 
 	ret = sg_alloc_table_from_pages(memdesc->sgt, pages, npages,
 					0, memdesc->size, GFP_KERNEL);
+
+	if (ret)
+		goto out;
+
+	ret = kgsl_cache_range_op(memdesc, 0, memdesc->size,
+			KGSL_CACHE_OP_FLUSH);
+
+	if (ret)
+		sg_free_table(memdesc->sgt);
 out:
 	if (ret) {
 		for (i = 0; i < npages; i++)
@@ -4148,17 +4158,21 @@ static unsigned long get_svm_unmapped_area(struct file *file,
 	unsigned long ret, iova;
 	u64 start = 0, end = 0;
 	struct vm_area_struct *vma;
+	bool hint_valid = true;
+
+	if (addr > current->mm->mmap_base)
+		hint_valid = false;
 
 	if (flags & MAP_FIXED) {
 		/* Even fixed addresses need to obey alignment */
-		if (!IS_ALIGNED(addr, align))
+		if (!hint_valid || !IS_ALIGNED(addr, align))
 			return -EINVAL;
 
 		return set_svm_area(file, entry, addr, len, flags);
 	}
 
 	/* If a hint was provided, try to use that first */
-	if (addr) {
+	if (addr && hint_valid) {
 		if (IS_ALIGNED(addr, align)) {
 			ret = set_svm_area(file, entry, addr, len, flags);
 			if (!IS_ERR_VALUE(ret))
@@ -4169,6 +4183,11 @@ static unsigned long get_svm_unmapped_area(struct file *file,
 	/* Get the SVM range for the current process */
 	if (kgsl_mmu_svm_range(private->pagetable, &start, &end,
 		entry->memdesc.flags))
+		return -ERANGE;
+
+	/* clamp the range based on the CPU's requirements */
+	end = min_t(uint64_t, end, current->mm->mmap_base);
+	if (start >= end)
 		return -ERANGE;
 
 	/* Find the first gap in the iova map */

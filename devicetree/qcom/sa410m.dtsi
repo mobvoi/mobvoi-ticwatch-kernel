@@ -28,6 +28,7 @@
 	aliases {
 		serial0 = &qupv3_se4_2uart;
 		sdhc0 = &sdhc_1; /*SDC1 eMMC slot*/
+		sdhc1 = &sdhc_2; /* SDC2 SD card slot */
 		swr0 = &swr0;
 		swr1 = &swr1;
 	};
@@ -549,6 +550,10 @@
 		rpm-channel-name = "rpm_requests";
 		interrupts = <GIC_SPI 194 IRQ_TYPE_EDGE_RISING>;
 		rpm-channel-type = <15>; /* SMD_APPS_RPM */
+	};
+
+	system_pm_rpm {
+		compatible = "qcom,system-pm-rpm";
 	};
 
 	mem_dump {
@@ -1289,6 +1294,64 @@
 
 	};
 
+	sdhc_2: sdhci@4784000 {
+		compatible = "qcom,sdhci-msm-v5";
+		reg = <0x4784000 0x1000>;
+		reg-names = "hc_mem";
+
+		interrupts = <GIC_SPI 350 IRQ_TYPE_LEVEL_HIGH>,
+			<GIC_SPI 353 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "hc_irq", "pwr_irq";
+
+		clocks = <&gcc GCC_SDCC2_AHB_CLK>,
+			<&gcc GCC_SDCC2_APPS_CLK>;
+		clock-names = "iface", "core";
+
+		interconnects = <&system_noc MASTER_SDCC_2 &bimc SLAVE_EBI_CH0>,
+			<&bimc MASTER_AMPSS_M0 &config_noc SLAVE_SDCC_2>;
+		interconnect-names = "sdhc-ddr","cpu-sdhc";
+		qcom,msm-bus,name = "sdhc2";
+		qcom,msm-bus,num-cases = <7>;
+		qcom,msm-bus,num-paths = <2>;
+		qcom,msm-bus,vectors-KBps =
+			/* No vote */
+			<0 0>, <0 0>,
+			/* 400 KB/s*/
+			<1046 3200>,<1600 1600>,
+			/* 25 MB/s */
+			<65360 250000>,<100000 133320>,
+			/* 50 MB/s */
+			<130718 250000>,<133320 133320>,
+			/* 100 MB/s */
+			<261438 250000>,<150000 133320>,
+			/* 200 MB/s */
+			<261438 800000>,<300000 300000>,
+			/* Max. bandwidth */
+			<1338562 4096000>,<1338562 4096000>;
+		qcom,bus-bw-vectors-bps = <0 400000 25000000 50000000
+			100750000 200000000 4294967295>;
+
+		/* DLL HSR settings. Refer go/hsr - <Target> DLL settings */
+		qcom,dll-hsr-list = <0x0007642c 0x0 0x0 0x00010800 0x80040868>;
+
+		bus-width = <4>;
+
+		iommus = <&apps_smmu 0xA0 0x0>;
+		qcom,iommu-dma = "bypass";
+
+		no-mmc;
+		no-sdio;
+
+		qcom,devfreq,freq-table = <50000000 202000000>;
+
+		status = "disabled";
+
+		qos0 {
+			mask = <0x0f>;
+			vote = <43>;
+		};
+	};
+
 	qcom,rmtfs_sharedmem@0 {
 		compatible = "qcom,sharedmem-uio";
 		reg = <0x0 0x280000>;
@@ -1354,7 +1417,7 @@
 		reg = <0x5800000 0x34000>,
 			<0x5804000 0x28000>;
 		reg-names = "ipa-base", "gsi-base";
-		interrupts = <0 257 0>, <0 259 0>;
+		interrupts = <GIC_SPI 257 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI 259 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "ipa-irq", "gsi-irq";
 		qcom,ipa-hw-ver = <16>; /* IPA core version = IPAv4.2 */
 		qcom,ipa-hw-mode = <0>;
@@ -1453,6 +1516,13 @@
 #include "sa410m-usb.dtsi"
 #include "sa410m-audio.dtsi"
 #include "sa410m-audio-overlay.dtsi"
+#include "scuba-pm.dtsi"
+
+&soc {
+	qcom,ion {
+		/delete-node/ qcom,ion-heap@26;
+	};
+};
 
 &qupv3_se4_2uart {
 	status = "ok";
@@ -1508,3 +1578,100 @@
 
 /delete-node/ &kgsl_iommu_test_device;
 /delete-node/ &kgsl_smmu;
+
+#include "scuba-thermal.dtsi"
+
+&thermal_zones {
+	gpu-step {
+		trips {
+			gpu-cxip-trip {
+				temperature = <105000>;
+			};
+
+			gpu-trip {
+				temperature = <105000>;
+			};
+
+			gpu-cx-mon {
+				temperature = <115000>;
+			};
+		};
+
+		cooling-maps {
+			/delete-node/ gpu_cdev;
+			/delete-node/ gpu-cx-cdev0;
+		};
+	};
+
+	cpuss-0-step {
+		trips {
+			cpu-0-2-config {
+				temperature = <115000>;
+			};
+		};
+	};
+
+	cpuss-1-step {
+		trips {
+			cpu-1-3-configs {
+				temperature = <115000>;
+			};
+		};
+	};
+
+	mdm-0-step {
+		trips {
+			mdm0-cx-mon {
+				temperature = <105000>;
+			};
+
+			mdm0_emer_mon: mdm0-emer-mon {
+				temperature = <125000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			/delete-node/ mdm0-cx-cdev0;
+			/delete-node/ mdm0-cx-cdev2;
+
+			mdm0-cx-cdev1 {
+				cooling-device = <&modem_proc 1 1>;
+			};
+
+			mdm0-emer-cdev0 {
+				trip = <&mdm0_emer_mon>;
+				cooling-device = <&modem_proc 3 3>;
+			};
+		};
+	};
+
+	mdm-1-step {
+		trips {
+			mdm1-cx-mon {
+				temperature = <105000>;
+			};
+
+			mdm1_emer_mon: mdm1-emer-mon {
+				temperature = <125000>;
+				hysteresis = <5000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			/delete-node/ mdm1-cx-cdev0;
+			/delete-node/ mdm1-cx-cdev2;
+
+			mdm1-cx-cdev1 {
+				cooling-device = <&modem_proc 1 1>;
+			};
+
+			mdm1-emer-cdev0 {
+				trip = <&mdm1_emer_mon>;
+				cooling-device = <&modem_proc 3 3>;
+			};
+		};
+	};
+};

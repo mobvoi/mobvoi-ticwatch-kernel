@@ -1150,13 +1150,6 @@ int dwc3_core_init(struct dwc3 *dwc)
 		dwc3_writel(dwc->regs, DWC31_LCSR_TX_DEEMPH_3(0),
 			dwc->gen2_tx_de_emph3 & DWC31_TX_DEEMPH_MASK);
 
-	/* set inter-packet gap 199.794ns to improve EL_23 margin */
-	if (dwc->revision >= DWC3_USB31_REVISION_170A) {
-		reg = dwc3_readl(dwc->regs, DWC3_GUCTL1);
-		reg |= DWC3_GUCTL1_IP_GAP_ADD_ON(1);
-		dwc3_writel(dwc->regs, DWC3_GUCTL1, reg);
-	}
-
 	/* Force Gen1 speed on Gen2 controller if "force_gen1" is present */
 	if (dwc->force_gen1) {
 		for (i = 0; i < dwc->num_ssphy; i++) {
@@ -1164,6 +1157,29 @@ int dwc3_core_init(struct dwc3 *dwc)
 			reg |= DWC3_FORCE_GEN1;
 			dwc3_writel(dwc->regs, DWC3_LLUCTL(i), reg);
 		}
+	}
+
+	/*
+	 * Set inter-packet gap 199.794ns to improve EL_23 margin.
+	 *
+	 * STAR 9001346572: Host: When a Single USB 2.0 Endpoint Receives NAKs Continuously, Host
+	 * Stops Transfers to Other Endpoints. When an active endpoint that is not currently cached
+	 * in the host controller is chosen to be cached to the same cache index as the endpoint
+	 * that receives NAK, The endpoint that receives the NAK responses would be in continuous
+	 * retry mode that would prevent it from getting evicted out of the host controller cache.
+	 * This would prevent the new endpoint to get into the endpoint cache and therefore service
+	 * to this endpoint is not done.
+	 * The workaround is to disable lower layer LSP retrying the USB2.0 NAKed transfer. Forcing
+	 * this to LSP upper layer allows next EP to evict the stuck EP from cache.
+	 */
+	if (dwc->revision >= DWC3_USB31_REVISION_170A) {
+		reg = dwc3_readl(dwc->regs, DWC3_GUCTL1);
+		reg |= DWC3_GUCTL1_IP_GAP_ADD_ON(1);
+		dwc3_writel(dwc->regs, DWC3_GUCTL1, reg);
+
+		reg = dwc3_readl(dwc->regs, DWC3_GUCTL3);
+		reg |= DWC3_GUCTL3_USB20_RETRY_DISABLE;
+		dwc3_writel(dwc->regs, DWC3_GUCTL3, reg);
 	}
 
 	return 0;
@@ -1766,6 +1782,7 @@ static int dwc3_probe(struct platform_device *pdev)
 	if (ret)
 		goto err2;
 
+	dwc3_debugfs_init(dwc);
 	if (!notify_event) {
 		ret = dwc3_core_init(dwc);
 		if (ret) {
@@ -1811,10 +1828,10 @@ static int dwc3_probe(struct platform_device *pdev)
 	count++;
 
 	pm_runtime_allow(dev);
-	dwc3_debugfs_init(dwc);
 	return 0;
 
 err3:
+	dwc3_debugfs_exit(dwc);
 	dwc3_free_scratch_buffers(dwc);
 err2:
 	dwc3_free_event_buffers(dwc);
@@ -1834,8 +1851,8 @@ static int dwc3_remove(struct platform_device *pdev)
 {
 	struct dwc3	*dwc = platform_get_drvdata(pdev);
 
-	dwc3_debugfs_exit(dwc);
 	dwc3_gadget_exit(dwc);
+	dwc3_debugfs_exit(dwc);
 	pm_runtime_disable(&pdev->dev);
 	pm_runtime_put_noidle(&pdev->dev);
 	pm_runtime_set_suspended(&pdev->dev);
@@ -1980,7 +1997,7 @@ static int dwc3_resume_common(struct dwc3 *dwc, pm_message_t msg)
 		if (PMSG_IS_AUTO(msg))
 			break;
 
-		ret = dwc3_core_init(dwc);
+		ret = dwc3_core_init_for_resume(dwc);
 		if (ret)
 			return ret;
 

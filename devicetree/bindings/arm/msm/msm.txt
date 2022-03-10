@@ -119,6 +119,9 @@ SoCs:
 - LEMANS
   compatible = "qcom,lemans"
 
+- SA410M
+  compatible = "qcom,sa410m"
+
 Generic board variants:
 
 - CDP device:
@@ -281,6 +284,7 @@ compatible = "qcom,sa6155-adp-air"
 compatible = "qcom,sa6155p-adp-air"
 compatible = "qcom,qcs610"
 compatible = "qcom,qcs610-iot"
+compatible = "qcom,qcs610-idp"
 compatible = "qcom,qcs405-rumi"
 compatible = "qcom,qcs405-iot"
 compatible = "qcom,sa2150p-ccard"
@@ -322,6 +326,10 @@ compatible = "qcom,direwolf-ivi-adp-star"
 compatible = "qcom,direwolf-adas"
 compatible = "qcom,direwolf-adas-rumi"
 compatible = "qcom,direwolf-adas-adp-star"
+compatible = "qcom,direwolf-adas-adp-ride"
 compatible = "qcom,lemans-rumi"
 compatible = "qcom,lemans-adp-air"
 compatible = "qcom,lemans-adp-star"
+compatible = "qcom,quinvm"
+compatible = "qcom,sa410m-idp"
+compatible = "qcom,sa410m-qrd"

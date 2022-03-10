@@ -21,6 +21,7 @@ Required properties :
 		"qcom,lemans-nspa_noc";
 		"qcom,lemans-nspb_noc";
 		"qcom,lemans-system_noc";
+		"qcom,lemans-pcie_anoc";
 - #interconnect-cells : should contain 1
 
 Examples:

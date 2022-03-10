@@ -1,7 +1,7 @@
 /dts-v1/;
 
 #include "direwolf-ivi.dtsi"
-#include "direwolf-adp-common.dtsi"
+#include "direwolf-adp-air.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. DirewolfAU IVI ADP-AIR";

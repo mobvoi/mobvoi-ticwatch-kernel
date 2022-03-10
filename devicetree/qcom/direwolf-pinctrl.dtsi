@@ -1117,6 +1117,19 @@
 	};
 
 	qupv3_se13_2uart_pins: qupv3_se13_2uart_pins {
+		qupv3_se13_2uart_default: qupv3_se13_2uart_default {
+			mux {
+				pins = "gpio28", "gpio29";
+				function = "qup13";
+			};
+
+			config {
+				pins = "gpio28", "gpio29";
+				drive-strength = <6>;
+				bias-disable;
+			};
+		};
+
 		qupv3_se13_2uart_active: qupv3_se13_2uart_active {
 			mux {
 				pins = "gpio28", "gpio29";
@@ -1125,7 +1138,7 @@
 
 			config {
 				pins = "gpio28", "gpio29";
-				drive-strength = <2>;
+				drive-strength = <6>;
 				bias-disable;
 			};
 		};
@@ -1139,7 +1152,22 @@
 			config {
 				pins = "gpio28", "gpio29";
 				drive-strength = <2>;
-				bias-pull-down;
+				bias-disable;
+			};
+		};
+
+		 qupv3_se13_2uart_disable: qupv3_se13_2uart_disable {
+			rtr {
+				pins = "gpio27";
+				drive-strength = <2>;
+				bias-disable;
+				input-enable;
+			};
+
+			cts {
+				pins = "gpio26";
+				drive-strength = <0>;
+				bias-pull-up;
 			};
 		};
 	};

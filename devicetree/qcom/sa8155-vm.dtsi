@@ -663,6 +663,8 @@
 
 	qtee_shmbridge {
 		compatible = "qcom,tee-shared-memory-bridge";
+		/*Boolean property to disable shmbridge*/
+		qcom,disable-shmbridge-support;
 	};
 
 	qcom_qseecom: qseecom@87900000 {
@@ -875,4 +877,5 @@
 	/delete-property/ qcom,msm-bus,num-paths;
 	/delete-property/ qcom,msm-bus,vectors-bus-ids;
 	qcom,iommu-dma = "bypass";
+	status = "disabled";
 };

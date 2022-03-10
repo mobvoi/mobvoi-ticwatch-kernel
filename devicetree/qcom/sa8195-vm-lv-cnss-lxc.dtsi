@@ -60,6 +60,7 @@
 		qcom,vdd-wlan-ctrl1-config = <0 0 0 0 0>;
 		qcom,vdd-wlan-ctrl2-config = <0 0 0 0 0>;
 		wlan-en-gpio = <&tlmm 169 0>;
+		qcom,bt-en-gpio = <&tlmm 172 0>;
 		pinctrl-names = "wlan_en_active", "wlan_en_sleep";
 		pinctrl-0 = <&cnss_wlan_en_active>;
 		pinctrl-1 = <&cnss_wlan_en_sleep>;

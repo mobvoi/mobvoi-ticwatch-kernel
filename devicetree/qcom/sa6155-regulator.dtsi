@@ -111,7 +111,7 @@
 			qcom,set = <RPMH_REGULATOR_SET_ALL>;
 			regulator-min-microvolt = <1650000>;
 			regulator-max-microvolt = <3100000>;
-			qcom,init-voltage = <1650000>;
+			qcom,init-voltage = <1800000>;
 			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
 		};
 	};
@@ -147,7 +147,7 @@
 			qcom,set = <RPMH_REGULATOR_SET_ALL>;
 			regulator-min-microvolt = <875000>;
 			regulator-max-microvolt = <975000>;
-			qcom,init-voltage = <875000>;
+			qcom,init-voltage = <925000>;
 			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
 		};
 	};
@@ -417,7 +417,7 @@
 			qcom,set = <RPMH_REGULATOR_SET_ALL>;
 			regulator-min-microvolt = <1650000>;
 			regulator-max-microvolt = <2950000>;
-			qcom,init-voltage = <1650000>;
+			qcom,init-voltage = <1800000>;
 			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
 		};
 	};
@@ -453,7 +453,7 @@
 			qcom,set = <RPMH_REGULATOR_SET_ALL>;
 			regulator-min-microvolt = <1650000>;
 			regulator-max-microvolt = <2950000>;
-			qcom,init-voltage = <1650000>;
+			qcom,init-voltage = <1800000>;
 			qcom,init-mode = <RPMH_REGULATOR_MODE_LPM>;
 		};
 	};

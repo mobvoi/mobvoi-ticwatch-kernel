@@ -1314,3 +1314,5 @@ dcc: dcc_v2@1be2000 {
 		};
 	};
 };
+
+#include "scuba-pm.dtsi"

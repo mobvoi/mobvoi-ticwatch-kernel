@@ -213,7 +213,6 @@
 		resets = <&gcc GCC_UFS_CARD_2_BCR>;
 		reset-names = "rst";
 
-		secondary-storage;
 		status = "disabled";
 	};
 };

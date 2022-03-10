@@ -227,6 +227,8 @@
 
 	qtee_shmbridge {
 		compatible = "qcom,tee-shared-memory-bridge";
+		/*Boolean property to disable shmbridge*/
+		qcom,disable-shmbridge-support;
 	};
 
 	qcom_seecom: qseecom@86d00000 {
@@ -347,6 +349,25 @@
 		qcom,bt-vdd-rfa2-config = <2040000 2040000 0 0>;
 		qcom,bt-vdd-rfa3-config = <1904000 1904000 0 0>;
 	};
+
+	subsys_notif_virt: qcom,subsys_notif_virt@2D000000 {
+		compatible = "qcom,subsys-notif-virt";
+		reg = <0x2D000000 0x400>;
+		reg-names = "vdev_base";
+		adsp {
+			subsys-name = "adsp";
+			interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "state-irq";
+			type = "virtual";
+			offset = <0>;
+		};
+
+		wlan {
+			subsys-name = "wlan";
+			type = "native";
+			offset = <512>;
+		};
+	};
 };
 
 &regulator {
@@ -447,6 +468,7 @@
 	/delete-property/ qcom,msm-bus,num-paths;
 	/delete-property/ qcom,msm-bus,vectors-bus-ids;
 	qcom,iommu-dma = "bypass";
+	status = "disabled";
 };
 
 &slpi_tlmm {

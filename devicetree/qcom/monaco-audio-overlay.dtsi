@@ -313,7 +313,7 @@
 		"VA DMIC2", "VA MIC BIAS2",
 		"VA DMIC3", "VA MIC BIAS2";
 
-	qcom,cdc-dmic23-gpios = <&cdc_dmic23_gpios>;
+	qcom,cdc-dmic01-gpios = <&cdc_dmic01_gpios>;
 	qcom,cdc-dmic23-gpios = <&cdc_dmic23_gpios>;
 
 	nvmem-cells = <&adsp_variant>;

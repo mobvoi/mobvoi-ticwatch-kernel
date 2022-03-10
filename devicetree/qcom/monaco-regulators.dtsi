@@ -209,6 +209,11 @@
 	/* WCSS_CX and WCSS_MX */
 	rpm-regulator-ldoa8 {
 		status = "okay";
+		qcom,supported-modes =
+			<RPM_SMD_REGULATOR_MODE_RET
+			RPM_SMD_REGULATOR_MODE_LPM
+			RPM_SMD_REGULATOR_MODE_HPM>;
+		qcom,mode-threshold-currents = <0 10000 30000>;
 		WCSS_CX:
 		WCSS_MX:
 		L8A: pm5100_l8: regulator-l8 {
@@ -261,6 +266,11 @@
 
 	rpm-regulator-ldoa13 {
 		status = "okay";
+		qcom,supported-modes =
+			<RPM_SMD_REGULATOR_MODE_RET
+			RPM_SMD_REGULATOR_MODE_LPM
+			RPM_SMD_REGULATOR_MODE_HPM>;
+		qcom,mode-threshold-currents = <0 10000 30000>;
 		L13A: pm5100_l13: regulator-l13 {
 			regulator-min-microvolt = <1304000>;
 			regulator-max-microvolt = <1304000>;
@@ -382,6 +392,7 @@
 	rpm-regulator-ldoa25 {
 		status = "okay";
 		L25A: pm5100_l25: regulator-l25 {
+			parent-supply = <&L12A>;
 			regulator-min-microvolt = <3080000>;
 			regulator-max-microvolt = <3080000>;
 			qcom,init-voltage = <3080000>;

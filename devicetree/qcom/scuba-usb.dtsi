@@ -74,7 +74,8 @@
 			snps,dis_u2_susphy_quirk;
 			snps,dis_enblslpm_quirk;
 			snps,has-lpm-erratum;
-			snps,hird-threshold = /bits/ 8 <0x10>;
+			snps,hird-threshold = /bits/ 8 <0x0>;
+			snps,is-utmi-l1-suspend;
 			snps,usb3_lpm_capable;
 			usb-core-id = <0>;
 			maximum-speed = "super-speed";

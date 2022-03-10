@@ -22,17 +22,25 @@
 	vdd-hba-fixed-regulator;
 
 	vcc-supply = <&L17C0>;
-	vcc-voltage-level = <2504000 2504000>;
+	vcc-voltage-level = <2504000 2950000>;
 	vcc-max-microamp = <800000>;
 
 	vccq-supply = <&L6C0>;
 	vccq-max-microamp = <750000>;
+
+	vccq2-supply = <&S4A0>;
+	vccq2-max-microamp = <750000>;
 
 	qcom,vddp-ref-clk-supply = <&L6C0>;
 	qcom,vddp-ref-clk-max-microamp = <100>;
 
 	/* Disable Write Booster Feature */
 	qcom,disable-wb-support;
+
+	nvmem-cells = <&ufs0_dev>;
+	nvmem-cell-names = "ufs_dev";
+
+	vcc-low-voltage-sup;
 
 	status = "ok";
 };
@@ -53,17 +61,25 @@
 	vdd-hba-fixed-regulator;
 
 	vcc-supply = <&L10C0>;
-	vcc-voltage-level = <2504000 2504000>;
+	vcc-voltage-level = <2504000 2950000>;
 	vcc-max-microamp = <800000>;
 
 	vccq-supply = <&L3C0>;
 	vccq-max-microamp = <750000>;
+
+	vccq2-supply = <&S4A0>;
+	vccq2-max-microamp = <750000>;
 
 	qcom,vddp-ref-clk-supply = <&L3C0>;
 	qcom,vddp-ref-clk-max-microamp = <100>;
 
 	/* Disable Write Booster Feature */
 	qcom,disable-wb-support;
+
+	nvmem-cells = <&ufs1_dev>;
+	nvmem-cell-names = "ufs_dev";
+
+	vcc-low-voltage-sup;
 
 	status = "ok";
 };

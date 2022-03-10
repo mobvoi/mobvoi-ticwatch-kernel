@@ -34,6 +34,7 @@
 		raydium,reset-gpio = <&tlmm 12 0x00>;
 		raydium,irq-gpio = <&tlmm 13 0x00>;
 		raydium,num-max-touches = <2>;
+		panel = <&dsi_rm6d030_amoled_cmd>;
 		raydium,soft-reset-delay-ms = <50>;
 		raydium,hard-reset-delay-ms = <100>;
 		raydium,x_max = <320>;

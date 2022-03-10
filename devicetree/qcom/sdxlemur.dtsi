@@ -971,8 +971,8 @@
 
 			qcom,pcie-vendor-id = /bits/ 16 <0x17cb>;
 			qcom,pcie-device-id = /bits/ 16 <0x0308>;
-			qcom,pcie-link-speed = <4>;
-			qcom,pcie-phy-ver = <8>;
+			qcom,pcie-link-speed = <3>;
+			qcom,pcie-phy-ver = <7>;
 			qcom,pcie-active-config;
 			qcom,pcie-aggregated-irq;
 			qcom,pcie-mhi-a7-irq;
@@ -1135,7 +1135,7 @@
 			qcom,mhi-ep-msi = <0>;
 			qcom,mhi-version = <0x1000000>;
 			qcom,use-ipa-software-channel;
-			interrupts = <0 145 0>;
+			interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "mhi-device-inta";
 			qcom,mhi-ifc-id = <0x030817cb>;
 			qcom,mhi-interrupt;

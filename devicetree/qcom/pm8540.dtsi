@@ -111,6 +111,8 @@
 		pm8540_1_sdam_2: sdam@b100 {
 			compatible = "qcom,spmi-sdam";
 			reg = <0xb100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 	};

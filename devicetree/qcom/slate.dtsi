@@ -45,6 +45,16 @@
 		compatible = "qcom,glink-slatecom-xprt";
 		label = "slate";
 
+		qcom,glink-slate-apps-diag-cntl {
+			qcom,glink-channels = "DIAG_SLATE_APPS_CNTL";
+			qcom,intents = <0x200 1>;
+		};
+
+		qcom,glink-slate-adsp-diag-cntl {
+			qcom,glink-channels = "DIAG_SLATE_ADSP_CNTL";
+			qcom,intents = <0x200 1>;
+		};
+
 		qcom,glink-slate-events-bridge {
 			qcom,glink-channels = "slate-event";
 			qcom,intents = <0x0181 1>;
@@ -189,6 +199,21 @@
 					0x3E8  2>;
 		};
 
+		qcom,glink-slate-bt-ctrl {
+			qcom,glink-channels = "slate_bt_ctrl";
+			qcom,intents = <0x50 1>;
+		};
+
+		qcom,glink-bt-offload-event {
+			qcom,glink-channels = "bt_offload_event";
+			qcom,intents = <0x50 1>;
+		};
+
+		qcom,glinkpkt-bt-app-offload-data {
+			qcom,glink-channels = "slate_bt_app";
+			qcom,intents = <0xF2F8 1>;
+		};
+
 		audio_ipc: qcom,audio_cc_ipc {
 			compatible = "qcom,audio_cc_ipc";
 			qcom,glink-channels = "gpr_cc_apps";
@@ -204,10 +229,6 @@
 			reg = <GPR_DOMAIN_CC_DSP>;
 			cdev_name = "nongpr_channel";
 		};
-	};
-
-	qcom,power-state {
-		compatible = "qcom,power-state";
 	};
 
 	qcom,slatecom-rpmsg {

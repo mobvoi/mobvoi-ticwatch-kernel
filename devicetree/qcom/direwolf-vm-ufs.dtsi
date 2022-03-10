@@ -184,7 +184,6 @@
 		rpm-level = <0>;
 		spm-level = <0>;
 
-		secondary-storage;
 		status = "disabled";
 	};
 };

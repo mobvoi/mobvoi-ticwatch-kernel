@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #define pr_fmt(msg) "slatecom_dev:" msg
 
@@ -572,6 +573,44 @@ static long slate_com_ioctl(struct file *filp,
 	return ret;
 }
 
+static ssize_t slatecom_char_write(struct file *f, const char __user *buf,
+				size_t count, loff_t *off)
+{
+	unsigned char qcli_cmnd;
+	uint32_t opcode;
+	int ret = 0;
+	struct slatedaemon_priv *dev = container_of(slatecom_intf_drv,
+					struct slatedaemon_priv,
+					lhndl);
+
+	if (copy_from_user(&qcli_cmnd, buf, sizeof(unsigned char)))
+		return -EFAULT;
+
+	pr_debug("%s: QCLI command arg = %c\n", __func__, qcli_cmnd);
+
+	switch (qcli_cmnd) {
+	case '0':
+		opcode = GMI_MGR_DISABLE_QCLI;
+		ret = slatecom_tx_msg(dev, &opcode, sizeof(opcode));
+		if (ret < 0)
+			pr_err("MSM QCLI Disable cmd failed\n");
+		break;
+	case '1':
+		opcode = GMI_MGR_ENABLE_QCLI;
+		ret = slatecom_tx_msg(dev, &opcode, sizeof(opcode));
+		if (ret < 0)
+			pr_err("MSM QCLI Enable cmd failed\n");
+		break;
+
+	default:
+		pr_err("MSM QCLI Invalid Option\n");
+		break;
+	}
+
+	*off += count;
+	return count;
+}
+
 static int slatecom_char_close(struct inode *inode, struct file *file)
 {
 	int ret;
@@ -687,6 +726,7 @@ static struct platform_driver slate_daemon_driver = {
 static const struct file_operations fops = {
 	.owner          = THIS_MODULE,
 	.open           = slatecom_char_open,
+	.write          = slatecom_char_write,
 	.release        = slatecom_char_close,
 	.unlocked_ioctl = slate_com_ioctl,
 };
@@ -750,6 +790,12 @@ static int ssr_modem_cb(struct notifier_block *this,
 	int ret;
 
 	switch (opcode) {
+	case SUBSYS_AFTER_DS_ENTRY:
+		msg_header.opcode = GMI_MGR_SSR_MPSS_DOWN_NOTIFICATION;
+		ret = slatecom_tx_msg(dev, &(msg_header.opcode), sizeof(msg_header.opcode));
+		if (ret < 0)
+			pr_err("failed to send mdsp down event to slate\n");
+		break;
 	case SUBSYS_BEFORE_SHUTDOWN:
 		modeme.e_type = MODEM_BEFORE_POWER_DOWN;
 		reinit_completion(&slate_modem_down_wait);
@@ -758,6 +804,12 @@ static int ssr_modem_cb(struct notifier_block *this,
 		ret = slatecom_tx_msg(dev, &(msg_header.opcode), sizeof(msg_header.opcode));
 		if (ret < 0)
 			pr_err("failed to send mdsp down event to slate\n");
+		break;
+	case SUBSYS_AFTER_DS_EXIT:
+		msg_header.opcode = GMI_MGR_SSR_MPSS_UP_NOTIFICATION;
+		ret = slatecom_tx_msg(dev, &(msg_header.opcode), sizeof(msg_header.opcode));
+		if (ret < 0)
+			pr_err("failed to send mdsp up event to slate\n");
 		break;
 	case SUBSYS_AFTER_POWERUP:
 		modeme.e_type = MODEM_AFTER_POWER_UP;
@@ -779,11 +831,23 @@ static int ssr_adsp_cb(struct notifier_block *this,
 	int ret;
 
 	switch (opcode) {
+	case SUBSYS_AFTER_DS_ENTRY:
+		msg_header.opcode = GMI_MGR_SSR_ADSP_DOWN_INDICATION;
+		ret = slatecom_tx_msg(dev, &(msg_header.opcode), sizeof(msg_header.opcode));
+		if (ret < 0)
+			pr_err("failed to send adsp down event to slate\n");
+		break;
 	case SUBSYS_BEFORE_SHUTDOWN:
 		adspe.e_type = ADSP_BEFORE_POWER_DOWN;
 		reinit_completion(&slate_adsp_down_wait);
 		send_uevent(&adspe);
 		msg_header.opcode = GMI_MGR_SSR_ADSP_DOWN_INDICATION;
+		ret = slatecom_tx_msg(dev, &(msg_header.opcode), sizeof(msg_header.opcode));
+		if (ret < 0)
+			pr_err("failed to send adsp up event to slate\n");
+		break;
+	case SUBSYS_AFTER_DS_EXIT:
+		msg_header.opcode = GMI_MGR_SSR_ADSP_UP_INDICATION;
 		ret = slatecom_tx_msg(dev, &(msg_header.opcode), sizeof(msg_header.opcode));
 		if (ret < 0)
 			pr_err("failed to send adsp up event to slate\n");

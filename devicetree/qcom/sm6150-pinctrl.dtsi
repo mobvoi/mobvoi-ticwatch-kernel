@@ -1107,6 +1107,35 @@
 			};
 		};
 
+		tert_i2s_sck_ws_d0 {
+			tert_i2s_sck_ws_d0_sleep: tert_i2s_sck_ws_do_sleep {
+				mux {
+					pins = "gpio115", "gpio116", "gpio117";
+					function = "ter_mi2s";
+				};
+
+				config {
+					pins = "gpio115", "gpio116", "gpio117";
+					drive-strength = <2>;   /* 2 mA */
+				};
+			};
+
+			tert_i2s_sck_ws_d0_active: tert_i2s_sck_ws_do_active {
+				mux {
+					pins = "gpio115", "gpio116", "gpio117";
+					function = "ter_mi2s";
+				};
+
+				config {
+					pins = "gpio115", "gpio116", "gpio117";
+					drive-strength = <8>;   /* 8 mA */
+					bias-disable;
+					output-high;
+					input-enable;
+				};
+			};
+		};
+
 		ter_i2s_sck_ws {
 			ter_i2s_sck_sleep: ter_i2s_sck_sleep {
 				mux {

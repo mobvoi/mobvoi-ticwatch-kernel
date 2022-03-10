@@ -5,6 +5,6 @@
 
 / {
 	model = "Qualcomm Technologies, Inc. Direwolf Single LV Virtual Machine";
-	compatible = "qcom,direwolf";
-	qcom,board-id = <0x1000002 0>;
+	compatible = "qcom,direwolf", "qcom,quinvm";
+	qcom,board-id = <0 0x1000002>;
 };

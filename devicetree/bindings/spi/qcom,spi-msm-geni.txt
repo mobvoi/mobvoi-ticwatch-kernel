@@ -46,6 +46,7 @@ the following properties.
 Required properties:
 - compatible:     Should contain:
                   "qcom,spi-msm-codec-slave" for external codec control
+                  or "qcom,spidev" for user mode SPI device driver
 
 - reg:            Chip select address of device.
 

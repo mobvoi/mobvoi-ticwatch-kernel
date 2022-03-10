@@ -13,10 +13,13 @@
 		compatible = "qcom,blkdev-rename";
 		actual-dev = "vda", "vdb", "vdc",
 				"vdd", "vde", "vdf",
-				"vdg", "vdh";
+				"vdg", "vdh", "vdi";
 		rename-dev = "system", "userdata", "vendor",
 				"persist", "modem", "bluetooth",
 				"misc", "vbmeta";
+		rename-dev-ab = "super", "userdata", "metadata",
+				"persist", "modem_a", "bluetooth_a",
+				"misc", "vbmeta_a", "vbmeta_b";
 	};
 };
 
@@ -55,3 +58,9 @@
 &pcie4_msi_snps {
 	status = "okay";
 };
+
+&qcom_rng_ee3 {
+	status = "okay";
+};
+
+#include "direwolf-vm-gnss.dtsi"

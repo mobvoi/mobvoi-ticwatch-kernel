@@ -2,6 +2,10 @@
 #include <dt-bindings/clock/qcom,gcc-sm6150.h>
 #include "sa6155-cnss.dtsi"
 
+&qupv3_2 {
+	status = "ok";
+};
+
 &qupv3_se0_2uart {
 	status = "ok";
 };
@@ -192,20 +196,18 @@
 			loopback-en = <1>;
 			rx-prog-swap = <1>;
 			tx-clk-phase-shift-en = <1>;
-
 			dll-clock-dis = <0>;
 			mclk-freq-calc = <0x1A>;
 			ddr-traffic-init-sel = <0>;
 			ddr-traffic-init-sw = <0>;
 			ddr-cal-en = <0>;
-
 			tcx0-cycles-dly-line = <64>;
 			tcx0-cycles-cnt = <4>;
-
 			test-ctl = <0xC1800000>;
 			usr-ctl = <0x2C010800>;
-
 			pps-create = <1>;
+			l3-master-dev = <1>;
+			ipv6-wq = <1>;
 		};
 
 	};

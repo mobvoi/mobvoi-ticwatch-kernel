@@ -25,9 +25,7 @@
 &soc {
 	bluetooth: bt_wcn3990 {
 		compatible = "qcom,qcc5100";
-		qcom,bt-vdd-pa-supply = <&L23A>; /* CH0 */
 
-		qcom,bt-vdd-pa-config = <1800000 1890000 10000 0>;
 		status = "ok";
 	};
 };

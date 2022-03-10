@@ -7,5 +7,5 @@
 	model = "Qualcomm Technologies, Inc. SA8155 Multi LV Virtual Machine";
 	compatible = "qcom,sa8155";
 	qcom,pmic-name = "PM8150";
-	qcom,board-id = <0x2000002 0>;
+	qcom,board-id = <0 0x2000002>;
 };

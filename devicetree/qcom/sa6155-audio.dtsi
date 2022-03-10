@@ -181,11 +181,11 @@
 		qcom,msm-cpudai-tdm-data-out = <0>;
 		qcom,msm-cpudai-tdm-invert-sync = <0>;
 		qcom,msm-cpudai-tdm-data-delay = <0>;
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&ter_i2s_sck_active &ter_i2s_data0_active
-				&ter_i2s_data1_active>;
-		pinctrl-1 = <&ter_i2s_sck_sleep &ter_i2s_data0_sleep
+		pinctrl-names = "default", "active";
+		pinctrl-0 = <&ter_i2s_sck_sleep &ter_i2s_data0_sleep
 				&ter_i2s_data1_sleep>;
+		pinctrl-1 = <&ter_i2s_sck_active &ter_i2s_data0_active
+				&ter_i2s_data1_active>;
 		#gpio-cells = <0>;
 		dai_tert_tdm_rx_0: qcom,msm-dai-q6-tdm-tert-rx-0 {
 			compatible = "qcom,msm-dai-q6-tdm";
@@ -276,13 +276,13 @@
 		qcom,msm-cpudai-tdm-data-out = <0>;
 		qcom,msm-cpudai-tdm-invert-sync = <0>;
 		qcom,msm-cpudai-tdm-data-delay = <0>;
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&quat_tdm_sclk_active &quat_tdm_ws_active
-				&quat_tdm_data0_active &quat_tdm_data1_active
-				&quat_tdm_data2_active &quat_tdm_data3_active>;
-		pinctrl-1 = <&quat_tdm_sclk_sleep &quat_tdm_ws_sleep
+		pinctrl-names = "default", "active";
+		pinctrl-0 = <&quat_tdm_sclk_sleep &quat_tdm_ws_sleep
 				&quat_tdm_data0_sleep &quat_tdm_data1_sleep
 				&quat_tdm_data2_sleep &quat_tdm_data3_sleep>;
+		pinctrl-1 = <&quat_tdm_sclk_active &quat_tdm_ws_active
+				&quat_tdm_data0_active &quat_tdm_data1_active
+				&quat_tdm_data2_active &quat_tdm_data3_active>;
 		#gpio-cells = <0>;
 		dai_quat_tdm_rx_0: qcom,msm-dai-q6-tdm-quat-rx-0 {
 			compatible = "qcom,msm-dai-q6-tdm";
@@ -373,11 +373,11 @@
 		qcom,msm-cpudai-tdm-data-out = <0>;
 		qcom,msm-cpudai-tdm-invert-sync = <0>;
 		qcom,msm-cpudai-tdm-data-delay = <0>;
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&quin_tdm_sclk_active &quin_tdm_ws_active
-				&quin_tdm_data0_active &quin_tdm_data1_active>;
-		pinctrl-1 = <&quin_tdm_sclk_sleep &quin_tdm_ws_sleep
+		pinctrl-names = "default", "active";
+		pinctrl-0 = <&quin_tdm_sclk_sleep &quin_tdm_ws_sleep
 				&quin_tdm_data0_sleep &quin_tdm_data1_sleep>;
+		pinctrl-1 = <&quin_tdm_sclk_active &quin_tdm_ws_active
+				&quin_tdm_data0_active &quin_tdm_data1_active>;
 		#gpio-cells = <0>;
 		dai_quin_tdm_rx_0: qcom,msm-dai-q6-tdm-quin-rx-0 {
 			compatible = "qcom,msm-dai-q6-tdm";

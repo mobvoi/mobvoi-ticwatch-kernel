@@ -502,8 +502,6 @@ static void qdss_unbind(struct usb_configuration *c, struct usb_function *f)
 	qdss_string_defs[QDSS_DATA_IDX].id = 0;
 	qdss_string_defs[QDSS_CTRL_IDX].id = 0;
 
-	qdss->debug_inface_enabled = false;
-
 	clear_eps(f);
 	clear_desc(gadget, f);
 }
@@ -811,7 +809,6 @@ int usb_qdss_write(struct usb_qdss_ch *ch, struct qdss_request *d_req)
 	req->length = d_req->length;
 	req->sg = d_req->sg;
 	req->num_sgs = d_req->num_sgs;
-	req->num_mapped_sgs = d_req->num_mapped_sgs;
 	reinit_completion(&qreq->write_done);
 	if (req->sg)
 		qdss_log("%s: req:%pK req->num_sgs:0x%x\n",
@@ -968,7 +965,9 @@ static void qdss_cleanup(void)
 
 static void qdss_free_func(struct usb_function *f)
 {
-	/* Do nothing as usb_qdss_alloc() doesn't alloc anything. */
+	struct f_qdss *qdss = func_to_qdss(f);
+
+	qdss->debug_inface_enabled = false;
 }
 
 static inline struct usb_qdss_opts *to_f_qdss_opts(struct config_item *item)

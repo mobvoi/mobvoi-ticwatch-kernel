@@ -92,6 +92,7 @@ Subsystem properties:
 		59. mmw2
 		60. mmw3
 		61. mmw_ific0
+		62. rf_cal
 
 Example:
 

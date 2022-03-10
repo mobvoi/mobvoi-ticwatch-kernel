@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2022, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -15,7 +15,6 @@
 #include <asm/unistd.h>
 #include <asm/ioctl.h>
 #include <linux/types.h>
-#include <linux/cdev.h>
 #include <linux/dma-buf.h>
 #include <linux/interrupt.h>
 #include <linux/mfd/syscon.h>
@@ -28,6 +27,8 @@
 #include <linux/uaccess.h>
 #include <uapi/linux/hgsl.h>
 #include <linux/delay.h>
+#include <trace/events/gpu_mem.h>
+
 #include "hgsl.h"
 #include "hgsl_tcsr.h"
 #include "hgsl_memory.h"
@@ -35,9 +36,6 @@
 
 #define HGSL_DEVICE_NAME "hgsl"
 #define HGSL_DEV_NUM 1
-
-/* Support upto 3 GVMs: 3 DBQs(Low/Medium/High priority) per GVM */
-#define MAX_DB_QUEUE 9
 
 #define IORESOURCE_HWINF "hgsl_reg_hwinf"
 #define IORESOURCE_GMUCX "hgsl_reg_gmucx"
@@ -58,7 +56,6 @@
 #define GLB_DB_DEST_TS_RETIRE_IRQ_ID   TCSR_DEST_IRQ_ID_0
 #define GLB_DB_DEST_TS_RETIRE_IRQ_MASK TCSR_DEST_IRQ_MASK_0
 
-#define HGSL_TCSR_NUM 2
 #define HGSL_HYP_GENERAL_MAX_SIZE 4096
 
 #define DB_STATE_Q_MASK	0xffff
@@ -73,22 +70,6 @@
 #define DB_SIGNAL_LOCAL	3
 #define DB_SIGNAL_MAX	DB_SIGNAL_LOCAL
 #define HGSL_CLEANUP_WAIT_SLICE_IN_MS  50
-
-struct hw_version {
-	unsigned int version;
-	unsigned int release;
-};
-
-struct reg {
-	unsigned long paddr;
-	unsigned long size;
-	void __iomem *vaddr;
-};
-
-struct db_buffer {
-	int32_t dwords;
-	void  *vaddr;
-};
 
 #define QHDR_STATUS_INACTIVE 0x00
 #define QHDR_STATUS_ACTIVE 0x01
@@ -334,16 +315,6 @@ struct db_ignore_retpacket {
 	struct db_msg_id db_msg_id;
 } __packed;
 
-struct doorbell_queue {
-	struct dma_buf *dma;
-	void  *vbase;
-	struct db_buffer data;
-	uint32_t state;
-	int tcsr_idx;
-	uint32_t dbq_idx;
-	struct mutex lock;
-	atomic_t seq_num;
-};
 
 struct hgsl_active_wait {
 	struct list_head head;
@@ -351,45 +322,21 @@ struct hgsl_active_wait {
 	unsigned int timestamp;
 };
 
-struct qcom_hgsl {
-	struct device *dev;
+#ifdef CONFIG_TRACE_GPU_MEM
+static inline void hgsl_trace_gpu_mem_total(struct hgsl_priv *priv, int64_t delta)
+{
+	struct qcom_hgsl *hgsl = priv->dev;
+	uint64_t size = atomic64_add_return(delta, &priv->total_mem_size);
+	uint64_t global_size = atomic64_add_return(delta, &hgsl->total_mem_size);
 
-	/* character device info */
-	struct cdev cdev;
-	dev_t device_no;
-	struct class *driver_class;
-	struct device *class_dev;
-
-	/* registers mapping */
-	struct reg reg_ver;
-	struct reg reg_dbidx;
-
-	struct doorbell_queue dbq[MAX_DB_QUEUE];
-	struct hgsl_dbq_info dbq_info[MAX_DB_QUEUE];
-
-	/* Could disable db and use isync only */
-	bool db_off;
-
-	/* global doorbell tcsr */
-	struct hgsl_tcsr *tcsr[HGSL_TCSR_NUM][HGSL_TCSR_ROLE_MAX];
-	int tcsr_idx;
-	struct hgsl_context **contexts;
-	rwlock_t ctxt_lock;
-
-	struct list_head active_wait_list;
-	spinlock_t active_wait_lock;
-
-	struct workqueue_struct *wq;
-	struct work_struct ts_retire_work;
-
-	struct hw_version *ver;
-	struct hgsl_hyp_priv_t global_hyp;
-	bool global_hyp_inited;
-	struct mutex mutex;
-	struct list_head release_list;
-	struct workqueue_struct *release_wq;
-	struct work_struct release_work;
-};
+	trace_gpu_mem_total(0, priv->pid, size);
+	trace_gpu_mem_total(0, 0, global_size);
+}
+#else
+static inline void hgsl_trace_gpu_mem_total(struct hgsl_priv *priv, int64_t delta)
+{
+}
+#endif
 
 static int hgsl_reg_map(struct platform_device *pdev,
 			char *res_name, struct reg *reg);
@@ -649,7 +596,7 @@ static int hgsl_db_next_timestamp(struct hgsl_context *ctxt,
 	} else if ((ctxt->flags & GSL_CONTEXT_FLAG_USER_GENERATED_TS) == 0) {
 		return 0;
 	} else if (ctxt->flags & GSL_CONTEXT_FLAG_CLIENT_GENERATED_TS) {
-		if (hgsl_ts_ge(ctxt->queued_ts, *timestamp)) {
+		if (hgsl_ts32_ge(ctxt->queued_ts, *timestamp)) {
 			LOGW("ctx:%d next client ts %d isn't greater than current ts %d",
 				ctxt->context_id, *timestamp, ctxt->queued_ts);
 			return -ERANGE;
@@ -775,7 +722,7 @@ static inline void set_context_retired_ts(struct hgsl_context *ctxt,
 static inline bool _timestamp_retired(struct hgsl_context *ctxt,
 				unsigned int timestamp)
 {
-	return hgsl_ts_ge(get_context_retired_ts(ctxt), timestamp);
+	return hgsl_ts32_ge(get_context_retired_ts(ctxt), timestamp);
 }
 
 static inline void _destroy_context(struct kref *kref);
@@ -1187,7 +1134,7 @@ static int hgsl_check_shadow_timestamp(struct hgsl_context *ctxt,
 	int ret = hgsl_read_shadow_timestamp(ctxt, type, &ts_read);
 
 	if (!ret)
-		*expired = hgsl_ts_ge(ts_read, timestamp);
+		*expired = hgsl_ts32_ge(ts_read, timestamp);
 
 	return ret;
 }
@@ -1734,6 +1681,7 @@ static int hgsl_ioctl_mem_alloc(struct file *filep, unsigned long arg)
 		mutex_lock(&priv->lock);
 		list_add(&mem_node->node, &priv->mem_allocated);
 		mutex_unlock(&priv->lock);
+		hgsl_trace_gpu_mem_total(priv, mem_node->memdesc.size64);
 	}
 
 out:
@@ -1790,9 +1738,11 @@ static int hgsl_ioctl_mem_free(struct file *filep, unsigned long arg)
 
 	if (node_found) {
 		ret = hgsl_hyp_mem_unmap_smmu(hab_channel, node_found);
-		if (!ret)
+		if (!ret) {
+			hgsl_trace_gpu_mem_total(priv,
+					-(node_found->memdesc.size64));
 			hgsl_sharedmem_free(node_found);
-		else {
+		} else {
 			LOGE("hgsl_hyp_mem_unmap_smmu failed %d", ret);
 			mutex_lock(&priv->lock);
 			list_add(&node_found->node, &priv->mem_allocated);
@@ -1904,6 +1854,8 @@ static int hgsl_ioctl_mem_map_smmu(struct file *filep, unsigned long arg)
 		mutex_lock(&priv->lock);
 		list_add(&mem_node->node, &priv->mem_mapped);
 		mutex_unlock(&priv->lock);
+
+		hgsl_trace_gpu_mem_total(priv, mem_node->memdesc.size64);
 	}
 
 out:
@@ -1955,6 +1907,8 @@ static int hgsl_ioctl_mem_unmap_smmu(struct file *filep, unsigned long arg)
 			list_add(&node_found->node, &priv->mem_mapped);
 			mutex_unlock(&priv->lock);
 		} else {
+			hgsl_trace_gpu_mem_total(priv,
+					-(node_found->memdesc.size64));
 			hgsl_free(node_found);
 		}
 	} else {
@@ -2149,7 +2103,7 @@ static int hgsl_ioctl_issueib(struct file *filep, unsigned long arg)
 	if (remote_issueib)
 		ret = hgsl_hyp_issueib(&priv->hyp_priv, &params, ibs);
 
-	if (!ret && copy_to_user(USRPTR(arg), &params, sizeof(params))) {
+	if (copy_to_user(USRPTR(arg), &params, sizeof(params))) {
 		LOGE("failed to copy param to user");
 		ret = -EFAULT;
 		goto out;
@@ -2249,7 +2203,7 @@ static int hgsl_ioctl_issueib_with_alloc_list(struct file *filep,
 		ret = hgsl_hyp_issueib_with_alloc_list(&priv->hyp_priv,
 			&params, ibs, allocations, be_descs, be_offsets);
 
-	if (!ret && copy_to_user(USRPTR(arg), &params, sizeof(params))) {
+	if (copy_to_user(USRPTR(arg), &params, sizeof(params))) {
 		LOGE("failed to copy param to user");
 		ret = -EFAULT;
 		goto out;
@@ -2705,9 +2659,6 @@ static int hgsl_open(struct inode *inodep, struct file *filep)
 		goto out;
 	}
 
-	idr_init(&priv->isync_timeline_idr);
-	spin_lock_init(&priv->isync_timeline_lock);
-
 	INIT_LIST_HEAD(&priv->mem_mapped);
 	INIT_LIST_HEAD(&priv->mem_allocated);
 	mutex_init(&priv->lock);
@@ -2760,7 +2711,11 @@ static int hgsl_cleanup(struct hgsl_priv *priv)
 		ret = hgsl_hyp_mem_unmap_smmu(hab_channel, node_found);
 		if (ret)
 			LOGE("Failed to clean mapped buffer %u, 0x%llx, ret %d",
-			node_found->export_id, node_found->memdesc.gpuaddr, ret);
+				node_found->export_id,
+				node_found->memdesc.gpuaddr, ret);
+		else
+			hgsl_trace_gpu_mem_total(priv,
+				-(node_found->memdesc.size64));
 		list_del(&node_found->node);
 		hgsl_free(node_found);
 	}
@@ -2770,6 +2725,7 @@ static int hgsl_cleanup(struct hgsl_priv *priv)
 			LOGE("Failed to clean mapped buffer %u, 0x%llx, ret %d",
 			node_found->export_id, node_found->memdesc.gpuaddr, ret);
 		list_del(&node_found->node);
+		hgsl_trace_gpu_mem_total(priv, -(node_found->memdesc.size64));
 		hgsl_sharedmem_free(node_found);
 	}
 	mutex_unlock(&priv->lock);
@@ -2947,7 +2903,7 @@ static int hgsl_ioctl_isync_timeline_create(struct file *filep,
 	uint32_t param = 0;
 	int ret = 0;
 
-	ret = hgsl_isync_timeline_create(priv, &param);
+	ret = hgsl_isync_timeline_create(priv, &param, HGSL_ISYNC_32BITS_TIMELINE, 0);
 	if (ret == 0)
 		copy_to_user(USRPTR(arg), &param, sizeof(param));
 
@@ -3015,7 +2971,121 @@ static int hgsl_ioctl_isync_forward(struct file *filep,
 	copy_from_user(&param, USRPTR(arg), sizeof(param));
 
 	ret = hgsl_isync_forward(priv, param.timeline_id,
-						  param.ts);
+						  (uint64_t)param.ts, true);
+
+	return ret;
+}
+
+static int hgsl_ioctl_timeline_create(struct file *filep,
+					unsigned long arg)
+{
+	struct hgsl_priv *priv = filep->private_data;
+	struct hgsl_timeline_create param;
+	int ret = 0;
+
+	if (copy_from_user(&param, USRPTR(arg), sizeof(param)))
+		return -EFAULT;
+
+	ret = hgsl_isync_timeline_create(priv, &param.timeline_id,
+					HGSL_ISYNC_64BITS_TIMELINE, param.initial_ts);
+	if (ret == 0)
+		copy_to_user(USRPTR(arg), &param, sizeof(param));
+
+	return ret;
+}
+
+static int hgsl_ioctl_timeline_signal(struct file *filep,
+					unsigned long arg)
+{
+	struct hgsl_priv *priv = filep->private_data;
+	struct hgsl_timeline_signal param;
+	int ret = 0;
+	uint64_t timelines;
+	uint32_t i;
+
+	if (copy_from_user(&param, USRPTR(arg), sizeof(param)))
+		return -EFAULT;
+
+	if (!param.timelines_size)
+		param.timelines_size = sizeof(struct hgsl_timeline_val);
+
+	timelines = param.timelines;
+
+	for (i = 0; i < param.count; i++) {
+		//struct hgsl_timeline *timeline;
+		struct hgsl_timeline_val val;
+
+		if (copy_struct_from_user(&val, sizeof(val),
+			USRPTR(timelines), param.timelines_size))
+			return -EFAULT;
+
+		if (val.padding)
+			return -EINVAL;
+
+		ret = hgsl_isync_forward(priv, val.timeline_id, val.timepoint, false);
+		if (ret)
+			return ret;
+
+		timelines += param.timelines_size;
+	}
+
+	return ret;
+}
+
+static int hgsl_ioctl_timeline_query(struct file *filep,
+					unsigned long arg)
+{
+	struct hgsl_priv *priv = filep->private_data;
+	struct hgsl_timeline_query param;
+	int ret = 0;
+	uint64_t timelines;
+	uint32_t i;
+
+	if (copy_from_user(&param, USRPTR(arg), sizeof(param)))
+		return -EFAULT;
+
+	if (!param.timelines_size)
+		param.timelines_size = sizeof(struct hgsl_timeline_val);
+
+	timelines = param.timelines;
+
+	for (i = 0; i < param.count; i++) {
+		//struct hgsl_timeline *timeline;
+		struct hgsl_timeline_val val;
+
+		if (copy_struct_from_user(&val, sizeof(val),
+			USRPTR(timelines), param.timelines_size))
+			return -EFAULT;
+
+		if (val.padding)
+			return -EINVAL;
+
+		ret = hgsl_isync_query(priv, val.timeline_id, &val.timepoint);
+		if (ret)
+			return ret;
+
+		copy_to_user(USRPTR(timelines), &val, sizeof(val));
+
+		timelines += param.timelines_size;
+	}
+
+	return ret;
+}
+
+static int hgsl_ioctl_timeline_wait(struct file *filep,
+					unsigned long arg)
+{
+	struct hgsl_priv *priv = filep->private_data;
+	struct hgsl_timeline_wait param;
+	int ret = 0;
+
+	if (copy_from_user(&param, USRPTR(arg), sizeof(param)))
+		return -EFAULT;
+
+	if (!param.timelines_size)
+		param.timelines_size = sizeof(struct hgsl_timeline_val);
+
+	ret = hgsl_isync_wait_multiple(priv, &param);
 
 	return ret;
 }
@@ -3108,6 +3178,18 @@ static long hgsl_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		break;
 	case HGSL_IOCTL_ISYNC_FORWARD:
 		ret = hgsl_ioctl_isync_forward(filep, arg);
+		break;
+	case HGSL_IOCTL_TIMELINE_CREATE:
+		ret = hgsl_ioctl_timeline_create(filep, arg);
+		break;
+	case HGSL_IOCTL_TIMELINE_SIGNAL:
+		ret = hgsl_ioctl_timeline_signal(filep, arg);
+		break;
+	case HGSL_IOCTL_TIMELINE_QUERY:
+		ret = hgsl_ioctl_timeline_query(filep, arg);
+		break;
+	case HGSL_IOCTL_TIMELINE_WAIT:
+		ret = hgsl_ioctl_timeline_wait(filep, arg);
 		break;
 
 	default:
@@ -3293,6 +3375,8 @@ static int qcom_hgsl_probe(struct platform_device *pdev)
 	}
 
 	hgsl_dev->db_off = hgsl_is_db_off(pdev);
+	idr_init(&hgsl_dev->isync_timeline_idr);
+	spin_lock_init(&hgsl_dev->isync_timeline_lock);
 
 	for (i = 0; i < MAX_DB_QUEUE; i++) {
 		mutex_init(&hgsl_dev->dbq[i].lock);
@@ -3342,6 +3426,7 @@ static int qcom_hgsl_remove(struct platform_device *pdev)
 		if (hgsl->dbq[i].state == DB_STATE_Q_INIT_DONE)
 			hgsl_reset_dbq(&hgsl->dbq[i]);
 
+	idr_destroy(&hgsl->isync_timeline_idr);
 	qcom_hgsl_deregister(pdev);
 	return 0;
 }

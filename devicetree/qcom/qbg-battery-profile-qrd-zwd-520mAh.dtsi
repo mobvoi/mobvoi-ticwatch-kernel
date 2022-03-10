@@ -19,20 +19,23 @@ qcom,qbg-battery-profile-qrd-zwd-520mAh {
 	/* Termination current (in mA) in recharge */
 	qcom,recharge-iterm-ma = <10>;
 
-	qcom,jeita-fcc-ranges = <0  150 156000
-				151 420 1040000
-				421 450 520000>;
+	qcom,jeita-fcc-ranges = <0 150 156000
+				151 435 1040000
+				436 445 800000
+				446 450 650000>;
 
-	qcom,jeita-fv-ranges = <0   150 4300000
-				151 420 4350000
-				421 450 4300000>;
+	qcom,jeita-fv-ranges = <0 150 4300000
+				151 435 4350000
+				436 445 4350000
+				446 450 4350000>;
 
-	/* COOL = 15 DegC, WARM = 42 DegC */
-	qcom,jeita-soft-thresholds = <0x27c1 0x1444>;
-	/* COLD = 0 DegC, HOT = 45 DegC */
-	qcom,jeita-hard-thresholds = <0x3257 0x128c>;
-	/* COOL = 18 DegC, WARM = 39 DegC*/
-	qcom,jeita-soft-hys-thresholds = <0x256e 0x161b>;
+	/* COOL = 15 DegC, WARM = 45 DegC */
+	qcom,jeita-soft-thresholds = <0x27c1 0x128c>;
+	/* COLD = 0 DegC, HOT = 45.1 DegC */
+	qcom,jeita-hard-thresholds = <0x3257 0x127e>;
+	/* COOL = 18 DegC, WARM = 44 DegC*/
+	qcom,jeita-soft-hys-thresholds = <0x256e 0x131c>;
+	qcom,step-jeita-hysteresis = <5 5>;
 	qcom,jeita-soft-fcc-ua = <156000 520000>;
 	qcom,jeita-soft-fv-uv = <4300000 4300000>;
 

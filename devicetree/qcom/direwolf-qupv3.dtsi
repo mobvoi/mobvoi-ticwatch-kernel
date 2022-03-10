@@ -974,9 +974,10 @@
 		clocks = <&gcc GCC_QUPV3_WRAP1_S5_CLK>,
 			<&gcc GCC_QUPV3_WRAP_1_M_AHB_CLK>,
 			<&gcc GCC_QUPV3_WRAP_1_S_AHB_CLK>;
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&qupv3_se13_2uart_active>;
-		pinctrl-1 = <&qupv3_se13_2uart_sleep>;
+		pinctrl-names = "default", "active", "sleep";
+		pinctrl-0 = <&qupv3_se13_2uart_default &qupv3_se13_2uart_disable>;
+		pinctrl-1 = <&qupv3_se13_2uart_active &qupv3_se13_2uart_disable>;
+		pinctrl-2 = <&qupv3_se13_2uart_sleep &qupv3_se13_2uart_disable>;
 		qcom,wrapper-core = <&qupv3_1>;
 		status = "disabled";
 	};

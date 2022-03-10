@@ -34,7 +34,6 @@
 		pinctrl-0 = <&qupv3_se20_i2c_active>;
 		pinctrl-1 = <&qupv3_se20_i2c_sleep>;
 		qcom,wrapper-core = <&qupv3_3>;
-		qcom,disable-dma;
 		ssr-enable;
 		status = "disabled";
 	};
@@ -53,7 +52,6 @@
 		pinctrl-0 = <&qupv3_se21_i2c_active>;
 		pinctrl-1 = <&qupv3_se21_i2c_sleep>;
 		qcom,wrapper-core = <&qupv3_3>;
-		qcom,disable-dma;
 		ssr-enable;
 		status = "disabled";
 	};
@@ -72,7 +70,6 @@
 		pinctrl-0 = <&qupv3_se22_i2c_active>;
 		pinctrl-1 = <&qupv3_se22_i2c_sleep>;
 		qcom,wrapper-core = <&qupv3_3>;
-		qcom,disable-dma;
 		ssr-enable;
 		status = "disabled";
 	};
@@ -94,7 +91,6 @@
 		pinctrl-1 = <&qupv3_se21_spi_sleep>;
 		spi-max-frequency = <50000000>;
 		qcom,wrapper-core = <&qupv3_3>;
-		qcom,disable-dma;
 		ssr-enable;
 		status = "disabled";
 	};
@@ -115,7 +111,6 @@
 		pinctrl-1 = <&qupv3_se22_spi_sleep>;
 		spi-max-frequency = <50000000>;
 		qcom,wrapper-core = <&qupv3_3>;
-		qcom,disable-dma;
 		ssr-enable;
 		status = "disabled";
 	};

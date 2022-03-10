@@ -113,3 +113,15 @@
 		};
 	};
 };
+
+&pm8540_1_sdam_2 {
+	ufs0_dev: ufs0_dev@9e {
+		reg = <0x9e 0x1>;
+		bits = <0 0>;
+	};
+
+	ufs1_dev: ufs1_dev@9f {
+		reg = <0x9f 0x1>;
+		bits = <0 0>;
+	};
+};
