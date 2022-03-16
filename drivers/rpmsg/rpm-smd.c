@@ -1512,10 +1512,12 @@ int msm_rpm_enter_sleep(bool print, const struct cpumask *cpumask)
 			smd_mask_receive_interrupt(false, NULL);
 	}
 
+#ifdef CONFIG_DEEPSLEEP
 	if (channel_status != ACTIVE) {
 		probe_status = -EPROBE_DEFER;
 		glink_ssr_notify_rpm();
 	}
+#endif
 
 	return ret;
 }
@@ -1715,6 +1717,7 @@ int qcom_smd_rpm_quickboot(struct rpmsg_device *rpdev, int status)
 	for (t = rb_first(&tr_root); t; t = rb_next(t)) {
 
 		struct slp_buf *s = rb_entry(t, struct slp_buf, node);
+
 		rb_erase(&s->node, &tr_root);
 	}
 
