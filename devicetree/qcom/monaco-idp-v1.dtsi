@@ -68,7 +68,7 @@
 		};
 	};
 };
-
+/*
 &pm5100_gpios {
 	nfc_clk {
 		nfc_clk_default: nfc_clk_default {
@@ -100,3 +100,4 @@
 		clock-names = "ref_clk";
 	};
 };
+*/

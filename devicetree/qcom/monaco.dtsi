@@ -2163,6 +2163,7 @@ qcom,msm-adsprpc-mem {
 #include "display/monaco-sde.dtsi"
 #include "display/monaco-sde-display.dtsi"
 #include "msm-rdbg-monaco.dtsi"
+#include "monaco-nfc.dtsi"
 
 &qupv3_se6_2uart {
 	status = "ok";
