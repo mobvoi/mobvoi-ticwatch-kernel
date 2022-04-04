@@ -1,166 +1,139 @@
 /*
- * Copyright (c) 2006-2018, RT-Thread Development Team
+ * Zinitix bt532 touch driver
  *
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright (C) 2013 Samsung Electronics Co.Ltd
  *
- * Change Logs:
- * Date           Author       Notes
- * 2018-02-08     Zhangyihong  the first version
+ * This software is licensed under the terms of the GNU General Public
+ * License version 2, as published by the Free Software Foundation, and
+ * may be copied, distributed, and modified under those terms.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
  */
-#ifndef __ZINITIX_TOUCH_H__
-#define __ZINITIX_TOUCH_H__
 
+#ifndef _LINUX_BT541_TS_H
+#define _LINUX_BT541_TS_H
 
-#define TOUCH_DBG_LEVEL DBG_ERROR
+#include "zinitix_touch_zxt_firmware.h"
 
-#define IIC_RETRY_NUM 2
+#define TS_DRVIER_VERSION          "1.0.18_1"
 
-#define TOUCH_EVENT_UP      (0x01)
-#define TOUCH_EVENT_DOWN    (0x02)
-#define TOUCH_EVENT_MOVE    (0x03)
-#define TOUCH_EVENT_EXIST   (0x04)
-#define TOUCH_EVENT_NONE    (0x80)
+#define CONFIG_DATE                "0304"
 
-#define TOUCH_ONESHOT_UPGRADE    1
-#define TOUCH_POINT_MODE         0
-#define MAX_SUPPORTED_FINGER_NUM 1
-#define TPD_RES_MAX_X 454
-#define TPD_RES_MAX_Y 454
+#define TSP_TYPE_COUNT             1
 
-#define SUPPORTED_PALM_TOUCH    0//
+/* #define TOUCH_POINT_FLAG */
 
-#define TP_POWERON_DELAY    10
-#define CHIP_ON_DELAY       200
-#define CHIP_OFF_DELAY      70
-#define FIRMWARE_ON_DELAY   150
-#define ENABLE              1
-#define DISABLE           0
+/* Upgrade Method */
+#define TOUCH_ONESHOT_UPGRADE      1
+#define TOUCH_FORCE_UPGRADE        1
+#define USE_CHECKSUM               0
 
-/* chip code */
-#define ZTW523_CHIP_CODE	0xE628
-#define ZTW522_CHIP_CODE	0xE532
-#define ZT7548_CHIP_CODE	0xE548
-#define ZT7538_CHIP_CODE	0xE538
-#define ZT7554_CHIP_CODE	0xE700
+#define USE_WAKEUP_GESTURE         1
 
-#define ZINITIX_INIT_RETRY_CNT   3
+#define SUPPORTED_PALM_TOUCH       1
 
-/*Register Map*/
-#define ZINITIX_SWRESET_CMD		0x0000
-#define ZINITIX_WAKEUP_CMD		0x0001
-#define ZINITIX_IDLE_CMD		0x0004
-#define ZINITIX_SLEEP_CMD		0x0005
-#define ZINITIX_CLEAR_INT_STATUS_CMD	0x0003
-#define ZINITIX_CALIBRATE_CMD		0x0006
-#define ZINITIX_SAVE_STATUS_CMD		0x0007
-#define ZINITIX_SAVE_CALIBRATION_CMD	0x0008
-#define ZINITIX_RECALL_FACTORY_CMD	0x000f
-#define ZINITIX_VENDOR_CMD              0xC000
-#define ZINITIX_INTN_CLEAR_CMD          0xC004
-#define ZINITIX_NVM_INIT_CMD            0xC002
-#define ZINITIX_PROGRAM_START_CMD       0xC001
-#define TOUCH_CHECK_SHORT_MODE	14
-#define NORMAL_SHORT_VALUE              1000
+#define MAX_SUPPORTED_FINGER_NUM   5 /* max 10 */
 
-#define ZINITIX_SENSITIVITY	0x0020
-#define	ZINITIX_I2C_CHECKSUM_WCNT	0x016a
-#define	ZINITIX_I2C_CHECKSUM_RESULT	0x016c
-#define ZINITIX_DEBUG_REG		0x0115	//0~7
-#define ZINITIX_TOUCH_MODE		0x0010
-#define ZINITIX_CHIP_REVISION		0x0011
-#define ZINITIX_FIRMWARE_VERSION	0x0012
-#define ZINITIX_MINOR_FW_VERSION	0x0121
-#define ZINITIX_DATA_VERSION_REG	0x0013
-#define ZINITIX_HW_ID				0x0014
-#define ZINITIX_SUPPORTED_FINGER_NUM	0x0015
-#define ZINITIX_EEPROM_INFO			0x0018
-#define ZINITIX_INITIAL_TOUCH_MODE	0x0019
-#define ZINITIX_TOTAL_NUMBER_OF_X	0x0060
-#define ZINITIX_TOTAL_NUMBER_OF_Y		0x0061
-#define ZINITIX_DELAY_RAW_FOR_HOST	0x007f
-#define ZINITIX_BUTTON_SUPPORTED_NUM	0x00B0
-#define ZINITIX_BUTTON_SENSITIVITY			0x00B2
-#define ZINITIX_X_RESOLUTION		0x00C0
-#define ZINITIX_Y_RESOLUTION		0x00C1
-#define ZINITIX_POINT_STATUS_REG	0x0080
-#define ZINITIX_ICON_STATUS_REG		0x00AA
-#define ZINITIX_AFE_FREQUENCY		0x0100
-#define ZINITIX_DND_N_COUNT		0x0122
-#define ZINITIX_DND_U_COUNT		0x0135
-#define ZINITIX_RAWDATA_REG		0x0200
-#define ZINITIX_EEPROM_INFO_REG		0x0018
-#define ZINITIX_INT_ENABLE_FLAG		0x00f0
-#define ZINITIX_PERIODICAL_INTERRUPT_INTERVAL	0x00f1
-#define ZINITIX_CHECKSUM_RESULT	0x012c
-#define ZINITIX_INIT_FLASH		0x01d0
-#define ZINITIX_WRITE_FLASH		0x01d1
-#define ZINITIX_READ_FLASH		0x01d2
-
-#define ZINITIX_VENDOR_REG              0xC000
-#define ZINITIX_NVM_REG                 0xC002
-
-#define BIT_PT_CNT_CHANGE       0 
-#define BIT_DOWN			1
-#define BIT_MOVE			2
-#define BIT_UP				3
-#define BIT_PALM			4
-#define BIT_PALM_REJECT		5
-#define BIT_WAKEUP			6
-#define RESERVED_1			7
-#define BIT_WEIGHT_CHANGE	8
-#define BIT_PT_NO_CHANGE	9
-#define BIT_REJECT			10
-#define BIT_PT_EXIST		11
-#define RESERVED_2			12
-#define BIT_MUST_ZERO		13
-#define BIT_DEBUG			14
-#define BIT_ICON_EVENT		15
-
-#define SUB_BIT_EXIST		0
-#define SUB_BIT_DOWN		1
-#define SUB_BIT_MOVE		2
-#define SUB_BIT_UP			3
-#define SUB_BIT_UPDATE		4
-#define SUB_BIT_WAIT		5
-  
- /*Test Mode (Monitoring Raw Data) */
-#define SEC_DND_N_COUNT			10//10//
-#define SEC_DND_U_COUNT			2//2//
-#define SEC_DND_FREQUENCY		99//99// /* 200khz */
-#define SEC_PDND_N_COUNT		27//31
-#define SEC_PDND_U_COUNT		3//12
-#define SEC_PDND_FREQUENCY		79//240
-
-/* preriod raw data interval */
-
-#define RAWDATA_DELAY_FOR_HOST		100
-
-#define zinitix_bit_set(val, n)		((val) &= ~(1<<(n)), (val) |= (1<<(n)))
-#define zinitix_bit_clr(val, n)		((val) &= ~(1<<(n)))
-#define zinitix_bit_test(val, n)	((val) & (1<<(n)))
-#define zinitix_swap_v(a, b, t)	((t) = (a), (a) = (b), (b) = (t))
-#define zinitix_swap_16(s) (((((s) & 0xff) << 8) | (((s) >> 8) & 0xff)))
-
-#define zinitix_max(a,b)  	(a>b?a:b)
-#define zinitix_abs(a,b)  	((a>=b)?(a-b):(b-a))
-
-/*do not need to modify the alignment.*/
-struct _ts_zinitix_coord {
-  uint16_t    x;
-  uint16_t    y;
-  uint8_t    width;
-  uint8_t    sub_status;
-};
-struct _ts_zinitix_point_info {
-  uint16_t    status;
-  #if TOUCH_POINT_MODE 
-  uint16_t event_flag;
-  #else
-  uint8_t    finger_cnt;
-  uint8_t    time_stamp;
-  #endif
-  struct _ts_zinitix_coord    coord[MAX_SUPPORTED_FINGER_NUM];
-};
-
-
+//#define TOUCH_POINT_FLAG
+#ifdef TOUCH_POINT_FLAG
+#define TOUCH_POINT_MODE           1
+#else
+#define TOUCH_POINT_MODE           0
 #endif
+
+#define CHIP_OFF_DELAY             70  /* ms */
+#define CHIP_ON_DELAY              200 /* ms */
+#define FIRMWARE_ON_DELAY          150 /* ms */
+
+#define DELAY_FOR_SIGNAL_DELAY     30  /* us */
+#define DELAY_FOR_TRANSCATION      50
+#define DELAY_FOR_POST_TRANSCATION 10
+
+/* ESD Protection */
+/* second : if 0, no use. if you have to use, 3 is recommended */
+#define ESD_TIMER_INTERVAL         0
+#define SCAN_RATE_HZ               100
+#define CHECK_ESD_TIMER            3
+
+#define BT541_TS_DEVICE            "bt541_ts_device"
+
+/* Test Mode (Monitoring Raw Data) */
+#define SEC_DND_N_COUNT           10
+#define SEC_DND_U_COUNT           2
+#define SEC_DND_FREQUENCY         99  /* 200khz */
+#define SEC_PDND_N_COUNT          14
+#define SEC_PDND_U_COUNT          6
+#define SEC_PDND_FREQUENCY        79
+
+#define SEC_SELF_N_COUNT          11 /* >12 */
+#define SEC_SELF_U_COUNT          1  /* 6~12 */
+#define SEC_SELF_FREQUENCY        60 /* 79 */
+
+#ifdef SUPPORTED_TOUCH_KEY
+#define NOT_SUPPORTED_TOUCH_DUMMY_KEY
+#ifdef NOT_SUPPORTED_TOUCH_DUMMY_KEY
+#define MAX_SUPPORTED_BUTTON_NUM    6 /* max 8 */
+#define SUPPORTED_BUTTON_NUM        4
+#else
+#define MAX_SUPPORTED_BUTTON_NUM    6 /* max 8 */
+#define SUPPORTED_BUTTON_NUM        4
+#endif
+#endif
+
+#define ZINITIX_DEBUG               0
+#define TSP_VERBOSE_DEBUG
+
+#define SEC_FACTORY_TEST
+
+#define zinitix_debug(fmt, args...) \
+	do { \
+		if (m_ts_debug_mode) \
+			pr_info("[zinitix_touch][%s:%d] " fmt, \
+					__func__, __LINE__, ## args); \
+	} while (0);
+
+#define zinitix_info(fmt, args...) \
+	do { \
+		pr_info("[zinitix_touch][%s:%d] " fmt, \
+				__func__, __LINE__, ## args); \
+	} while (0);
+
+#define zinitix_err(fmt, args...) \
+	do { \
+		pr_err("[zinitix_touch][%s:%d] " fmt, \
+				__func__, __LINE__, ## args); \
+	} while (0);
+
+struct bt541_ts_platform_data {
+	u32 gpio_reset;
+	u32 gpio_reset_flags;
+	u32 gpio_switch;
+	u32 gpio_switch_flags;
+	u32 gpio_int;
+	u32 gpio_int_flags;
+	u32 tsp_irq;
+#ifdef SUPPORTED_TOUCH_KEY_LED
+	int gpio_keyled;
+#endif
+	int tsp_vendor1;
+	int tsp_vendor2;
+	int tsp_en_gpio;
+	u32 tsp_supply_type;
+	u16 x_resolution;
+	u16 y_resolution;
+	u16 page_size;
+	u8 orientation;
+	const char *pname;
+#ifdef USE_TSP_TA_CALLBACKS
+	void (*register_cb) (struct tsp_callbacks *);
+	struct tsp_callbacks callbacks;
+#endif
+};
+
+struct class *sec_class;
+
+#endif /* LINUX_BT541_TS_H */

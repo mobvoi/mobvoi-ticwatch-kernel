@@ -1,4 +1,4 @@
-#
-# Makefile for the touchscreen raydium drivers.
-#
-obj-$(CONFIG_TOUCHSCREEN_ZINITIX_TS) += zinitix_driver.o
+# Makefile for the focaltech touchscreen drivers.
+# Each configuration option enables a list of files.
+
+obj-$(CONFIG_TOUCHSCREEN_ZINITIX_TS) +=zinitix.o
