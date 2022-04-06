@@ -40,6 +40,9 @@
 
 &pm5100_charger {
 	qcom,remote-fg;
+	qcom,fv-max-uv = <4450000>;
+	qcom,auto-recharge-vbat-mv = <4400>;
+	qcom,chg-term-current-ma = <(-40)>;
 	#io-channel-cells = <1>;
 	io-channels = <&pm5100_adc PM5100_ADC5_GEN3_USB_SNS_V_16>,
 		      <&pm5100_adc PM5100_ADC5_GEN3_USB_IN_I>,

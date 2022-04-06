@@ -3,7 +3,7 @@ qcom,qbg-battery-profile-alium-860-89032-0000-3600mAh {
 	qcom,batt-id-kohm = <107>;
 	qcom,capacity = <3588>;
 	qcom,max-voltage-uv = <4350000>;
-	qcom,fastchg-current-ma = <3600>;
+	qcom,fastchg-current-ma = <400>;
 	qcom,checksum = <4563678>; /*@5, 0.005V, 10% */
 	qcom,soh-range = <0 100>;
 	qcom,battery-impedance = <12580000 25160000>; /* Nominal_Impedance in 10nohm @ SOC 50% 25C* 0:fresh cell, 1: aged cell */
