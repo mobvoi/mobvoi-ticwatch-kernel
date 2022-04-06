@@ -2,7 +2,8 @@
 /plugin/;
 
 #include "monaco-idp-v1.dtsi"
-#include "monaco-slate-audio-overlay.dtsi"
+//#include "monaco-slate-audio-overlay.dtsi"
+#include "monaco-slate-wsa-audio-overlay.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. Monaco IDP V1.0";
