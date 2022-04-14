@@ -322,7 +322,7 @@
 		compatible = "android,firmware";
 		vbmeta {
 			compatible="android,vbmeta";
-			parts = "vbmeta,boot,system,vendor,dtbo,recovery";
+			parts = "vbmeta,boot,system,vendor,dtbo";
 		};
 
 		fstab {
