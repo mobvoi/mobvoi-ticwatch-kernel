@@ -10839,6 +10839,7 @@ exit:
 	if (rc) {
 		dev_err(dev, "%s: Failed to wake up: rc=%d\n",
 			__func__, rc);
+		pt_enable_regulator(cd, false);
 		return -EAGAIN;
 	}
 
