@@ -429,7 +429,7 @@ static ssize_t st21nfc_dev_read(struct file *filp, char __user *buf,
 #ifdef ST54J_PWRSTATS
 	int idle = 0;
 #endif // ST21NFCD_MTK
-	pr_info("--luwl--%s start\n",__func__);
+
 	if (count == 0)
 		return 0;
 
@@ -519,8 +519,7 @@ static ssize_t st21nfc_dev_read(struct file *filp, char __user *buf,
 		pr_warn("%s : failed to copy to user space\n", __func__);
 		return -EFAULT;
 	}
-	
-	pr_info("--luwl--%s end\n",__func__);
+
 	return ret;
 }
 
@@ -531,7 +530,6 @@ static ssize_t st21nfc_dev_write(struct file *filp, const char __user *buf,
 		filp->private_data, struct st21nfc_device, st21nfc_device);
 	char *tmp = NULL;
 	int ret = count;
-	pr_info("--luwl--%s start\n",__func__);
 
 	if (enable_debug_log) {
 		//pr_debug("%s: st21nfc_dev ptr %p\n", __func__, st21nfc_dev);
@@ -554,7 +552,6 @@ static ssize_t st21nfc_dev_write(struct file *filp, const char __user *buf,
 		ret = -EIO;
 	}
 	kfree(tmp);
-	pr_info("--luwl--%s end\n",__func__);
 
 	return ret;
 }
@@ -564,8 +561,7 @@ static int st21nfc_dev_open(struct inode *inode, struct file *filp)
 	int ret = 0;
 	struct st21nfc_device *st21nfc_dev = container_of(
 		filp->private_data, struct st21nfc_device, st21nfc_device);
-	
-	pr_info("--luwl--%s start\n",__func__);
+
 	if (enable_debug_log)
 		pr_info("%s:%d dev_open", __FILE__, __LINE__);
 
@@ -575,7 +571,6 @@ static int st21nfc_dev_open(struct inode *inode, struct file *filp)
 	} else {
 		st21nfc_dev->device_open = true;
 	}
-	pr_info("--luwl--%s end\n",__func__);
 	return ret;
 }
 
@@ -584,7 +579,6 @@ static int st21nfc_release(struct inode *inode, struct file *file)
 	struct st21nfc_device *st21nfc_dev = container_of(
 		file->private_data, struct st21nfc_device, st21nfc_device);
 
-	pr_info("--luwl--%s start\n",__func__);
 	st21nfc_dev->device_open = false;
 	if (enable_debug_log)
 		pr_debug("%s : device_open  = false\n", __func__);
@@ -621,7 +615,6 @@ static long st21nfc_dev_ioctl(struct file *filp, unsigned int cmd,
 
 	u32 tmp;
 
-	pr_info("--luwl--%s start\n",__func__);
 	/* Check type and command number */
 	if (_IOC_TYPE(cmd) != ST21NFC_MAGIC)
 		return -ENOTTY;
@@ -639,7 +632,6 @@ static long st21nfc_dev_ioctl(struct file *filp, unsigned int cmd,
 	if (ret)
 		return -EFAULT;
 
-	pr_info("--luwl--%s cmd=%d\n",__func__,cmd);
 	switch (cmd) {
 	case ST21NFC_SET_POLARITY_RISING:
 	case ST21NFC_LEGACY_SET_POLARITY_RISING:
