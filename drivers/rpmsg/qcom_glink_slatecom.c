@@ -30,6 +30,7 @@
 #include <linux/component.h>
 #include <linux/ipc_logging.h>
 #include <linux/termios.h>
+#include <linux/unistd.h>
 #include "../soc/qcom/slatecom.h"
 
 #include <linux/rpmsg/qcom_glink.h>
@@ -443,12 +444,16 @@ static int glink_slatecom_tx_write_one(struct glink_slatecom *glink, void *src,
 		return -ENOSPC;
 	}
 
-	ret = slatecom_fifo_write(glink->slatecom_handle, size_in_words, src);
-	if (ret < 0) {
-		GLINK_ERR(glink, "%s: Error %d writing data\n",
-							__func__, ret);
-		return ret;
-	}
+	do {
+		ret = slatecom_fifo_write(glink->slatecom_handle, size_in_words, src);
+		if (ret < 0) {
+			GLINK_ERR(glink, "%s: Error %d writing data\n",
+								__func__, ret);
+			if (ret == -ECANCELED)
+				usleep_range(TX_WAIT_US, TX_WAIT_US + 1000);
+		}
+
+	} while (ret == -ECANCELED);
 
 	glink_slatecom_update_tx_avail(glink, size_in_words);
 	return ret;
@@ -630,6 +635,12 @@ static void glink_slatecom_handle_intent_req(struct glink_slatecom *glink,
 
 	if (!channel) {
 		pr_err("%s channel not found for cid %d\n", __func__, cid);
+		return;
+	}
+
+	if (!strcmp(channel->name, "ssc_hal")) {
+		pr_err("%s max no of intents reached for cid %d\n", __func__, cid);
+		glink_slatecom_send_intent_req_ack(glink, channel, true);
 		return;
 	}
 
@@ -1171,6 +1182,7 @@ static int glink_slatecom_announce_create(struct rpmsg_device *rpdev)
 			glink_slatecom_advertise_intent(glink, channel, intent);
 		}
 	}
+
 	return 0;
 }
 
@@ -1653,20 +1665,23 @@ static int glink_slatecom_rx_data(struct glink_slatecom *glink,
 		return msglen;
 	}
 
-	rc = slatecom_ahb_read(glink->slatecom_handle, (uint32_t)(size_t)addr,
+	do {
+		rc = slatecom_ahb_read(glink->slatecom_handle, (uint32_t)(size_t)addr,
 			ALIGN(chunk_size, WORD_SIZE)/WORD_SIZE,
 			intent->data + intent->offset);
-	if (rc < 0) {
-		GLINK_ERR(glink, "%s: Error %d receiving data\n",
+		if (rc < 0) {
+			GLINK_ERR(glink, "%s: Error %d receiving data\n",
 							__func__, rc);
-	}
+			if (rc == -ECANCELED)
+				usleep_range(TX_WAIT_US, TX_WAIT_US + 1000);
+		}
 
-	intent->offset += chunk_size;
+	} while (rc == -ECANCELED);
+
+intent->offset += chunk_size;
 
 	/* Handle message when no fragments remain to be received */
 	if (!left_size) {
-		glink_slatecom_send_rx_done(glink, channel, intent);
-
 		spin_lock_irqsave(&channel->recv_lock, flags);
 		if (channel->ept.cb) {
 			channel->ept.cb(channel->ept.rpdev,
@@ -1677,6 +1692,7 @@ static int glink_slatecom_rx_data(struct glink_slatecom *glink,
 		}
 		spin_unlock_irqrestore(&channel->recv_lock, flags);
 
+		glink_slatecom_send_rx_done(glink, channel, intent);
 		glink_slatecom_free_intent(channel, intent);
 	}
 	mutex_unlock(&channel->intent_lock);
