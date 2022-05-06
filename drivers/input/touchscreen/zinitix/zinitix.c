@@ -83,8 +83,11 @@ u8 m_FirmwareIdx;
 /* gpio controlled LDO based supply to TSP */
 #define TSP_LDO_SUPPLY        0
 
-#define FT_VTG_MIN_UV            2800000
-#define FT_VTG_MAX_UV            2800000
+#define FT_VTG_MIN_UV_V1         2800000
+#define FT_VTG_MAX_UV_V1         2800000
+
+#define FT_VTG_MIN_UV            3304000
+#define FT_VTG_MAX_UV            3304000
 
 #define FT_I2C_VTG_MIN_UV        1800000
 #define FT_I2C_VTG_MAX_UV        1800000
@@ -519,6 +522,7 @@ struct bt541_ts_info {
 	struct tsp_raw_data *raw_data;
 #endif
 	struct regulator *vdd;
+	struct regulator *vdd_v1;
 	struct regulator *vcc_i2c;
 	/* add by mobvoi */
 	int palm_detected_flag;
@@ -1197,6 +1201,11 @@ static int bt541_hw_power(struct bt541_ts_info *data, int on)
 	if (!on)
 		goto power_off;
 
+	rc = regulator_enable(data->vdd_v1);
+	if (rc) {
+		zinitix_err("Regulator vdd v1 enable failed rc=%d\n", rc);
+		return rc;
+	}
 	rc = regulator_enable(data->vdd);
 	if (rc) {
 		zinitix_err("Regulator vdd enable failed rc=%d\n", rc);
@@ -1212,6 +1221,11 @@ static int bt541_hw_power(struct bt541_ts_info *data, int on)
 	return rc;
 
 power_off:
+	rc = regulator_disable(data->vdd_v1);
+	if (rc) {
+		zinitix_err("Regulator vdd v1 disable failed rc=%d\n", rc);
+		return rc;
+	}
 	rc = regulator_disable(data->vdd);
 	if (rc) {
 		zinitix_err("Regulator vdd disable failed rc=%d\n", rc);
@@ -4053,6 +4067,12 @@ static int zinitix_power_init(struct bt541_ts_info *data, bool on)
 	if (!on)
 		goto pwr_deinit;
 
+	data->vdd_v1 = regulator_get(&data->client->dev, "vdd-v1");
+	if (IS_ERR(data->vdd_v1)) {
+		rc = PTR_ERR(data->vdd_v1);
+		zinitix_err("Regulator get failed vdd v1 rc=%d\n", rc);
+		return rc;
+	}
 	data->vdd = regulator_get(&data->client->dev, "vdd");
 	if (IS_ERR(data->vdd)) {
 		rc = PTR_ERR(data->vdd);
@@ -4060,6 +4080,13 @@ static int zinitix_power_init(struct bt541_ts_info *data, bool on)
 		return rc;
 	}
 
+	if (regulator_count_voltages(data->vdd_v1) > 0) {
+		rc = regulator_set_voltage(data->vdd_v1, FT_VTG_MIN_UV_V1,FT_VTG_MAX_UV_V1);
+		if (rc) {
+			zinitix_err("Regulator set_vtg v1 failed vdd rc=%d\n", rc);
+			goto reg_vdd_v1_put;
+		}
+	}
 	if (regulator_count_voltages(data->vdd) > 0) {
 		rc = regulator_set_voltage(data->vdd, FT_VTG_MIN_UV,FT_VTG_MAX_UV);
 		if (rc) {
@@ -4092,9 +4119,16 @@ reg_vdd_set_vtg:
 		regulator_set_voltage(data->vdd, 0, FT_VTG_MAX_UV);
 reg_vdd_put:
 	regulator_put(data->vdd);
+reg_vdd_v1_put:
+	regulator_put(data->vdd_v1);
 	return rc;
 
 pwr_deinit:
+	if (regulator_count_voltages(data->vdd_v1) > 0)
+		regulator_set_voltage(data->vdd_v1, 0, FT_VTG_MAX_UV_V1);
+
+	regulator_put(data->vdd_v1);
+
 	if (regulator_count_voltages(data->vdd) > 0)
 		regulator_set_voltage(data->vdd, 0, FT_VTG_MAX_UV);
 

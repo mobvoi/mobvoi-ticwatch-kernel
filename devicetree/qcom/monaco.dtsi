@@ -2232,7 +2232,8 @@ qcom,msm-adsprpc-mem {
                 status = "ok";
 		interrupt-parent = <&tlmm>;
 		interrupts = <13 0x2002>;
-		vdd-supply=<&L29A>;
+		vdd-v1-supply = <&L29A>;
+                vdd-supply = <&L26A>;
 		vcc_i2c-supply=<&L21A>;
 		/* pins used by touchscreen */
 		pinctrl-names = "pmx_ts_active","pmx_ts_suspend",
