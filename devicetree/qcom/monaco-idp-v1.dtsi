@@ -104,3 +104,4 @@
 	};
 };
 */
+#include "mobvoi_custom.dtsi"
