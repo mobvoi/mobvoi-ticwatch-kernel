@@ -595,13 +595,13 @@ static void slate_irq_tasklet_hndlr_l(void)
 		ret = slatecom_reg_write_cmd(&clnt_handle, SLATE_CMND_REG, 1, &cmnd_reg);
 		if (ret == 0) {
 			spi_state = SLATECOM_SPI_PAUSE;
-			pr_debug("SPI is in Pause State\n");
+			SLATECOM_INFO("SPI is in Pause State\n");
 		}
 	}
 
 	if (slav_status_auto_clear_reg & SLATE_RESUME_IND) {
 		spi_state = SLATECOM_SPI_FREE;
-		pr_debug("Apps to resume operation\n");
+		SLATECOM_INFO("Apps to resume operation\n");
 	}
 
 	/* Check if there are any status updates */
@@ -1379,6 +1379,8 @@ static irqreturn_t slate_irq_tasklet_hndlr(int irq, void *device)
 	uint32_t slav_status_reg = 0;
 	uint32_t slav_status_auto_clear_reg = 0;
 	struct slate_context clnt_handle;
+	uint32_t cmnd_reg = 0;
+	int ret = 0;
 
 	clnt_handle.slate_spi = slate_spi;
 
@@ -1403,6 +1405,19 @@ static irqreturn_t slate_irq_tasklet_hndlr(int irq, void *device)
 				atomic_set(&slate_is_spi_active, 1);
 				atomic_set(&slate_is_runtime_suspend, 0);
 			}
+
+		}
+		if (slav_status_auto_clear_reg & SLATE_PAUSE_REQ) {
+			cmnd_reg |= SLATE_PAUSE_OK;
+			ret = slatecom_reg_write_cmd(&clnt_handle, SLATE_CMND_REG, 1, &cmnd_reg);
+			if (ret == 0) {
+				spi_state = SLATECOM_SPI_PAUSE;
+				SLATECOM_INFO("SPI is in Pause State\n");
+			}
+		}
+		if (slav_status_auto_clear_reg & SLATE_RESUME_IND) {
+			spi_state = SLATECOM_SPI_FREE;
+			SLATECOM_INFO("Apps to resume operation\n");
 		}
 		atomic_set(&slate_spi->irq_lock, 0);
 	} else if (list_empty(&cb_head)) {
