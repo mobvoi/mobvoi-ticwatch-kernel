@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/debugfs.h>
@@ -2390,7 +2391,6 @@ static int smblite_suspend(struct device *dev)
 static int smblite_resume(struct device *dev)
 {
 	int rc = 0;
-	struct smblite *chip = dev_get_drvdata(dev);
 
 #ifdef CONFIG_DEEPSLEEP
 	if (mem_sleep_current == PM_SUSPEND_MEM) {
@@ -2400,18 +2400,32 @@ static int smblite_resume(struct device *dev)
 	}
 #endif
 
-	if (chip->dt.remote_fg) {
-		rc = remote_bms_resume();
-		if (rc < 0) {
-			pr_err("Couldn't resume remote-fg, rc=%d\n", rc);
-			return rc;
-		}
-	}
-
 	return rc;
 }
 
+static void smblite_complete(struct device *dev)
+{
+	int rc = 0;
+	struct smblite *chip = dev_get_drvdata(dev);
+
+	/*
+	 * There can be race condition where-in glink comm driver
+	 * resume is called after the resume callback of charger
+	 * driver which may lead to device crash because charger
+	 * driver requests battery data when glink is not yet up.
+	 * Hence move getting of battery data to complete callback
+	 * which is called after all the drivers resume callback is
+	 * completed.
+	 */
+	if (chip->dt.remote_fg) {
+		rc = remote_bms_resume();
+		if (rc < 0)
+			pr_err("Couldn't resume remote-fg, rc=%d\n", rc);
+	}
+}
+
 static const struct dev_pm_ops smblite_pm_ops = {
+	.complete = smblite_complete,
 	.freeze = smblite_freeze,
 	.restore = smblite_restore,
 	.suspend = smblite_suspend,

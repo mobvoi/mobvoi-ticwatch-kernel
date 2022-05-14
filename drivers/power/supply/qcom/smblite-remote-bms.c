@@ -838,23 +838,15 @@ int remote_bms_deinit(void)
 
 int remote_bms_resume(void)
 {
-	int rc;
-
 	if (!the_bms)
 		return -ENODEV;
 
 	if (is_debug_batt_id(the_bms))
 		return 0;
 
-	schedule_delayed_work(&the_bms->periodic_fg_work,
-				msecs_to_jiffies(BMS_READ_INTERVAL_MS));
+	schedule_delayed_work(&the_bms->periodic_fg_work, 0);
 
-	/* get data immediately on resume */
-	rc = remote_bms_get_data(the_bms);
-	if (rc < 0)
-		pr_err("Couldn't read remote-fg data in resume, rc=%d\n", rc);
-
-	return rc;
+	return 0;
 }
 
 int remote_bms_suspend(void)
