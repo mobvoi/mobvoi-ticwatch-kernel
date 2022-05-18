@@ -6,6 +6,7 @@
  */
 
 #include <linux/clk-provider.h>
+#include <linux/delay.h>
 #include <linux/err.h>
 #include <linux/export.h>
 #include <linux/init.h>
@@ -1186,10 +1187,15 @@ static int clk_smd_rpm_pm_freeze(struct device *dev)
 
 static int clk_smd_rpm_resume(void)
 {
-	int ret;
-
-	ret = clk_vote_bimc(&holi_bimc_clk.hw, INT_MAX);
-	if (ret < 0)
+	int ret, count = 0, trysend = 25;
+	do {
+		ret = clk_vote_bimc(&holi_bimc_clk.hw, INT_MAX);
+		if (!ret)
+			break;
+		udelay(100);
+		count++;
+	} while (count < trysend);
+	if(ret)
 		return ret;
 
 	clk_prepare_enable(holi_bi_tcxo_ao.hw.clk);
