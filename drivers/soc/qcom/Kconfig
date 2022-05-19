@@ -1463,6 +1463,15 @@ config MSM_SEB_RPMSG
 	  and is probed when Slate opens channel and removed when the
 	  channel is closed by remote processor.
 
+config MSM_SLATECOM_EVENT
+	tristate "provide support for slate sensor event Communication"
+	depends on MSM_SEB
+	help
+	 Create a slate_com_event device node for user space communication.
+	 This event driver register for AON event bridge to receive sensor
+	 up and down and notifies upper layer HAL about sensor stataus
+	 through uevent via netlink socket.
+
 config DEEPSLEEP
 	bool "Deep Sleep or Suspend-to-RAM sleep state"
 	help

@@ -128,6 +128,7 @@ obj-$(CONFIG_QCOM_ADSP_MANUAL_VOTE) += adsp_vote_qmi.o adsp_lpm_voting_v01.o
 obj-$(CONFIG_QCOM_ADSP_VOTE_SMP2P) += adsp_vote_smp2p.o
 obj-$(CONFIG_MSM_SLATECOM) += slatecom_spi.o
 obj-$(CONFIG_MSM_SLATECOM_INTERFACE) += slatecom_interface.o
+obj-$(CONFIG_MSM_SLATECOM_EVENT) += slatecom_event.o
 obj-$(CONFIG_MSM_SLATECOM_RPMSG) += slatecom_rpmsg.o
 obj-$(CONFIG_QCOM_AOP_SET_DDR) += aop-set-ddr.o
 obj-$(CONFIG_CPU_V7) += idle-v7.o
