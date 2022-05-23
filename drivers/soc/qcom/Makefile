@@ -141,3 +141,6 @@ obj-$(CONFIG_AUTO_EARLY_LAUNCH) += auto_early_launcher.o
 obj-$(CONFIG_SILENT_MODE) += silent-mode-hw-monitoring.o
 obj-$(CONFIG_QTI_PMIC_LPM)	+= qti-pmic-lpm.o
 obj-$(CONFIG_QCOM_SECURE_HIBERNATION) += qcom_secure_hibernation.o
+
+###add by wzb for slate_mobvoi_rpc
+obj-y += slate_mobvoi_rpc_rpmsg.o slate_mobvoi_rpc.o

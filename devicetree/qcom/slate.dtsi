@@ -75,6 +75,11 @@
 			qcom,intents = <0x0C 1>;
 		};
 
+		qcom,glink-slate-mobvoi-rpc {
+			qcom,glink-channels = "slate-mobvoi-rpc";
+			qcom,intents = <0x0C 1>;
+		};
+
 		qcom,glinkpkt-slate-ssc-hal {
 			qcom,glink-channels = "ssc_hal";
 			qcom,intents = <0x2710 2
@@ -258,4 +263,16 @@
 		qcom,glinkpkt-edge = "slate";
 		intents = <0x200 1>;
 	};
+
+	qcom,mobvoi-rpc-rpmsg {
+		compatible = "qcom,mobvoi-rpc-rpmsg";
+		qcom,glink-channels = "slate-mobvoi-rpc";
+		qcom,glinkpkt-edge = "slate";
+		intents = <0x0181 1>;
+	};
+
+	qcom,slate-mobvoirpc {
+		compatible = "qcom,slate-mobvoirpc";
+	};
+
 };
