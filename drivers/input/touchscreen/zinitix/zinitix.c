@@ -110,6 +110,7 @@ u8 m_FirmwareIdx;
 #define TOUCH_DELTA_MODE         3
 #define TOUCH_DND_MODE           6
 #define TOUCH_PDND_MODE          11
+#define TOUCH_SELF_MODE          17
 
 #define TOUCH_CHECK_SELF_RX_MODE 12
 #define TOUCH_CHECK_SELF_TX_MODE 13
@@ -907,7 +908,7 @@ static bool get_self_rx_data(struct bt541_ts_info *info, u8 *buff, int skip_cnt)
 		udelay(1000);
 
 	if (read_raw_data(client, BT541_RAWDATA_REG,
-			  (char *)(buff), CHECK_SELF_RX_DATA_NUM) < 0) {
+			  (char *)(buff), 28) < 0) {
 		zinitix_err("Failed to read short data\n");
 		info->work_state = NOTHING;
 		enable_irq(info->irq);
@@ -2618,7 +2619,7 @@ static bool ts_set_touchmode(u16 value)
 		if (write_reg(misc_info->client, BT541_AFE_FREQUENCY,SEC_PDND_FREQUENCY) != I2C_SUCCESS)
 			zinitix_info("TEST Mode: Fail to set BT541_AFE_FREQUENCY %d.\n",SEC_PDND_FREQUENCY);
 	}
-	if ((value == TOUCH_CHECK_SELF_RX_MODE) || (value == TOUCH_CHECK_SELF_TX_MODE)) {
+	if (value == TOUCH_SELF_MODE ) {
 		if (write_reg(misc_info->client, BT541_DND_N_COUNT,SEC_SELF_N_COUNT) != I2C_SUCCESS)
 			zinitix_info("TEST Mod: Fail to set BT541_DND_N_COUNT %d.\n",SEC_PDND_N_COUNT);
 		if (write_reg(misc_info->client, BT541_DND_U_COUNT,SEC_SELF_U_COUNT) != I2C_SUCCESS)
@@ -2709,6 +2710,7 @@ static inline void set_cmd_result(struct bt541_ts_info *info, char *buff,
 
 	dst_str_len = strlen(info->factory_info->cmd_result);
 	buff_size = sizeof(info->factory_info->cmd_result);
+
 
 	res_str_len = dst_str_len + len;
 	if (res_str_len > buff_size)
@@ -3035,8 +3037,13 @@ static void run_preference_read(void *device_data)
 	struct tsp_raw_data *raw_data = info->raw_data;
 	u16 min, max;
 	s32 i, j;
+	int offset = 0;
+
 
 	set_default_result(info);
+	memset(finfo->cmd_buff, 0, sizeof(finfo->cmd_buff));
+	finfo->cmd_buff[0] = '\n';
+
 
 	ts_set_touchmode(TOUCH_PDND_MODE);
 	get_raw_data(info, (u8 *) raw_data->pref_data, 10);
@@ -3047,26 +3054,26 @@ static void run_preference_read(void *device_data)
 
 	for (i = 0; i < info->cap_info.x_node_num; i++) {
 		for (j = 0; j < info->cap_info.y_node_num; j++) {
-			if (raw_data->pref_data[i *
-						info->cap_info.y_node_num +
-						j] < min
-			    && raw_data->pref_data[i *
-						   info->cap_info.y_node_num +
-						   j] != 0)
-				min = raw_data->pref_data[i *
-							  info->cap_info.
-							  y_node_num + j];
+			if (raw_data->pref_data[i *info->cap_info.y_node_num +j] < min
+			    && raw_data->pref_data[i *info->cap_info.y_node_num +j] != 0)
+				min = raw_data->pref_data[i *info->cap_info.y_node_num + j];
 
-			if (raw_data->
-			    pref_data[i * info->cap_info.y_node_num + j] > max)
+			if (raw_data->pref_data[i * info->cap_info.y_node_num + j] > max)
 				max = raw_data->pref_data[i *info->cap_info.y_node_num + j];
 
 		}
 	}
 
-	snprintf(finfo->cmd_buff, sizeof(finfo->cmd_buff), "%d,%d\n", min, max);
-	set_cmd_result(info, finfo->cmd_buff,
-		       strnlen(finfo->cmd_buff, sizeof(finfo->cmd_buff)));
+	//snprintf(finfo->cmd_buff, sizeof(finfo->cmd_buff), "%d,%d\n", min, max);
+	for (i = 0; i < info->cap_info.x_node_num * info->cap_info.y_node_num; i++) {
+		zinitix_err(" TX pref_data[%d]: %d\n",i, (s16)raw_data->pref_data[i]);
+		snprintf((char *)&finfo->cmd_buff[offset++ * 7 + 1], 8,"% 6d\n", (s16) raw_data->pref_data[i]);
+
+	}
+
+	finfo->cmd_buff[offset * 7 + 1] = '\0';
+
+	set_cmd_result(info, finfo->cmd_buff,strnlen(finfo->cmd_buff, sizeof(finfo->cmd_buff)));
 	finfo->cmd_state = OK;
 }
 
@@ -3080,7 +3087,10 @@ static void run_self_data_read(void *device_data)
 	int offset = 0;
 
 	set_default_result(info);
+	memset(finfo->cmd_buff, 0, sizeof(finfo->cmd_buff));
+	finfo->cmd_buff[0] = '\n';
 
+	/*
 	ts_set_touchmode(TOUCH_CHECK_SELF_RX_MODE);
 	get_self_rx_data(info, (u8 *) raw_data->pref_data, 10);
 	ts_set_touchmode(TOUCH_POINT_MODE);
@@ -3095,16 +3105,19 @@ static void run_self_data_read(void *device_data)
 
 	ts_set_touchmode(TOUCH_CHECK_SELF_TX_MODE);
 	get_self_tx_data(info, (u8 *) raw_data->pref_data, 10);
+	ts_set_touchmode(TOUCH_POINT_MODE);*/
+
+	ts_set_touchmode(TOUCH_SELF_MODE);//mode 17
+	get_self_rx_data(info, (u8 *) raw_data->pref_data, 10);
 	ts_set_touchmode(TOUCH_POINT_MODE);
 
-	for (i = 0; i < (CHECK_SELF_TX_DATA_NUM >> 1); i++) {
-		zinitix_debug(" TX pref_data[%d]: %d\n",i, (s16)raw_data->pref_data[i]);
-		snprintf((char *)&finfo->cmd_buff[offset++ * 7 + 1], 8,
-			 "% 6d\n", (s16) raw_data->pref_data[i]);
+
+	for (i = 0; i < (info->cap_info.x_node_num + info->cap_info.y_node_num); i++) {
+		zinitix_err(" TX pref_data[%d]: %d\n",i, (s16)raw_data->pref_data[i]);
+		snprintf((char *)&finfo->cmd_buff[offset++ * 7 + 1], 8,"% 6d\n", (s16) raw_data->pref_data[i]);
 	}
 
 	finfo->cmd_buff[offset * 7 + 1] = '\0';
-
 	set_cmd_result(info, finfo->cmd_buff,strnlen(finfo->cmd_buff, sizeof(finfo->cmd_buff)));
 	finfo->cmd_state = OK;
 }
@@ -4263,7 +4276,6 @@ static int bt541_ts_probe_dt(struct device_node *np,
 #endif
 	int ret = 0;
 	u32 temp;
-	zinitix_info("[yuewen]bt541_ts_probe_dt start...\n");
 
 	ret = of_property_read_u32(np, "zinitix,x_resolution", &temp);
 	if (!ret)
@@ -4396,7 +4408,6 @@ static int bt541_ts_probe(struct i2c_client *client,
 
 	struct device_node *np = client->dev.of_node;
 
-	zinitix_info("[yuewen]----\n");
 	if (client->dev.of_node) {
 		if (!pdata) {
 			pdata =devm_kzalloc(&client->dev, sizeof(*pdata),GFP_KERNEL);
