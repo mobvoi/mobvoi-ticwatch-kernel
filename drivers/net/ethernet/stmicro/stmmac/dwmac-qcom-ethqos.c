@@ -25,7 +25,7 @@
 #include <linux/ipv6.h>
 #include <linux/rtnetlink.h>
 #include <asm-generic/io.h>
-
+#include <linux/kthread.h>
 #include "stmmac.h"
 #include "stmmac_platform.h"
 #include "dwmac-qcom-ethqos.h"
@@ -102,8 +102,6 @@
 
 #define EMAC_I0_EMAC_CORE_HW_VERSION_RGOFFADDR 0x00000070
 #define EMAC_HW_v2_3_2_RG 0x20030002
-
-#define EMAC_HW_v3_0_0_RG 0x30000000
 
 #define MII_BUSY 0x00000001
 #define MII_WRITE 0x00000002
@@ -998,27 +996,27 @@ static int ethqos_configure(struct qcom_ethqos *ethqos)
 			     ethqos->por[i].offset);
 	ethqos_set_func_clk_en(ethqos);
 
-	/* Disable CK_OUT_EN */
-	rgmii_updatel(ethqos, SDCC_DLL_CONFIG_CK_OUT_EN,
-		      0,
-		      SDCC_HC_REG_DLL_CONFIG);
-
-	/* Wait for CK_OUT_EN clear */
-	do {
-		val = rgmii_readl(ethqos, SDCC_HC_REG_DLL_CONFIG);
-		val &= SDCC_DLL_CONFIG_CK_OUT_EN;
-		if (!val)
-			break;
-		usleep_range(1000, 1500);
-		retry--;
-	} while (retry > 0);
-	if (!retry)
-		dev_err(&ethqos->pdev->dev, "Clear CK_OUT_EN timedout\n");
-
 	if (ethqos->speed != SPEED_100 && ethqos->speed != SPEED_10) {
-		/* Set DLL_EN */
-		rgmii_updatel(ethqos, SDCC_DLL_CONFIG_DLL_EN,
-			      SDCC_DLL_CONFIG_DLL_EN, SDCC_HC_REG_DLL_CONFIG);
+		/* Disable CK_OUT_EN */
+		rgmii_updatel(ethqos, SDCC_DLL_CONFIG_CK_OUT_EN,
+			      0,
+			      SDCC_HC_REG_DLL_CONFIG);
+
+		/* Wait for CK_OUT_EN clear */
+		do {
+			val = rgmii_readl(ethqos, SDCC_HC_REG_DLL_CONFIG);
+			val &= SDCC_DLL_CONFIG_CK_OUT_EN;
+			if (!val)
+				break;
+			usleep_range(1000, 1500);
+			retry--;
+		} while (retry > 0);
+		if (!retry)
+			dev_err(&ethqos->pdev->dev, "Clear CK_OUT_EN timedout\n");
+
+			/* Set DLL_EN */
+			rgmii_updatel(ethqos, SDCC_DLL_CONFIG_DLL_EN,
+				      SDCC_DLL_CONFIG_DLL_EN, SDCC_HC_REG_DLL_CONFIG);
 	}
 
 	if (ethqos->speed == SPEED_1000) {
@@ -1046,7 +1044,8 @@ static int ethqos_configure(struct qcom_ethqos *ethqos)
 	rgmii_updatel(ethqos, SDCC_DLL_CONFIG_PDN,
 		      SDCC_DLL_CONFIG_PDN, SDCC_HC_REG_DLL_CONFIG);
 
-	usleep_range(1000, 1500);
+	if (ethqos->speed != SPEED_100 && ethqos->speed != SPEED_10)
+		usleep_range(1000, 1500);
 
 	/* Clear DLL_RST */
 	rgmii_updatel(ethqos, SDCC_DLL_CONFIG_DLL_RST, 0,
@@ -1056,39 +1055,41 @@ static int ethqos_configure(struct qcom_ethqos *ethqos)
 	rgmii_updatel(ethqos, SDCC_DLL_CONFIG_PDN, 0,
 		      SDCC_HC_REG_DLL_CONFIG);
 
-	usleep_range(1000, 1500);
+	if (ethqos->speed != SPEED_100 && ethqos->speed != SPEED_10)
+		usleep_range(1000, 1500);
 
-	/* Set CK_OUT_EN */
-	rgmii_updatel(ethqos, SDCC_DLL_CONFIG_CK_OUT_EN,
-		      SDCC_DLL_CONFIG_CK_OUT_EN,
+	if (ethqos->speed != SPEED_100 && ethqos->speed != SPEED_10) {
+		/* Set CK_OUT_EN */
+		rgmii_updatel(ethqos, SDCC_DLL_CONFIG_CK_OUT_EN,
+			      SDCC_DLL_CONFIG_CK_OUT_EN,
 		      SDCC_HC_REG_DLL_CONFIG);
 
-	/* Wait for CK_OUT_EN set */
-	retry = 1000;
-	do {
-		val = rgmii_readl(ethqos, SDCC_HC_REG_DLL_CONFIG);
-		val &= SDCC_DLL_CONFIG_CK_OUT_EN;
-		if (val)
-			break;
-		usleep_range(1000, 1500);
-		retry--;
-	} while (retry > 0);
-	if (!retry)
-		dev_err(&ethqos->pdev->dev, "Set CK_OUT_EN timedout\n");
+		/* Wait for CK_OUT_EN set */
+		retry = 1000;
+		do {
+			val = rgmii_readl(ethqos, SDCC_HC_REG_DLL_CONFIG);
+			val &= SDCC_DLL_CONFIG_CK_OUT_EN;
+			if (val)
+				break;
+			usleep_range(1000, 1500);
+			retry--;
+		} while (retry > 0);
+		if (!retry)
+			dev_err(&ethqos->pdev->dev, "Set CK_OUT_EN timedout\n");
 
-	/* wait for DLL LOCK */
-	retry = 1000;
-	do {
-		usleep_range(1000, 1500);
-		dll_lock = rgmii_readl(ethqos, SDC4_STATUS);
-		if (dll_lock & SDC4_STATUS_DLL_LOCK)
-			break;
-		retry--;
-	} while (retry > 0);
-	if (!retry)
-		dev_err(&ethqos->pdev->dev,
-			"Timeout while waiting for DLL lock\n");
-
+		/* wait for DLL LOCK */
+		retry = 1000;
+		do {
+			usleep_range(1000, 1500);
+			dll_lock = rgmii_readl(ethqos, SDC4_STATUS);
+			if (dll_lock & SDC4_STATUS_DLL_LOCK)
+				break;
+			retry--;
+		} while (retry > 0);
+		if (!retry)
+			dev_err(&ethqos->pdev->dev,
+				"Timeout while waiting for DLL lock\n");
+	}
 	return 0;
 }
 
@@ -2247,8 +2248,9 @@ static struct notifier_block qcom_ethqos_panic_blk = {
 	.notifier_call  = qcom_ethqos_panic_notifier,
 };
 
-static int qcom_ethqos_probe(struct platform_device *pdev)
+static int _qcom_ethqos_probe(void *arg)
 {
+	struct platform_device *pdev = (struct platform_device *)arg;
 	struct device_node *np = pdev->dev.of_node;
 	struct device_node *rgmii_io_macro_node = NULL;
 	struct plat_stmmacenet_data *plat_dat = NULL;
@@ -2267,12 +2269,15 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 	place_marker("M - Ethernet probe start");
 #endif
 
+#if IS_ENABLED(CONFIG_IPC_LOGGING)
 	ipc_emac_log_ctxt = ipc_log_context_create(IPCLOG_STATE_PAGES,
 						   "emac", 0);
 	if (!ipc_emac_log_ctxt)
 		ETHQOSERR("Error creating logging context for emac\n");
 	else
 		ETHQOSINFO("IPC logging has been enabled for emac\n");
+#endif
+
 	ret = stmmac_get_platform_resources(pdev, &stmmac_res);
 	if (ret)
 		return ret;
@@ -2283,6 +2288,18 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 	}
 
 	ethqos->pdev = pdev;
+
+	ethqos->phyad_change = false;
+	if (of_property_read_bool(np, "qcom,phyad_change")) {
+		ethqos->phyad_change = true;
+		ETHQOSDBG("qcom,phyad_change present\n");
+	}
+
+	ethqos->is_gpio_phy_reset = false;
+	if (of_property_read_bool(np, "snps,reset-gpios")) {
+		ethqos->is_gpio_phy_reset = true;
+		ETHQOSDBG("qcom,phy-reset present\n");
+	}
 
 	ethqos_init_regulators(ethqos);
 	ethqos_init_gpio(ethqos);
@@ -2348,6 +2365,8 @@ static int qcom_ethqos_probe(struct platform_device *pdev)
 	plat_dat->phy_intr_enable = ethqos_phy_intr_enable;
 	plat_dat->phy_irq_enable = ethqos_phy_irq_enable;
 	plat_dat->phy_irq_disable = ethqos_phy_irq_disable;
+	plat_dat->phyad_change = ethqos->phyad_change;
+	plat_dat->is_gpio_phy_reset = ethqos->is_gpio_phy_reset;
 
 	/* Get rgmii interface speed for mac2c from device tree */
 	if (of_property_read_u32(np, "mac2mac-rgmii-speed",
@@ -2484,6 +2503,20 @@ err_mem:
 	stmmac_remove_config_dt(pdev, plat_dat);
 
 	return ret;
+}
+
+static int qcom_ethqos_probe(struct platform_device *pdev)
+{
+#ifdef CONFIG_PLATFORM_AUTO
+	struct task_struct *ethqos_task = kthread_run(_qcom_ethqos_probe, pdev,
+			"ethqos_probe");
+	if (PTR_ERR_OR_ZERO(ethqos_task))
+		return PTR_ERR(ethqos_task);
+	else
+		return 0;
+#else
+	return _qcom_ethqos_probe(pdev);
+#endif
 }
 
 static int qcom_ethqos_remove(struct platform_device *pdev)

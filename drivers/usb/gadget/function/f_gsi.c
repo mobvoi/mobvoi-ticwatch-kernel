@@ -55,8 +55,14 @@ static void ipa_ready_callback(void *user_data)
 
 	log_event_info("%s: ipa is ready\n", __func__);
 
-	gsi->d_port.ipa_ready = true;
-	wake_up_interruptible(&gsi->d_port.wait_for_ipa_ready);
+	/*
+	 * If ipa_ready_timeout is set then don't mark ipa_ready as true since this
+	 * callback can come even after timeout.
+	 */
+	if (!gsi->ipa_ready_timeout) {
+		gsi->d_port.ipa_ready = true;
+		wake_up_interruptible(&gsi->d_port.wait_for_ipa_ready);
+	}
 }
 
 static void post_event(struct gsi_data_port *port, u8 event)
@@ -663,6 +669,7 @@ static int ipa_connect_channels(struct gsi_data_port *d_port)
 	memset(&ipa_out_channel_out_params, 0x0,
 				sizeof(ipa_out_channel_out_params));
 
+	gsi->ipa_ready_timeout = false;
 	ret = ipa_register_ipa_ready_cb(ipa_ready_callback, gsi);
 	if (!ret) {
 		log_event_info("%s: ipa is not ready", __func__);
@@ -671,6 +678,8 @@ static int ipa_connect_channels(struct gsi_data_port *d_port)
 			msecs_to_jiffies(GSI_IPA_READY_TIMEOUT));
 		if (!ret) {
 			log_event_err("%s: ipa ready timeout", __func__);
+			gsi->ipa_ready_timeout = true;
+			ret = -ETIMEDOUT;
 			goto end_xfer_ep_out;
 		}
 		gsi->d_port.ipa_ready = false;
@@ -2542,13 +2551,8 @@ static int gsi_set_alt(struct usb_function *f, unsigned int intf,
 		/* for rndis and rmnet alt is always 0 update alt accordingly */
 		if (gsi->prot_id == IPA_USB_RNDIS ||
 				gsi->prot_id == IPA_USB_RMNET ||
-				gsi->prot_id == IPA_USB_DIAG) {
-			if (gsi->d_port.in_ep &&
-				!gsi->d_port.in_ep->driver_data)
+				gsi->prot_id == IPA_USB_DIAG)
 				alt = 1;
-			else
-				alt = 0;
-		}
 
 		if (alt > 1)
 			goto notify_ep_disable;
@@ -3371,6 +3375,7 @@ static int gsi_bind(struct usb_configuration *c, struct usb_function *f)
 	if (gsi->prot_id == IPA_USB_GPS)
 		goto skip_ipa_init;
 
+	gsi->ipa_ready_timeout = false;
 	status = ipa_register_ipa_ready_cb(ipa_ready_callback, gsi);
 	if (!status) {
 		log_event_info("%s: ipa is not ready", __func__);
@@ -3379,6 +3384,7 @@ static int gsi_bind(struct usb_configuration *c, struct usb_function *f)
 			msecs_to_jiffies(GSI_IPA_READY_TIMEOUT));
 		if (!status) {
 			log_event_err("%s: ipa ready timeout", __func__);
+			gsi->ipa_ready_timeout = true;
 			status = -ETIMEDOUT;
 			goto dereg_rndis;
 		}

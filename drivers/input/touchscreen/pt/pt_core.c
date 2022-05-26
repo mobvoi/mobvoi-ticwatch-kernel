@@ -10839,6 +10839,7 @@ exit:
 	if (rc) {
 		dev_err(dev, "%s: Failed to wake up: rc=%d\n",
 			__func__, rc);
+		pt_enable_regulator(cd, false);
 		return -EAGAIN;
 	}
 
@@ -17721,6 +17722,10 @@ int pt_probe(const struct pt_bus_ops *ops, struct device *dev,
 		pt_debug(dev, DL_ERROR, "%s: Error, device_init_wakeup rc:%d\n",
 			__func__, rc);
 
+	if (!enable_irq_wake(cd->irq)) {
+		cd->irq_wake = 1;
+		pt_debug(cd->dev, DL_WARN, "%s Device MAY wakeup\n", __func__);
+	}
 	pm_runtime_get_noresume(dev);
 	pm_runtime_set_active(dev);
 	pm_runtime_enable(dev);
@@ -17984,6 +17989,11 @@ int pt_release(struct pt_core_data *cd)
 		cd->cpdata->setup_power(cd->cpdata, PT_MT_POWER_OFF, dev);
 	dev_set_drvdata(dev, NULL);
 	pt_del_core(dev);
+	if (cd->vcc_i2c)
+		regulator_set_load(cd->vcc_i2c, 0);
+
+	if (cd->vdd)
+		regulator_set_load(cd->vdd, 0);
 	pt_enable_regulator(cd, false);
 	pt_get_regulator(cd, false);
 	pt_free_si_ptrs(cd);
