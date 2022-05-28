@@ -75,13 +75,20 @@ properties:
     description: Resistance of the battery connector in mOhms.
 
   nvmem-cell-names:
-    $ref: /schemas/types.yaml#/definitions/string-array
-    description: The nvmem cell device name of the SDAM register used to store
-	the qbg debug mask.
+    minItems: 2
+    maxItems: 3
+    items:
+      - const: qbg_debug_mask_low
+      - const: qbg_debug_mask_high
+      - const: skip_esr_state
 
   nvmem-cells:
-    $ref: /schemas/types.yaml#/definitions/phandle-array
-    description: Phandle of the nvmem cell device used to store the qbg debug mask.
+   minItems: 2
+   minItems: 3
+   description: |
+     Use nvmem cell device to indicate SDAM register.
+       qbg_debug_mask_low/qbg_debug_mask_high used to store the qbg debug mask
+       skip_esr_state used to get GPS de-modulating status
 
 required:
   - compatible

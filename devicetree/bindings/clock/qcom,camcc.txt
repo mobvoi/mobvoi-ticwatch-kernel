@@ -18,6 +18,7 @@ Required properties :
 			"qcom,sa6155-camcc"
 			"qcom,sa6155-camcc"
 			"qcom,direwolf-camcc"
+			"qcom,lemans-camcc"
 
 - reg : shall contain base register location and length.
 - reg-names: names of registers listed in the same order as in

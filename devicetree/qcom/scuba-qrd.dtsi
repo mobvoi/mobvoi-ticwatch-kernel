@@ -223,7 +223,74 @@
 	status = "ok";
 };
 
+&tlmm {
+	key_vol_up {
+		key_vol_up_default: key_vol_up_default {
+			pins = "gpio96";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			power-source = <0>;
+		};
+	};
+};
+
 &soc {
+	gpio_keys {
+		compatible = "gpio-keys";
+		label = "gpio-keys";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&key_vol_up_default>;
+
+		vol_up {
+			label = "volume_up";
+			gpios = <&tlmm 96 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <KEY_VOLUMEUP>;
+			linux,can-disable;
+			debounce-interval = <15>;
+			gpio-key,wakeup;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wifi_led {
+			label = "wifi-led_yellow";
+			gpios = <&tlmm 47 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		bt_led {
+			label = "bt-led_blue";
+			gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		user_led0 {
+			label = "user-led0_green";
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+
+	pm2250_rg_leds: qcom,rg_leds {
+		compatible = "pwm-leds";
+		user_led1 {
+			label = "user-led1_green";
+			pwms = <&pm2250_pwm1 0 1000000>;
+			max-brightness = <255>;
+		};
+
+		user_led2 {
+			label = "user-led2_green";
+			pwms = <&pm2250_pwm2 0 1000000>;
+			max-brightness = <255>;
+		};
+	};
+
 	clk40M: can_clock {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
@@ -241,6 +308,7 @@
 		interrupts = <39 0>;
 		interrupt-names = "can_irq";
 		spi-max-frequency = <10000000>;
+		message-transmit-interval = <800>;
 		gpio-controller;
 		status = "okay";
 	};
@@ -303,14 +371,12 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&usb_id_interrupt>;
 
+	qcom,batteryless-platform;
 	qcom,auto-recharge-soc = <98>;
-	qcom,suspend-input-on-debug-batt;
-	qcom,battery-data = <&scuba_batterydata>;
 	io-channels = <&pm2250_vadc ADC5_USB_IN_V_16>,
 			<&pm2250_vadc ADC5_CHG_TEMP>;
 	io-channel-names = "usb_in_voltage",
 			"chg_temp";
-	qcom,thermal-mitigation = <2000000 1500000 1000000 500000>;
 };
 
 &qusb_phy0 {

@@ -43,6 +43,7 @@ Required properties :
 			"qcom,scuba-gcc"
 			"qcom,qcs404-gcc-mdss"
 			"qcom,bengal-gcc"
+			"qcom,lemans-gcc"
 
 - reg : shall contain base register location and length
 - vdd_cx-supply: The vdd_cx logic rail supply.

@@ -51,6 +51,10 @@
 	};
 };
 
+&icnss {
+	qcom,rf_subtype = <1>;
+};
+
 &qupv3_se5_4uart {
 	status = "ok";
 };
@@ -58,8 +62,8 @@
 &pm5100_qbg {
 	status = "ok";
 	qcom,battery-data = <&monaco_batterydata>;
-	nvmem-cell-names = "qbg_debug_mask_low", "qbg_debug_mask_high";
-	nvmem-cells = <&qbg_debug_mask_low>, <&qbg_debug_mask_high>;
+	nvmem-cell-names = "qbg_debug_mask_low", "qbg_debug_mask_high", "skip_esr_state";
+	nvmem-cells = <&qbg_debug_mask_low>, <&qbg_debug_mask_high>, <&skip_esr_state>;
 	#io-channel-cells = <1>;
 	io-channels = <&pm5100_adc PM5100_ADC5_GEN3_BATT_THM_100K_PU>,
 		      <&pm5100_adc PM5100_ADC5_GEN3_BAT_ID_100K_PU>,

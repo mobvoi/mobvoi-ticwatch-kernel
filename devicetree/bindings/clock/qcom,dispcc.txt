@@ -22,6 +22,8 @@ Required properties :
 			"qcom,direwolf-dispcc0"
 			"qcom,direwolf-dispcc1"
 			"qcom,bengal-dispcc"
+			"qcom,lemans-dispcc0"
+			"qcom,lemans-dispcc1"
 
 - reg : shall contain base register location and length.
 - #clock-cells : from common clock binding, shall contain 1.

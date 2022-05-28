@@ -1,4 +1,5 @@
 #include "lemans.dtsi"
+#include <dt-bindings/clock/qcom,gcc-lemans.h>
 
 &arch_timer {
 	clock-frequency = <500000>;
@@ -39,4 +40,43 @@
 		usb-phy = <&usb_emu_phy_0>, <&usb_nop_phy>;
 		maximum-speed = "high-speed";
 	};
+};
+
+&tsens0 {
+		status = "disabled";
+};
+
+&tsens1 {
+		status = "disabled";
+};
+
+&tsens2 {
+		status = "disabled";
+};
+
+&tsens3 {
+		status = "disabled";
+};
+
+&gcc {
+	clocks = <&bi_tcxo>, <&pcie_0_pipe_clk>, <&pcie_1_pipe_clk>,
+		 <&pcie_phy_aux_clk>, <&rxc0_ref_clk>, <&rxc1_ref_clk>,
+		 <&sleep_clk>, <&ufs_card_rx_symbol_0_clk>, <&ufs_card_rx_symbol_1_clk>,
+		 <&ufs_card_tx_symbol_0_clk>, <&ufs_phy_rx_symbol_0_clk>,
+		 <&ufs_phy_rx_symbol_1_clk>, <&ufs_phy_tx_symbol_0_clk>,
+		 <&usb3_phy_wrapper_gcc_usb30_prim_pipe_clk>,
+		 <&usb3_phy_wrapper_gcc_usb30_sec_pipe_clk>;
+};
+
+&camcc {
+	clocks = <&bi_tcxo>, <&gcc GCC_CAMERA_AHB_CLK>, <&sleep_clk>;
+};
+
+&videocc {
+	clocks = <&bi_tcxo>, <&gcc GCC_VIDEO_AHB_CLK>, <&sleep_clk>;
+};
+
+&gpucc {
+	clocks = <&bi_tcxo>, <&gcc GCC_GPU_CFG_AHB_CLK>,
+		 <&gcc GCC_GPU_GPLL0_CLK_SRC>, <&gcc GCC_GPU_GPLL0_DIV_CLK_SRC>;
 };

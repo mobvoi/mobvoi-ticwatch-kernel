@@ -16,6 +16,7 @@ Required properties :
 		"qcom,sdxlemur-rpmh-clk"
 		"qcom,yupik-rpmh-clk"
 		"qcom,direwolf-rpmh-clk"
+		"qcom,lemans-rpmh-clk"
 
 - #clock-cells : must contain 1
 

@@ -348,21 +348,21 @@
 	leds {
 		compatible = "gpio-leds";
 
-		gpio52 {
-			label = "user4-led_green";
-			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
-		};
-
-		gpio47 {
+		wifi_led {
 			label = "wifi-led_yellow";
 			gpios = <&tlmm 47 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 		};
 
-		gpio45 {
+		bt_led {
 			label = "bt-led_blue";
 			gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		user_led0 {
+			label = "user-led0_green";
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 		};
 	};
@@ -381,6 +381,20 @@
 	};
 };
 
+&pmi632_rgb {
+	blue {
+		label = "user-led1_green";
+	};
+
+	green {
+		label = "user-led2_green";
+	};
+
+	red {
+		label = "user-led3_green";
+	};
+};
+
 &qupv3_se5_spi {
 	status = "okay";
 	mcp2518fd: can@0 {
@@ -391,6 +405,7 @@
 		interrupts = <39 0>;
 		interrupt-names = "can_irq";
 		spi-max-frequency = <10000000>;
+		message-transmit-interval = <800>;
 		gpio-controller;
 		status = "okay";
 	};

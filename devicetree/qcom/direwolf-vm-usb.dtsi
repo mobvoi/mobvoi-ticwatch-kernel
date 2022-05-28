@@ -45,6 +45,7 @@
 		qcom,core-clk-rate-hs = <66666667>;
 
 		qcom,dwc-usb3-msm-tx-fifo-size = <27696>;
+		qcom,ignore-wakeup-src-in-hostmode;
 
 		status = "disabled";
 
@@ -59,6 +60,7 @@
 			snps,hird-threshold = /bits/ 8 <0x0>;
 			snps,ssp-u3-u0-quirk;
 			snps,is-utmi-l1-suspend;
+			snps,usb2-gadget-lpm-disable;
 			snps,dis-u1-entry-quirk;
 			snps,dis-u2-entry-quirk;
 			tx-fifo-resize;
@@ -84,6 +86,10 @@
 
 		resets = <&gcc GCC_QUSB2PHY_PRIM_BCR>;
 		reset-names = "phy_reset";
+		qcom,param-override-seq =
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
+			 0x17 0x74>;	/* override x2 */
 		status = "disabled";
 	};
 
@@ -135,7 +141,7 @@
 		qcom,core-clk-rate-hs = <66666667>;
 
 		qcom,dwc-usb3-msm-tx-fifo-size = <27696>;
-
+		qcom,ignore-wakeup-src-in-hostmode;
 		qcom,default-mode-host;
 		status = "disabled";
 
@@ -152,6 +158,7 @@
 			snps,is-utmi-l1-suspend;
 			snps,dis-u1-entry-quirk;
 			snps,dis-u2-entry-quirk;
+			snps,usb2-gadget-lpm-disable;
 			tx-fifo-resize;
 			maximum-speed = "high-speed";
 			dr_mode = "otg";
@@ -175,6 +182,10 @@
 
 		resets = <&gcc GCC_USB2_PHY_SEC_BCR>;
 		reset-names = "phy_reset";
+		qcom,param-override-seq =
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
+			 0x17 0x74>;	/* override x2 */
 		status = "disabled";
 	};
 
@@ -228,6 +239,7 @@
 		reset-names = "core_reset";
 
 		qcom,core-clk-rate = <200000000>;
+		qcom,ignore-wakeup-src-in-hostmode;
 
 		status = "disabled";
 
@@ -245,8 +257,6 @@
 			snps,hird-threshold = /bits/ 8 <0x0>;
 			snps,ssp-u3-u0-quirk;
 			snps,is-utmi-l1-suspend;
-			snps,dis-u1-entry-quirk;
-			snps,dis-u2-entry-quirk;
 			snps,dis_u3_susphy_quirk;
 			maximum-speed = "high-speed";
 			dr_mode = "host";
@@ -270,8 +280,8 @@
 		resets = <&gcc GCC_QUSB2PHY_HS0_MP_BCR>;
 		reset-names = "phy_reset";
 		qcom,param-override-seq =
-			<0xe6 0x6c	/* override_x0 */
-			 0x0b 0x70	/* override_x1 */
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
 			 0x17 0x74>;	/* override x2 */
 
 		status = "disabled";
@@ -294,8 +304,8 @@
 		resets = <&gcc GCC_QUSB2PHY_HS1_MP_BCR>;
 		reset-names = "phy_reset";
 		qcom,param-override-seq =
-			<0xe6 0x6c	/* override_x0 */
-			 0x0b 0x70	/* override_x1 */
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
 			 0x17 0x74>;	/* override x2 */
 
 		status = "disabled";
@@ -318,8 +328,8 @@
 		resets = <&gcc GCC_QUSB2PHY_HS2_MP_BCR>;
 		reset-names = "phy_reset";
 		qcom,param-override-seq =
-			<0xe6 0x6c	/* override_x0 */
-			 0x0b 0x70	/* override_x1 */
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
 			 0x17 0x74>;	/* override x2 */
 
 		status = "disabled";
@@ -342,8 +352,8 @@
 		resets = <&gcc GCC_QUSB2PHY_HS3_MP_BCR>;
 		reset-names = "phy_reset";
 		qcom,param-override-seq =
-			<0xe6 0x6c	/* override_x0 */
-			 0x0b 0x70	/* override_x1 */
+			<0x63 0x6c	/* override_x0 */
+			 0xC8 0x70	/* override_x1 */
 			 0x17 0x74>;	/* override x2 */
 
 		status = "disabled";

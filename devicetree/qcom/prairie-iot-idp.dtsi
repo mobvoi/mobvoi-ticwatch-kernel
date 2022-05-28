@@ -4,6 +4,7 @@
 #include "display/sm6150-sde-display.dtsi"
 #include <dt-bindings/clock/qcom,gcc-sm6150.h>
 #include <dt-bindings/iio/qti_power_supply_iio.h>
+#include "camera/sm6150-camera-sensor-idp.dtsi"
 
 &qupv3_se3_i2c {
 	#address-cells = <1>;
@@ -24,6 +25,43 @@
 			power-source = <0>;
 		};
 	};
+
+	cam_sensor_dvdd {
+		cam_sensor_dvdd_default: cam_sensor_dvdd_default {
+			pins = "gpio3";
+			function = "normal";
+			output-low;
+			power-source = <0>;
+		};
+	};
+
+	cam_sensor_1_vana {
+		cam_sensor_1_vana_default: cam_sensor_1_vana_default {
+			pins = "gpio8";
+			function = "normal";
+			output-low;
+			power-source = <0>;
+		};
+	};
+
+	cam_sensor_0_vana {
+		cam_sensor_0_vana_default: cam_sensor_0_vana_default {
+			pins = "gpio9";
+			function = "normal";
+			output-low;
+			power-source = <0>;
+		};
+	};
+
+	cam_sensor_1_2_vana {
+		cam_sensor_1_2_vana_default: cam_sensor_1_2_vana_default {
+			pins = "gpio4";
+			function = "normal";
+			output-low;
+			power-source = <0>;
+		};
+	};
+
 };
 
 &soc {
@@ -132,11 +170,31 @@
 	};
 };
 
+&usb0 {
+	qcom,interconnect-values-nom = /* NOMINAL Votes */
+						<1000000 2500000>,
+						<0 2400>,
+						<0 40000>;
+	qcom,interconnect-values-svs = /* SVS Votes */
+						<240000 700000>,
+						<0 2400>,
+						<0 40000>;
+	extcon = <&pm6150_pdphy>, <&pm6150_charger>, <&eud>;
+
+	#io-channel-cells = <1>;
+	io-channels= <&pm6150_charger PSY_IIO_USB_REAL_TYPE>;
+	io-channel-names = "chg_type";
+};
+
 &qupv3_se0_2uart {
 	status = "ok";
 };
 
 &qupv3_se7_4uart {
+	status = "ok";
+};
+
+&flash_led {
 	status = "ok";
 };
 
@@ -272,10 +330,58 @@
 };
 
 &pm6150_qg {
+	io-channels = <&pm6150_vadc ADC5_BAT_THERM_100K_PU>,
+		      <&pm6150_vadc ADC5_BAT_ID_100K_PU>,
+		      <&pm6150_charger PSY_IIO_INPUT_CURRENT_LIMITED>,
+		      <&pm6150_charger PSY_IIO_RECHARGE_SOC>,
+		      <&pm6150_charger PSY_IIO_FORCE_RECHARGE>,
+		      <&pm6150_charger PSY_IIO_CHARGE_DONE>,
+		      <&smb1390_charger PSY_IIO_CP_ENABLE>;
+	io-channel-names = "batt-therm",
+			   "batt-id",
+			   "input_current_limited",
+			   "recharge_soc",
+			   "force_recharge",
+			   "charge_done",
+			   "cp_charging_enabled";
+
+	qcom,battery-data = <&mtp_batterydata>;
 	qcom,qg-iterm-ma = <100>;
 	qcom,hold-soc-while-full;
 	qcom,linearize-soc;
 	qcom,cl-feedback-on;
+};
+
+&pm6150_pdphy {
+	#io-channel-cells = <1>;
+	io-channels = <&pm6150_charger PSY_IIO_PD_ACTIVE>,
+		      <&pm6150_charger PSY_IIO_TYPEC_CC_ORIENTATION>,
+		      <&pm6150_charger PSY_IIO_CONNECTOR_TYPE>,
+		      <&pm6150_charger PSY_IIO_TYPEC_POWER_ROLE>,
+		      <&pm6150_charger PSY_IIO_PD_USB_SUSPEND_SUPPORTED>,
+		      <&pm6150_charger PSY_IIO_TYPEC_SRC_RP>,
+		      <&pm6150_charger PSY_IIO_PD_IN_HARD_RESET>,
+		      <&pm6150_charger PSY_IIO_PD_CURRENT_MAX>,
+		      <&pm6150_charger PSY_IIO_PR_SWAP>,
+		      <&pm6150_charger PSY_IIO_PD_VOLTAGE_MIN>,
+		      <&pm6150_charger PSY_IIO_PD_VOLTAGE_MAX>,
+		      <&pm6150_charger PSY_IIO_USB_REAL_TYPE>,
+		      <&pm6150_charger PSY_IIO_TYPEC_MODE>,
+		      <&pm6150_charger PSY_IIO_PE_START>;
+	io-channel-names = "pd_active",
+			   "typec_cc_orientation",
+			   "connector_type",
+			   "typec_power_role",
+			   "pd_usb_suspend_supported",
+			   "typec_src_rp",
+			   "pd_in_hard_reset",
+			   "pr_current_max",
+			   "pr_swap",
+			   "pd_voltage_min",
+			   "pd_voltage_max",
+			   "real_type",
+			   "typec_mode",
+			   "pe_start";
 };
 
 &pm6150_charger {
@@ -288,6 +394,8 @@
 		<&pm6150_vadc ADC5_AMUX_THM4_100K_PU>,
 		<&pm6150_vadc ADC5_SBUx>,
 		<&pm6150_vadc ADC5_VPH_PWR>,
+		<&pm6150_qg PSY_IIO_CHARGE_FULL>,
+		<&pm6150_qg PSY_IIO_CHARGE_FULL_DESIGN>,
 		<&pm6150_qg PSY_IIO_RESISTANCE_ID>,
 		<&pm6150_qg PSY_IIO_VOLTAGE_NOW>,
 		<&pm6150_qg PSY_IIO_TEMP>,
@@ -301,7 +409,14 @@
 		<&pm6150_qg PSY_IIO_VOLTAGE_MAX>,
 		<&pm6150_qg PSY_IIO_CHARGE_COUNTER>,
 		<&pm6150_qg PSY_IIO_CYCLE_COUNT>,
-		<&pm6150_qg PSY_IIO_TIME_TO_FULL_NOW>;
+		<&pm6150_qg PSY_IIO_TIME_TO_FULL_NOW>,
+		<&smb1390_charger PSY_IIO_PARALLEL_MODE>,
+		<&smb1390_charger PSY_IIO_PARALLEL_OUTPUT_MODE>,
+		<&smb1390_charger PSY_IIO_MIN_ICL>,
+		<&smb1390_charger PSY_IIO_CP_SWITCHER_EN>,
+		<&smb1390_charger PSY_IIO_CP_ENABLE>,
+		<&smb1390_charger PSY_IIO_CP_ILIM>,
+		<&smb1390_charger PSY_IIO_CP_DIE_TEMP>;
 	io-channel-names = "usb_in_voltage",
 		"usb_in_current",
 		"chg_temp",
@@ -309,6 +424,8 @@
 		"conn_temp",
 		"sbux_res",
 		"vph_voltage",
+		"charge_full",
+		"charge_full_design",
 		"resistance_id",
 		"voltage_now",
 		"temp",
@@ -322,14 +439,21 @@
 		"voltage_max",
 		"charge_counter",
 		"cycle_count",
-		"time_to_full_now";
-	qcom,batteryless-platform;
+		"time_to_full_now",
+		"cp_parallel_mode",
+		"cp_parallel_output_mode",
+		"cp_min_icl",
+		"cp_switcher_en",
+		"cp_enable",
+		"cp_ilim",
+		"cp_die_temp";
+	qcom,battery-data = <&mtp_batterydata>;
 	qcom,auto-recharge-soc = <98>;
 	qcom,step-charging-enable;
 	qcom,sw-jeita-enable;
 	qcom,fcc-stepping-enable;
 	qcom,suspend-input-on-debug-batt;
-	qcom,sec-charger-config = <0>;
+	qcom,sec-charger-config = <3>;
 	qcom,thermal-mitigation = <4200000 3500000 3000000
 			2500000 2000000 1500000 1000000 500000>;
 	dpdm-supply = <&qusb_phy0>;
@@ -346,10 +470,20 @@
 };
 
 &smb1390_charger {
-	/delete-property/ compatible;
-	compatible = "qcom,smb1390-charger-psy";
-	io-channels = <&pm6150_vadc ADC5_AMUX_THM3>;
-	io-channel-names = "cp_die_temp";
+	io-channels = <&pm6150_vadc ADC5_AMUX_THM3>,
+		      <&pm6150_charger PSY_IIO_AICL_DONE>,
+		      <&pm6150_charger PSY_IIO_ADAPTER_CC_MODE>,
+		      <&pm6150_charger PSY_IIO_PD_CURRENT_MAX>,
+		      <&pm6150_charger PSY_IIO_USB_INPUT_CURRENT_SETTLED>,
+		      <&pm6150_charger PSY_IIO_SMB_EN_MODE>,
+		      <&pm6150_charger PSY_IIO_SMB_EN_REASON>;
+	io-channel-names = "cp_die_temp",
+			   "aicl_done",
+			   "adapter_cc_mode",
+			   "pd_current_max",
+			   "input_current_settled",
+			   "smb_en_mode",
+			   "smb_en_reason";
 	status = "ok";
 };
 

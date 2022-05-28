@@ -172,6 +172,8 @@ Generic board variants:
 - SA2150P
   compatible = "qcom,sa2150p"
 
+- OPK device:
+  compatible = "qcom,opk"
 
 Boards (SoC type + board variant):
 
@@ -285,6 +287,7 @@ compatible = "qcom,sa6155p-adp-air"
 compatible = "qcom,qcs610"
 compatible = "qcom,qcs610-iot"
 compatible = "qcom,qcs610-idp"
+compatible = "qcom,qcs610-opk"
 compatible = "qcom,qcs405-rumi"
 compatible = "qcom,qcs405-iot"
 compatible = "qcom,sa2150p-ccard"
@@ -294,6 +297,7 @@ compatible = "qcom,adp-star"
 compatible = "qcom,sdxprairie-rumi"
 compatible = "qcom,sdxprairie-mtp"
 compatible = "qcom,sdxprairie-cdp"
+compatible = "qcom,sa515m-ccard"
 compatible = "qcom,sdxlemur-rumi"
 compatible = "qcom,sdxlemur-atp"
 compatible = "qcom,sdxlemur-mtp"

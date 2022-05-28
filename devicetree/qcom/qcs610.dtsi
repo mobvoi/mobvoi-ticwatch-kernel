@@ -1,10 +1,17 @@
 #include "sm6150.dtsi"
 #include "display/sm6150-sde-display.dtsi"
 #include "sm6150-pmic-overlay.dtsi"
+#include "sm6150-audio.dtsi"
 / {
 	model = "Qualcomm Technologies, Inc. QCS610";
 	qcom,msm-name = "QCS610";
 	qcom,msm-id = <401 0>;
+};
+
+&aliases {
+	swr0 = &swr0;
+	swr1 = &swr1;
+	swr2 = &swr2;
 };
 
 &reserved_memory {
@@ -174,7 +181,7 @@
 		reg = <0x1de0000 0x20000>,
 			<0x1dc4000 0x24000>;
 		reg-names = "crypto-base","crypto-bam-base";
-		interrupts = <0 272 0>;
+		interrupts = <GIC_SPI 272 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,bam-pipe-pair = <3>;
 		qcom,ce-hw-instance = <0>;
 		qcom,ce-device = <0>;
@@ -194,7 +201,7 @@
 		reg = <0x1de0000 0x20000>,
 			 <0x1dc4000 0x24000>;
 		reg-names = "crypto-base","crypto-bam-base";
-		interrupts = <0 272 0>;
+		interrupts = <GIC_SPI 272 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,bam-pipe-pair = <2>;
 		qcom,ce-hw-instance = <0>;
 		qcom,ce-device = <0>;

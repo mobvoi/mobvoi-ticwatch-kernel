@@ -5,7 +5,6 @@
 #include "display/sa8195p-v2-adp-air-display-lxc-shd.dtsi"
 
 / {
-	model = "ADP-AIR";
 	compatible = "qcom,sa8195p-v2-adp-air", "qcom,sa8195p",
 		"qcom,adp-air";
 	qcom,board-id = <0x02010019 0>;

@@ -102,7 +102,6 @@
 			qcom,supply-max-voltage = <6000000>;
 			qcom,supply-enable-load = <0>;
 			qcom,supply-disable-load = <0>;
-			qcom,supply-post-on-sleep = <20>;
 		};
 	};
 
@@ -143,6 +142,8 @@
 
 		qcom,platform-te-gpio = <&tlmm 73 0>;
 		qcom,panel-te-source = <0>;
+		qcom,needs-clk-src-reset;
+		qcom,needs-ctrl-vreg-disable;
 		vddio-supply = <&L21A>;
 		ibb-supply = <&display_panel_ibb>;
 		qcom,mdp = <&mdss_mdp>;
@@ -209,6 +210,7 @@
 
 &dsi_rm6d030_amoled_cmd {
 	qcom,ulps-enabled;
+	qcom,skip-panel-power-off;
 	qcom,mdss-dsi-t-clk-post = <0x07>;
 	qcom,mdss-dsi-t-clk-pre = <0x0A>;
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",

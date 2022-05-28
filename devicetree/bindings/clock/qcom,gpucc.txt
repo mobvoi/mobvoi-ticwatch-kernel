@@ -18,6 +18,7 @@ Required properties :
 		"qcom,bengal-gpucc"
 		"qcom,direwolf-gpucc"
 		"qcom,direwolf-gpucc-v2"
+		"qcom,lemans-gpucc"
 
 - reg: shall contain base register offset and size.
 - reg-names: names of registers listed in the same order as in the reg property.
