@@ -19,18 +19,6 @@ struct msg_header_t {
 	uint32_t payload_size;
 };
 
-/**
- * Opcodes to be received on slate-control channel.
- */
-enum WMSlateCtrlChnlOpcode {
-	/*
-	 * Command to slate to enter TWM mode
-	 */
-	GMI_MGR_TEST1 = 1,
 
-	GMI_MGR_TEST2 = 2,
-
-
-};
 #endif /* SLATE_MOBVOI_RPC_H */
 

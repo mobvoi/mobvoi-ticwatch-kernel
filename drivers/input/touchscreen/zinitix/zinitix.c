@@ -49,6 +49,12 @@
 #include <linux/firmware.h>
 #include <stdbool.h>
 
+#include <drm/drm_of.h>
+#include <drm/drm_panel.h>
+#include <linux/soc/qcom/slate_mobvoi_rpc_intf.h>
+
+
+
 #ifdef CONFIG_MACH_PXA_SAMSUNG
 #include <linux/sec-common.h>
 #endif
@@ -530,7 +536,26 @@ struct bt541_ts_info {
 	bool device_enabled;
 	bool checkUMSmode;
 	bool enable_wakeup;
+
+	struct  drm_panel *active_panel;
+	struct notifier_block drm_notif;
+
+	struct seb_notif_info		*seb_handle;
+	struct notifier_block		seb_nb;
 };
+
+typedef struct
+{
+    u32          opcode;
+    u32          payload_size;
+} wear_header_t;
+typedef struct
+{
+    wear_header_t   header;
+	unsigned char buff[128];
+} wear_slate_mobvoi_rpc_packet_t;
+
+
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void zinitix_early_suspend(struct early_suspend *h);
@@ -2110,7 +2135,7 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 #endif
 	ktime_t cur_time;
 
-	zinitix_info("%s:%d touch_info.status 0x%x\n", __func__, __LINE__,info->touch_info.status);
+	zinitix_debug("%s:%d touch_info.status 0x%x\n", __func__, __LINE__,info->touch_info.status);
 
 	if (down_trylock(&info->work_lock)) {
 		zinitix_err("Failed to occupy work lock\n");
@@ -2469,7 +2494,7 @@ static int bt541_ts_suspend(struct device *dev)
 	struct bt541_ts_info *info = i2c_get_clientdata(client);
 	struct bt541_ts_platform_data *pdata = info->pdata;
 
-	zinitix_debug("suspend start\n");
+	zinitix_info("suspend start\n");
 
 #if !USE_WAKEUP_GESTURE		/* eric add 20170208 */
 	disable_irq(info->irq);
@@ -2540,7 +2565,7 @@ static int bt541_ts_suspend(struct device *dev)
 
 	info->work_state = SUSPEND;
 	up(&info->work_lock);
-	zinitix_debug("suspend end\n");
+	zinitix_info("suspend end\n");
 
 	return 0;
 }
@@ -2579,9 +2604,9 @@ static void zinitix_late_resume(struct early_suspend *h)
 static void zinitix_early_suspend(struct early_suspend *h)
 {
 
-	zinitix_debug("zinitix_early_suspend\n");
+	zinitix_info("zinitix_early_suspend\n");
 	bt541_ts_suspend(&misc_touch_dev->client->dev);
-	zinitix_debug("zinitix_early_suspend end\n");
+	zinitix_info("zinitix_early_suspend end\n");
 
 }
 #endif /* CONFIG_FB */
@@ -2965,8 +2990,7 @@ static void get_x_num(void *device_data)
 	set_default_result(info);
 
 	snprintf(finfo->cmd_buff, sizeof(finfo->cmd_buff),"%u", info->cap_info.x_node_num);
-	set_cmd_result(info, finfo->cmd_buff,
-		       strnlen(finfo->cmd_buff, sizeof(finfo->cmd_buff)));
+	set_cmd_result(info, finfo->cmd_buff,strnlen(finfo->cmd_buff, sizeof(finfo->cmd_buff)));
 	finfo->cmd_state = OK;
 }
 
@@ -4266,6 +4290,35 @@ err_irq_gpio_req:
 }
 #endif /* CONFIG_OF */
 
+static int zinitix_check_dsi_panel_dt(struct device_node *np, struct drm_panel **active_panel)
+{
+	int i = 0;
+	int count = 0;
+	struct device_node *node = NULL;
+	struct drm_panel *panel = NULL;
+
+	count = of_count_phandle_with_args(np, "panel", NULL);
+	if (count <= 0)
+		return 0;
+
+	for (i = 0; i < count; i++) {
+		node = of_parse_phandle(np, "panel", i);
+
+		if (node != NULL)
+			pr_info("%s: node handle successfully parsed !\n", __func__);
+		panel = of_drm_find_panel(node);
+		of_node_put(node);
+
+		if (!IS_ERR(panel)) {
+			pr_info("%s: active panel selected !\n", __func__);
+			*active_panel = panel;
+			return 0;
+		}
+	}
+	pr_err("%s: active panel not selected !\n", __func__);
+	return 0;
+}
+
 static int bt541_ts_probe_dt(struct device_node *np,
 			     struct device *dev,
 			     struct bt541_ts_platform_data *pdata)
@@ -4276,6 +4329,7 @@ static int bt541_ts_probe_dt(struct device_node *np,
 #endif
 	int ret = 0;
 	u32 temp;
+
 
 	ret = of_property_read_u32(np, "zinitix,x_resolution", &temp);
 	if (!ret)
@@ -4332,14 +4386,6 @@ static int bt541_ts_probe_dt(struct device_node *np,
 
 	zinitix_err("of_get_named_gpio success: gpio_reset: %d\n",pdata->gpio_reset);
 
-#if 0
-	pdata->gpio_switch =
-	    of_get_named_gpio_flags(np, "zinitix,switch-gpio", 0,&pdata->gpio_switch_flags);
-	if (pdata->gpio_switch < 0) {
-		zinitix_err("of_get_named_gpio failed: gpio_switch %d\n",pdata->gpio_switch);
-		return -EINVAL;
-	}
-#endif
 	pdata->gpio_int = of_get_named_gpio_flags(np, "zinitix,irq-gpio", 0,&pdata->gpio_int_flags);
 	if (pdata->gpio_int < 0) {
 		zinitix_err("of_get_named_gpio failed: tsp_gpio %d\n",pdata->gpio_int);
@@ -4394,6 +4440,71 @@ static void ts_resume_work(struct work_struct *work)
 }
 #endif
 
+static int zinitix_notifier_callback(struct notifier_block *self,
+			unsigned long event, void *data)
+{
+//	struct bt541_ts_info  *g_zinitix_data =
+//		container_of(self, struct bt541_ts_info, drm_notif);
+	struct drm_panel_notifier *evdata = data;
+	int *blank,i = 0;
+	unsigned char  panel_power_state = 0;
+    char  *tx_buf;
+	unsigned int tx_buf_size;
+	wear_header_t req_header;
+
+	tx_buf_size = sizeof(req_header) + 4;
+
+	tx_buf = kzalloc(tx_buf_size, GFP_KERNEL);
+	if (!tx_buf) {
+		return -ENOMEM;
+	}
+
+	if (!evdata){
+		zinitix_err("evdata error!\n");
+	}
+
+	if (!(event == DRM_PANEL_EARLY_EVENT_BLANK || event == DRM_PANEL_EVENT_BLANK)) {
+		zinitix_err("Event(%lu) do not need process\n", event);
+		//goto exit;
+	}
+
+	blank = evdata->data;
+	panel_power_state = (unsigned char  )*blank;
+	zinitix_info(" DRM event:%lu,blank:%d,panel_power_state:%d ", event, *blank,panel_power_state);
+	//zinitix_info(" DRM Power - %s \n", (*blank == DRM_PANEL_BLANK_UNBLANK)?"UP":"DOWN");
+	if (*blank == DRM_PANEL_BLANK_UNBLANK) {
+		zinitix_info("DRM_PANEL_BLANK_UNBLANK,pannel power on!\n");
+
+	} else if (*blank == DRM_PANEL_BLANK_POWERDOWN) {
+		zinitix_info("DRM_PANEL_BLANK_POWERDOWN,pannel power off!\n");
+	} else if(*blank == DRM_PANEL_BLANK_LP){
+		zinitix_info("DRM_PANEL_BLANK_LP,pannel power doze!\n");
+	}else{
+		zinitix_info("DRM BLANK(%d) do not need process\n", *blank);
+	}
+
+	req_header.opcode = GMI_SLATE_MOBVOI_RPC_PANNEL_POWER_STATE;//0x3;
+	req_header.payload_size = sizeof(panel_power_state);
+
+	memcpy(tx_buf, &req_header, sizeof(req_header));
+	memcpy(tx_buf+sizeof(req_header), &panel_power_state, sizeof(panel_power_state));
+	for(i=0; i< req_header.payload_size + sizeof(req_header);i++)
+		zinitix_debug("tx_buf[%d]=%d\n",i, tx_buf[i]);
+
+	slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+
+	return 0;
+}
+
+static void zinitix_setup_drm_notifier(struct bt541_ts_info *pdata)
+{
+	pdata->drm_notif.notifier_call = zinitix_notifier_callback;
+	zinitix_info("setting up drm notifier success\n");
+
+	if (drm_panel_notifier_register(pdata->active_panel,&pdata->drm_notif) < 0)
+			zinitix_err("Error drm_panel_notifier_register!!!!\n");
+}
+
 static int bt541_ts_probe(struct i2c_client *client,
 			  const struct i2c_device_id *i2c_id)
 {
@@ -4401,6 +4512,8 @@ static int bt541_ts_probe(struct i2c_client *client,
 	struct bt541_ts_platform_data *pdata = NULL;
 	struct bt541_ts_info *info;
 	struct input_dev *input_dev;
+	struct drm_panel *active_panel = NULL;
+
 	int ret = 0;
 #ifdef SUPPORTED_TOUCH_KEY
 	int i;
@@ -4426,22 +4539,8 @@ static int bt541_ts_probe(struct i2c_client *client,
 		zinitix_err("no platform data defined\n");
 		return -EINVAL;
 	}
-#if 0
-	if (gpio_is_valid(pdata->gpio_switch)) {
-		/* configure touchscreen switch out gpio */
-		ret = gpio_request(pdata->gpio_switch, "zinitix_gpio_switch");
-		if (ret < 0) {
-			zinitix_err("unable to request switch gpio %d\n",pdata->gpio_switch);
-			goto err_no_platform_data;
-		}
 
-		ret = gpio_direction_output(pdata->gpio_switch, 1);
-		if (ret) {
-			zinitix_err("unable to set direction for gpio %d\n",pdata->gpio_switch);
-			goto err_no_platform_data;
-		}
-	}
-#endif
+
 	if (!i2c_check_functionality(adapter, I2C_FUNC_I2C)) {
 		zinitix_err("Not compatible i2c function\n");
 		ret = -EIO;
@@ -4459,6 +4558,15 @@ static int bt541_ts_probe(struct i2c_client *client,
 	info->pdata = pdata;
 	info->device_enabled = 1;
 	misc_touch_dev = info;
+
+	ret = zinitix_check_dsi_panel_dt(np, &active_panel);
+	if (ret) {
+		if (ret == -EPROBE_DEFER) {
+			zinitix_err("probe defer selected, rc=%d\n", ret);
+			return ret;
+		}
+	}
+	info->active_panel = active_panel;
 
 	ret = zinitix_ts_pinctrl_init(info);
 	if (!ret && info->ts_pinctrl) {
@@ -4639,6 +4747,8 @@ static int bt541_ts_probe(struct i2c_client *client,
 	info->early_suspend.resume = zinitix_late_resume;
 	register_early_suspend(&info->early_suspend);
 #endif
+
+	zinitix_setup_drm_notifier(info);
 
 
 	sema_init(&info->raw_data_lock, 1);
