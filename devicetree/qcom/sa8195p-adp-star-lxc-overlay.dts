@@ -5,7 +5,6 @@
 #include "display/sa8195p-v2-adp-air-display-lxc-shd.dtsi"
 
 / {
-	model = "ADP-STAR";
 	compatible = "qcom,sa8195p-adp-star", "qcom,sa8195p",
 		"qcom,adp-star";
 	qcom,msm-id = <405 0x20000>;

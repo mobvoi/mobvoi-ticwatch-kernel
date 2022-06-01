@@ -792,7 +792,10 @@ out_close:
 		svc_xprt_put(xprt);
 	}
 out_err:
-	nfsd_destroy(net);
+	if (!list_empty(&nn->nfsd_serv->sv_permsocks))
+		nn->nfsd_serv->sv_nrthreads--;
+	 else
+		nfsd_destroy(net);
 	return err;
 }
 
@@ -956,7 +959,7 @@ static ssize_t write_maxconn(struct file *file, char *buf, size_t size)
 
 #ifdef CONFIG_NFSD_V4
 static ssize_t __nfsd4_write_time(struct file *file, char *buf, size_t size,
-				  time_t *time, struct nfsd_net *nn)
+				  time64_t *time, struct nfsd_net *nn)
 {
 	char *mesg = buf;
 	int rv, i;
@@ -984,11 +987,11 @@ static ssize_t __nfsd4_write_time(struct file *file, char *buf, size_t size,
 		*time = i;
 	}
 
-	return scnprintf(buf, SIMPLE_TRANSACTION_LIMIT, "%ld\n", *time);
+	return scnprintf(buf, SIMPLE_TRANSACTION_LIMIT, "%lld\n", *time);
 }
 
 static ssize_t nfsd4_write_time(struct file *file, char *buf, size_t size,
-				time_t *time, struct nfsd_net *nn)
+				time64_t *time, struct nfsd_net *nn)
 {
 	ssize_t rv;
 
@@ -1549,7 +1552,7 @@ static int __init init_nfsd(void)
 		goto out_free_all;
 	return 0;
 out_free_all:
-	unregister_pernet_subsys(&nfsd_net_ops);
+	unregister_filesystem(&nfsd_fs_type);
 out_free_exports:
 	remove_proc_entry("fs/nfs/exports", NULL);
 	remove_proc_entry("fs/nfs", NULL);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -171,8 +172,9 @@ struct dcc_drvdata {
 	uint8_t			curr_list;
 	uint8_t			*cti_trig;
 	uint8_t			loopoff;
+	uint32_t		ram_cpy_len;
 	uint32_t		per_ll_reg_cnt;
-	uint32_t		ll_state_cnt;
+	int32_t			ll_state_cnt;
 	struct reg_state	*ll_state;
 	void			*sram_state;
 };
@@ -756,6 +758,7 @@ static int dcc_enable(struct dcc_drvdata *drvdata)
 			   (drvdata->func_type[list])), DCC_LL_CFG(list));
 	}
 
+	drvdata->ram_cpy_len = drvdata->ram_cfg * 4;
 err:
 	mutex_unlock(&drvdata->mutex);
 	return ret;
@@ -1995,7 +1998,7 @@ static int dcc_state_store(struct device *dev)
 	}
 
 	if (dcc_sram_memcpy(drvdata->sram_state, drvdata->ram_base,
-				drvdata->ram_size)) {
+				drvdata->ram_cpy_len)) {
 		dev_err(dev, "Failed to copy DCC SRAM contents\n");
 		ret = -EINVAL;
 		goto sram_cpy_err;
@@ -2029,6 +2032,7 @@ static int dcc_state_restore(struct device *dev)
 	int n, i, j, dcc_ll_index;
 	int *sram_state;
 	struct dcc_drvdata *drvdata = dev_get_drvdata(dev);
+	uint32_t ram_cpy_wlen = drvdata->ram_cpy_len / 4;
 
 	if (!drvdata || !drvdata->ll_state || !drvdata->sram_state) {
 		dev_err(dev, "Err: %s Invalid argument\n", __func__);
@@ -2043,7 +2047,7 @@ static int dcc_state_restore(struct device *dev)
 	sram_state = drvdata->sram_state;
 	n = drvdata->ll_state_cnt;
 
-	for (i = 0; i < drvdata->ram_size / 4; i++)
+	for (i = 0; i < ram_cpy_wlen; i++)
 		dcc_sram_writel(drvdata, sram_state[i], i * 4);
 
 	mutex_lock(&drvdata->mutex);

@@ -1884,7 +1884,6 @@ static int qcom_glink_rx_open(struct qcom_glink *glink, unsigned int rcid,
 			quickboot = 0;
 		}
 #endif
-
 		channel->rpdev = rpdev;
 	}
 	CH_INFO(channel, "\n");

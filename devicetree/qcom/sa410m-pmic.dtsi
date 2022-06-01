@@ -71,8 +71,6 @@
 	};
 
 	/delete-node/ vbat_sns;
-	/delete-node/ usb_in_v_div_16;
-	/delete-node/ chg_temp;
 	/delete-node/ bat_therm;
 	/delete-node/ bat_therm_30k;
 	/delete-node/ bat_therm_400k;
@@ -134,7 +132,6 @@
 		};
 
 		/delete-node/ pm2250_qg;
-		/delete-node/ pm2250_charger;
 	};
 
 	qcom,pm2250@1 {

@@ -449,15 +449,18 @@ endif
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 	dtbo-$(CONFIG_ARCH_SM6150) += \
 		qcs610-iot-overlay.dtbo \
-		prairie-iot-idp-overlay.dtbo
+		prairie-iot-idp-overlay.dtbo \
+		qcs610-opk-overlay.dtbo
 
 qcs610-iot-overlay.dtbo-base := qcs610.dtb
 prairie-iot-idp-overlay.dtbo-base := qcs610.dtb
+qcs610-opk-overlay.dtbo-base := qcs610.dtb
 
 else
 dtb-$(CONFIG_ARCH_SM6150)	+= \
 	qcs610-iot.dtb \
-	prairie-iot-idp.dtb
+	prairie-iot-idp.dtb \
+	qcs610-opk.dtb
 endif
 
 ifeq ($(CONFIG_ARCH_LAHAINA), y)
@@ -494,6 +497,17 @@ dtb-$(CONFIG_ARCH_SDXLEMUR) += sdxlemur-rumi.dtb \
 	sdxlemur-v2-rcm-pcie-ep.dtb \
 	sdxlemur-v2-rcm-rc.dtb
 
+dtb-$(CONFIG_ARCH_SA515M) += sa515m-ccard.dtb \
+	sa515m-ccard-eth-ep.dtb \
+	sa515m-ccard-pcie-ep.dtb \
+	sa515m-ccard-usb-ep.dtb \
+	sa515m-v2-ccard-eth-ep.dtb \
+	sa515m-v2-ccard-pcie-ep.dtb \
+	sa515m-v2-ccard-usb-ep.dtb \
+	sa515m-v2-ccard.dtb \
+	sa515m-v2-ttp-pcie-ep.dtb \
+	sa515m-v2-ttp-usb-ep.dtb \
+	sa515m-v2-ttp.dtb
 
 ifeq ($(CONFIG_ARCH_SHIMA), y)
 ifeq ($(CONFIG_ARCH_QTI_VM), y)
@@ -520,6 +534,39 @@ dtb-$(CONFIG_ARCH_QTI_VM) += yupik-vm-rumi.dtb \
 endif
 endif
 
+ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+	dtbo-$(CONFIG_QTI_QUIN_GVM) += sa8155-vm-la-overlay.dtbo \
+	sa8155-vm-lv-overlay.dtbo \
+	sa8155-vm-la-mt-overlay.dtbo \
+	sa8155-vm-lv-mt-overlay.dtbo \
+	sa8195-vm-la-overlay.dtbo \
+	sa8195-vm-lv-overlay.dtbo \
+	sa8195-vm-la-mt-overlay.dtbo \
+	sa8195-vm-lv-mt-overlay.dtbo \
+	sa8195-vm-lv-lxc-overlay.dtbo \
+	sa6155p-vm-la-overlay.dtbo \
+	direwolf-vm-la-mt-overlay.dtbo \
+	direwolf-vm-la-overlay.dtbo \
+	direwolf-vm-la1-mt-overlay.dtbo \
+	direwolf-vm-lv-mt-overlay.dtbo \
+	direwolf-vm-lv-overlay.dtbo
+
+sa8155-vm-la-overlay.dtbo-base := sa8155-vm-la.dtb
+sa8155-vm-lv-overlay.dtbo-base := sa8155-vm-lv.dtb
+sa8155-vm-la-mt-overlay.dtbo-base := sa8155-vm-la-mt.dtb
+sa8155-vm-lv-mt-overlay.dtbo-base := sa8155-vm-lv-mt.dtb
+sa8195-vm-la-overlay.dtbo-base := sa8195-vm-la.dtb
+sa8195-vm-lv-overlay.dtbo-base := sa8195-vm-lv.dtb
+sa8195-vm-la-mt-overlay.dtbo-base := sa8195-vm-la-mt.dtb
+sa8195-vm-lv-mt-overlay.dtbo-base := sa8195-vm-lv-mt.dtb
+sa8195-vm-lv-lxc-overlay.dtbo-base := sa8195-vm-lv-lxc.dtb
+sa6155p-vm-la-overlay.dtbo-base := sa6155p-vm-la.dtb
+direwolf-vm-la-mt-overlay.dtbo-base := direwolf-vm-la-mt.dtb
+direwolf-vm-la-overlay.dtbo-base := direwolf-vm-la.dtb
+direwolf-vm-la1-mt-overlay.dtbo-base := direwolf-vm-la1-mt.dtb
+direwolf-vm-lv-mt-overlay.dtbo-base := direwolf-vm-lv-mt.dtb
+direwolf-vm-lv-overlay.dtbo-base := direwolf-vm-lv.dtb
+else
 dtb-$(CONFIG_QTI_QUIN_GVM) += sa8155-vm-la.dtb \
 	sa8155-vm-lv.dtb \
 	sa8155-vm-la-mt.dtb \
@@ -536,6 +583,7 @@ dtb-$(CONFIG_QTI_QUIN_GVM) += sa8155-vm-la.dtb \
 	direwolf-vm-la-mt.dtb \
 	direwolf-vm-la1-mt.dtb \
 	direwolf-vm-lv-mt.dtb
+endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 	dtbo-$(CONFIG_ARCH_DIREWOLF) += direwolf-ivi-rumi-overlay.dtbo \

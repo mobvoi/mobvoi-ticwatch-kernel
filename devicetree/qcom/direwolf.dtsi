@@ -2874,6 +2874,33 @@
 	status = "ok";
 };
 
+&video_cc_mvs0_gdsc {
+	clocks = <&gcc GCC_VIDEO_AHB_CLK>;
+	clock-names = "ahb_clk";
+	parent-supply = <&VDD_MM_LEVEL>;
+	status = "ok";
+};
+
+&video_cc_mvs0c_gdsc {
+	clocks = <&gcc GCC_VIDEO_AHB_CLK>;
+	clock-names = "ahb_clk";
+	parent-supply = <&VDD_MM_LEVEL>;
+	status = "ok";
+};
+
+&video_cc_mvs1_gdsc {
+	clocks = <&gcc GCC_VIDEO_AHB_CLK>;
+	clock-names = "ahb_clk";
+	parent-supply = <&VDD_MM_LEVEL>;
+	status = "ok";
+};
+
+&video_cc_mvs1c_gdsc {
+	clocks = <&gcc GCC_VIDEO_AHB_CLK>;
+	clock-names = "ahb_clk";
+	parent-supply = <&VDD_MM_LEVEL>;
+	status = "ok";
+};
 
 &gpu_cc_cx_gdsc {
 	clocks = <&gcc GCC_GPU_CFG_AHB_CLK>;
@@ -2890,6 +2917,41 @@
 	qcom,retain-regs;
 	qcom,skip-disable-before-sw-enable;
 	status = "ok";
+};
+
+&qupv3_se0_i2c {
+	status = "ok";
+	usb0_typec: usb0_typec@21 {
+		compatible = "ti,tps6598x";
+		reg = <0x21>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <138 IRQ_TYPE_LEVEL_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&tps_i2c_intr>;
+
+		connector {
+			port {
+				usb_port0_connector: endpoint {
+					remote-endpoint = <&usb_port0>;
+				};
+			};
+		};
+	};
+
+	usb1_typec: usb1_typec@25 {
+		compatible = "ti,tps6598x";
+		reg = <0x25>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <138 IRQ_TYPE_LEVEL_LOW>;
+
+		connector {
+			port {
+				usb_port1_connector: endpoint {
+					remote-endpoint = <&usb_port1>;
+				};
+			};
+		};
+	};
 };
 
 &qupv3_se17_2uart {
@@ -2962,9 +3024,8 @@
 		compatible = "qcom,stmmac-ethqos";
 		qcom,arm-smmu;
 		reg = <0x20000 0x10000>,
-			<0x36000 0x100>,
-			<0x3D00000 0x300000>;
-		reg-names = "stmmaceth", "rgmii","tlmm-central-base";
+			<0x36000 0x100>;
+		reg-names = "stmmaceth", "rgmii";
 		clocks = <&gcc GCC_EMAC0_AXI_CLK>,
 			<&gcc GCC_EMAC0_SLV_AHB_CLK>,
 			<&gcc GCC_EMAC0_PTP_CLK>,
@@ -2983,7 +3044,7 @@
 		snps,mtl-tx-config = <&mtl_tx_setup>;
 
 		snps,reset-gpios = <&pm8540_1_gpios 1 GPIO_ACTIVE_HIGH>;
-		vreg_rgmii-supply = <&pm8540_a0_l2>;
+		vreg_emac_phy-supply = <&pm8540_a0_l2>;
 		gdsc_emac-supply = <&gcc_emac0_gdsc>;
 		qcom,phy-intr-redirect = <&tlmm 127 GPIO_ACTIVE_LOW>;
 		pinctrl-names = "dev-emac-mdc",

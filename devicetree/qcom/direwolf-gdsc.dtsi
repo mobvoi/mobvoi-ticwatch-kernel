@@ -23,12 +23,6 @@
 		status = "disabled";
 	};
 
-	gcc_pcie_0_gdsc: qcom,gdsc@1a9004 {
-		compatible = "regulator-fixed";
-		regulator-name = "gcc_pcie_0_gdsc";
-		status = "disabled";
-	};
-
 	gcc_pcie_0_tunnel_gdsc: qcom,gdsc@1a4004 {
 		compatible = "qcom,gdsc";
 		reg = <0x1a4004 0x4>;
@@ -38,12 +32,6 @@
 		qcom,collapse-vote = <&gcc_apcs_gdsc_vote_ctrl 0>;
 		qcom,retain-regs;
 		regulator-name = "gcc_pcie_0_tunnel_gdsc";
-		status = "disabled";
-	};
-
-	gcc_pcie_1_gdsc: qcom,gdsc@177004 {
-		compatible = "regulator-fixed";
-		regulator-name = "gcc_pcie_1_gdsc";
 		status = "disabled";
 	};
 
@@ -132,12 +120,6 @@
 		reg = <0x177004 0x4>;
 		qcom,retain-regs;
 		regulator-name = "gcc_ufs_phy_gdsc";
-		status = "disabled";
-	};
-
-	gcc_usb20_prim_gdsc: qcom,gdsc@11c004 {
-		compatible = "regulator-fixed";
-		regulator-name = "gcc_usb20_prim_gdsc";
 		status = "disabled";
 	};
 
@@ -371,10 +353,9 @@
 		reg = <0xabf0d18 0x4>;
 		regulator-name = "video_cc_mvs0_gdsc";
 		qcom,gds-timeout = <500>;
-		clock-names = "ahb_clk";
-		clocks = <&gcc GCC_VIDEO_AHB_CLK>;
 		qcom,support-hw-trigger;
 		qcom,retain-regs;
+		status = "disabled";
 	};
 
 	video_cc_mvs0c_gdsc: qcom,gdsc@abf0bf8 {
@@ -382,9 +363,8 @@
 		reg = <0xabf0bf8 0x4>;
 		regulator-name = "video_cc_mvs0c_gdsc";
 		qcom,gds-timeout = <500>;
-		clock-names = "ahb_clk";
-		clocks = <&gcc GCC_VIDEO_AHB_CLK>;
 		qcom,retain-regs;
+		status = "disabled";
 	};
 
 	video_cc_mvs1_gdsc: qcom,gdsc@abf0d98 {
@@ -392,10 +372,9 @@
 		reg = <0xabf0d98 0x4>;
 		regulator-name = "video_cc_mvs1_gdsc";
 		qcom,gds-timeout = <500>;
-		clock-names = "ahb_clk";
-		clocks = <&gcc GCC_VIDEO_AHB_CLK>;
 		qcom,support-hw-trigger;
 		qcom,retain-regs;
+		status = "disabled";
 	};
 
 	video_cc_mvs1c_gdsc: qcom,gdsc@abf0c98 {
@@ -403,9 +382,8 @@
 		reg = <0xabf0c98 0x4>;
 		regulator-name = "video_cc_mvs1c_gdsc";
 		qcom,gds-timeout = <500>;
-		clock-names = "ahb_clk";
-		clocks = <&gcc GCC_VIDEO_AHB_CLK>;
 		qcom,retain-regs;
+		status = "disabled";
 	};
 
 	/* GPU_CC GDSCs */

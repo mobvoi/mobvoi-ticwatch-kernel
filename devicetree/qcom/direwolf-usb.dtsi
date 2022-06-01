@@ -47,6 +47,7 @@
 
 		qcom,dwc-usb3-msm-tx-fifo-size = <27696>;
 		qcom,ignore-wakeup-src-in-hostmode;
+		usb-role-switch;
 
 		interconnect-names = "usb-ddr", "ddr-usb";
 		interconnects = <&aggre1_noc MASTER_USB3_0 &mc_virt SLAVE_EBI1>,
@@ -69,6 +70,12 @@
 			tx-fifo-resize;
 			maximum-speed = "super-speed-plus";
 			dr_mode = "otg";
+		};
+
+		port {
+			usb_port0: endpoint {
+				remote-endpoint = <&usb_port0_connector>;
+			};
 		};
 	};
 
@@ -268,20 +275,21 @@
 			USB43DP_QSERDES_RXB_Q_PI_INTRINSIC_BIAS_RATE32	0x3F 0
 			USB3_PCS_RCVR_DTCT_DLY_P1U2_L	0xE7 0
 			USB3_PCS_RCVR_DTCT_DLY_P1U2_H	0x03 0
-			USB3_PCS_LOCK_DETECT_CONFIG1	0xD0 0
-			USB3_PCS_LOCK_DETECT_CONFIG2	0x07 0
+			USB3_PCS_LOCK_DETECT_CONFIG1	0xC4 0
+			USB3_PCS_LOCK_DETECT_CONFIG2	0x89 0
 			USB3_PCS_LOCK_DETECT_CONFIG3	0x20 0
 			USB3_PCS_LOCK_DETECT_CONFIG6	0x13 0
 			USB3_PCS_REFGEN_REQ_CONFIG1	0x21 0
-			USB3_PCS_RX_SIGDET_LVL	0xAA 0
+			USB3_PCS_RX_SIGDET_LVL	0x33 0
 			USB3_PCS_RX_CONFIG	0x0A 0
-			USB3_PCS_ALIGN_DETECT_CONFIG1	0x88 0
-			USB3_PCS_ALIGN_DETECT_CONFIG2	0x13 0
+			USB3_PCS_ALIGN_DETECT_CONFIG1	0xD4 0
+			USB3_PCS_ALIGN_DETECT_CONFIG2	0x30 0
 			USB3_PCS_PCS_TX_RX_CONFIG	0x0C 0
 			USB3_PCS_EQ_CONFIG1	0x4B 0
 			USB3_PCS_EQ_CONFIG5	0x10 0
 			USB3_PCS_USB3_LFPS_DET_HIGH_COUNT_VAL	0xF8 0
 			USB3_PCS_USB3_RXEQTRAINING_DFE_TIME_S2	0x07 0
+			USB3_PCS_USB3_POWER_STATE_CONFIG1	0x68 0
 			0xffffffff 0xffffffff 0x00>;
 	};
 
@@ -335,6 +343,7 @@
 		qcom,dwc-usb3-msm-tx-fifo-size = <27696>;
 		qcom,ignore-wakeup-src-in-hostmode;
 		qcom,default-mode-host;
+		usb-role-switch;
 
 		interconnect-names = "usb-ddr", "ddr-usb";
 		interconnects = <&aggre1_noc MASTER_USB3_1 &mc_virt SLAVE_EBI1>,
@@ -357,6 +366,12 @@
 			tx-fifo-resize;
 			maximum-speed = "super-speed-plus";
 			dr_mode = "otg";
+		};
+
+		port {
+			usb_port1: endpoint {
+				remote-endpoint = <&usb_port1_connector>;
+			};
 		};
 	};
 
@@ -556,20 +571,21 @@
 			USB43DP_QSERDES_RXB_Q_PI_INTRINSIC_BIAS_RATE32	0x3F 0
 			USB3_PCS_RCVR_DTCT_DLY_P1U2_L	0xE7 0
 			USB3_PCS_RCVR_DTCT_DLY_P1U2_H	0x03 0
-			USB3_PCS_LOCK_DETECT_CONFIG1	0xD0 0
-			USB3_PCS_LOCK_DETECT_CONFIG2	0x07 0
+			USB3_PCS_LOCK_DETECT_CONFIG1	0xC4 0
+			USB3_PCS_LOCK_DETECT_CONFIG2	0x89 0
 			USB3_PCS_LOCK_DETECT_CONFIG3	0x20 0
 			USB3_PCS_LOCK_DETECT_CONFIG6	0x13 0
 			USB3_PCS_REFGEN_REQ_CONFIG1	0x21 0
-			USB3_PCS_RX_SIGDET_LVL	0xAA 0
+			USB3_PCS_RX_SIGDET_LVL	0x33 0
 			USB3_PCS_RX_CONFIG	0x0A 0
-			USB3_PCS_ALIGN_DETECT_CONFIG1	0x88 0
-			USB3_PCS_ALIGN_DETECT_CONFIG2	0x13 0
+			USB3_PCS_ALIGN_DETECT_CONFIG1	0xD4 0
+			USB3_PCS_ALIGN_DETECT_CONFIG2	0x30 0
 			USB3_PCS_PCS_TX_RX_CONFIG	0x0C 0
 			USB3_PCS_EQ_CONFIG1	0x4B 0
 			USB3_PCS_EQ_CONFIG5	0x10 0
 			USB3_PCS_USB3_LFPS_DET_HIGH_COUNT_VAL	0xF8 0
 			USB3_PCS_USB3_RXEQTRAINING_DFE_TIME_S2	0x07 0
+			USB3_PCS_USB3_POWER_STATE_CONFIG1	0x68 0
 			0xffffffff 0xffffffff 0x00>;
 	};
 

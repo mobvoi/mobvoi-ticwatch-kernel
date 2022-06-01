@@ -1,6 +1,6 @@
 
 #include "msm-audio-lpass.dtsi"
-#include "dt-bindings/clock/qcom,audio-ext-clk.h"
+#include <dt-bindings/clock/qcom,audio-ext-clk.h>
 
 &msm_audio_ion {
 	iommus = <&apps_smmu 0x1721 0x0>;
@@ -28,8 +28,21 @@
 &audio_apr {
 	q6core: qcom,q6core-audio {
 		compatible = "qcom,q6core-audio";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		lpass_audio_hw_vote: vote_lpass_audio_hw {
+			compatible = "qcom,audio-ref-clk";
+			qcom,codec-ext-clk-src = <AUDIO_LPASS_AUDIO_HW_VOTE>;
+			#clock-cells = <1>;
+		};
+
 		bolero: bolero-cdc {
 			compatible = "qcom,bolero-codec";
+			clock-names = "lpass_audio_hw_vote";
+			clocks = <&lpass_audio_hw_vote 0>;
+			bolero-clk-rsc-mngr {
+				compatible = "qcom,bolero-clk-rsc-mngr";
+			};
 
 			va_macro: va-macro@62f20000 {
 			};
@@ -103,7 +116,10 @@
 		asoc-cpu-names = "msm-dai-q6-dp.24608",
 				"msm-dai-q6-mi2s.0", "msm-dai-q6-mi2s.1",
 				"msm-dai-q6-mi2s.2", "msm-dai-q6-mi2s.3",
-				"msm-dai-q6-mi2s.4", "msm-dai-q6-auxpcm.1",
+				"msm-dai-q6-mi2s.4", "msm-dai-q6-mi2s.5",
+				"msm-dai-q6-mi2s.6", "msm-dai-q6-mi2s.7",
+				"msm-dai-q6-mi2s.8", "msm-dai-q6-mi2s.9",
+				"msm-dai-q6-auxpcm.1",
 				"msm-dai-q6-auxpcm.2", "msm-dai-q6-auxpcm.3",
 				"msm-dai-q6-auxpcm.4", "msm-dai-q6-auxpcm.5",
 				"msm-dai-q6-dev.224",

@@ -308,6 +308,16 @@
 			reg = <0x7600>;
 		};
 
+		pm5100_sdam_22: sdam@8500 {
+			compatible = "qcom,spmi-sdam";
+			reg = <0x8500>;
+
+			/* GPS demod state */
+			skip_esr_state: demod@46 {
+				reg = <0x46 0x1>;
+			};
+		};
+
 		pm5100_sdam_23: sdam@8600 {
 			compatible = "qcom,spmi-sdam";
 			reg = <0x8600>;
@@ -322,6 +332,8 @@
 			interrupts = <0x0 0x76 0x1 IRQ_TYPE_EDGE_RISING>;
 			qcom,num-data-sdams = <5>;
 			qcom,sdam-base = <0x7600>;
+			qcom,adc-cmn-wb-base = <0x3000>;
+			qcom,adc-cmn-base = <0x3900>;
 		};
 
 		pm5100_haptics: qcom,hv-haptics@f000 {

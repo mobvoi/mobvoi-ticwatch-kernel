@@ -37,13 +37,13 @@
 	rpmh-regulator-cxlvl {
 		compatible = "qcom,rpmh-arc-regulator";
 		qcom,resource-name = "cx.lvl";
-		pm6150_s1_level-parent-supply = <&VDD_MX_LEVEL>;
-		pm6150_s1_level_ao-parent-supply = <&VDD_MX_LEVEL_AO>;
+		proxy-supply = <&VDD_CX_LEVEL>;
 
 		VDD_CX_LEVEL:
 		S1A_LEVEL: pm6150_s1_level: regulator-pm6150-s1 {
 			regulator-name = "pm6150_s1_level";
 			qcom,set = <RPMH_REGULATOR_SET_ALL>;
+			pm6150_s1_level-parent-supply = <&VDD_MX_LEVEL>;
 			regulator-min-microvolt =
 					<RPMH_REGULATOR_LEVEL_RETENTION>;
 			regulator-max-microvolt =
@@ -57,6 +57,7 @@
 		S1A_LEVEL_AO: pm6150_s1_level_ao: regulator-pm6150-s1-level-ao {
 			qcom,set = <RPMH_REGULATOR_SET_ACTIVE>;
 			regulator-name = "pm6150_s1_level_ao";
+			vin-supply = <&VDD_MX_LEVEL_AO>;
 			regulator-min-microvolt =
 					<RPMH_REGULATOR_LEVEL_RETENTION>;
 			regulator-max-microvolt =

@@ -70,6 +70,7 @@ do  {\
 #define EMAC_HW_v2_1_2 0x20010002
 #define EMAC_HW_v2_3_0 0x20030000
 #define EMAC_HW_v2_3_1 0x20030001
+#define EMAC_HW_v3_0_0_RG 0x30000000
 #define EMAC_HW_vMAX 9
 
 #define ETHQOS_CONFIG_PPSOUT_CMD 44
@@ -248,6 +249,8 @@ struct qcom_ethqos {
 	struct dentry *debugfs_dir;
 
 	struct ethqos_io_macro io_macro;
+	bool phyad_change;
+	bool is_gpio_phy_reset;
 };
 
 struct pps_cfg {

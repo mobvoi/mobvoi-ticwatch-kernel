@@ -32,6 +32,9 @@
 
 &icnss {
 	qcom,is_slate_rfa = <1>;
+	qcom,rf_subtype = <0>;
+	vdd-1.8-xo-supply = <>;
+	vdd-3.3-ch0-supply = <>;
 };
 
 &qupv3_se5_4uart {

@@ -11,6 +11,7 @@
 #include <dt-bindings/interconnect/qcom,icc.h>
 #include <dt-bindings/interconnect/qcom,osm-l3.h>
 #include <dt-bindings/interconnect/qcom,sm6150.h>
+#include <dt-bindings/soc/qcom,dcc_v2.h>
 #include <dt-bindings/soc/qcom,rpmh-rsc.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
 
@@ -29,9 +30,15 @@
 
 	#address-cells = <2>;
 	#size-cells = <2>;
-	memory { device_type = "memory"; reg = <0 0 0 0>; };
 
-	aliases {
+	chosen {
+		bootargs = "log_buf_len=2M earlycon=msm_geni_serial,0x880000 rcupdate.rcu_expedited=1 rcu_nocbs=0-7 kpti=off";
+	};
+
+	memory { device_type = "memory"; reg = <0 0 0 0>; };
+	reserved_memory: reserved-memory { };
+
+	aliases: aliases {
 		ufshc1 = &ufshc_mem; /* Embedded UFS slot */
 		serial0 = &qupv3_se0_2uart;
 		sdhc0 = &sdhc_1;
@@ -40,6 +47,8 @@
 		hsuart0 = &qupv3_se7_4uart;
 		hsuart1 = &qupv3_se4_2uart;
 	};
+
+	firmware: firmware {};
 
 	cpus {
 		#address-cells = <2>;
@@ -254,17 +263,10 @@
 		};
 	};
 
-	psci {
-		compatible = "arm,psci-1.0";
-		method = "smc";
-	};
-
-	chosen {
-	};
-
 	soc: soc { };
+};
 
-	firmware: firmware {
+	&firmware {
 		android {
 			compatible = "android,firmware";
 			vbmeta {
@@ -276,8 +278,7 @@
 				compatible = "android,fstab";
 				vendor {
 					compatible = "android,vendor";
-					dev = "/dev/block/platform/soc
-						/1d84000.ufshc/by-name/vendor";
+					dev = "/dev/block/platform/soc/1d84000.ufshc/by-name/vendor";
 					type = "ext4";
 					mnt_flags = "ro,barrier=1,discard";
 					fsmgr_flags = "wait,slotselect,avb";
@@ -287,7 +288,7 @@
 		};
 	};
 
-	reserved_memory: reserved-memory {
+	&reserved_memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
@@ -460,20 +461,72 @@
 		};
 	};
 
-	qcom-secure-buffer {
-		compatible = "qcom,secure-buffer";
-	};
-
-};
-
-#include "display/sm6150-sde-pll.dtsi"
-#include "display/sm6150-sde.dtsi"
-
 &soc {
 	#address-cells = <1>;
 	#size-cells = <1>;
 	ranges = <0 0 0 0xffffffff>;
 	compatible = "simple-bus";
+
+	psci {
+		compatible = "arm,psci-1.0";
+		method = "smc";
+	};
+
+	apps_rsc: rsc@18200000 {
+		label = "apps_rsc";
+		compatible = "qcom,rpmh-rsc";
+		reg = <0x18200000 0x10000>,
+		      <0x18210000 0x10000>,
+		      <0x18220000 0x10000>;
+		reg-names = "drv-0", "drv-1", "drv-2";
+		interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 4 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>;
+		qcom,tcs-offset = <0xd00>;
+		qcom,drv-id = <2>;
+		qcom,tcs-config = <ACTIVE_TCS  2>,
+				  <SLEEP_TCS   3>,
+				  <WAKE_TCS    3>,
+				  <CONTROL_TCS 1>;
+
+		apps_bcm_voter: bcm_voter {
+			compatible = "qcom,bcm-voter";
+		};
+
+		rpmhcc: qcom,rpmhclk {
+			compatible = "qcom,sm6150-rpmh-clk";
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		system_pm {
+			compatible = "qcom,system-pm";
+		};
+	};
+
+	disp_rsc: rsc@af20000 {
+		label = "disp_rsc";
+		compatible = "qcom,rpmh-rsc";
+		reg = <0xaf20000 0x10000>;
+		reg-names = "drv-0";
+		interrupts = <GIC_SPI 129 IRQ_TYPE_LEVEL_HIGH>;
+		qcom,tcs-offset = <0x1c00>;
+		qcom,drv-id = <0>;
+		qcom,tcs-config = <SLEEP_TCS   1>,
+				  <WAKE_TCS    1>,
+				  <ACTIVE_TCS  2>,
+				  <CONTROL_TCS 0>;
+
+		disp_bcm_voter: bcm_voter {
+			compatible = "qcom,bcm-voter";
+			qcom,tcs-wait = <QCOM_ICC_TAG_AMC>;
+		};
+
+		sde_rsc_rpmh {
+		    compatible = "qcom,sde-rsc-rpmh";
+		    cell-index = <0>;
+		};
+	};
 
 	intc: interrupt-controller@17a00000 {
 		compatible = "arm,gic-v3";
@@ -485,6 +538,43 @@
 		      <0x17a60000 0x100000>;    /* GICR * 8 */
 		interrupts = <1 9 4>;
 		interrupt-parent = <&intc>;
+	};
+
+	pdc: interrupt-controller@b220000 {
+		compatible = "qcom,sm6150-pdc";
+		reg = <0xb220000 0x30000>, <0x17c000f0 0x60>;
+		qcom,pdc-ranges = <0 480 94>, <94 609 31>, <125 63 1>;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&intc>;
+		interrupt-controller;
+	};
+
+	spmi_bus: qcom,spmi@c440000 {
+		compatible = "qcom,spmi-pmic-arb";
+		reg = <0xc440000 0x1100>,
+		      <0xc600000 0x2000000>,
+		      <0xe600000 0x100000>,
+		      <0xe700000 0xa0000>,
+		      <0xc40a000 0x26000>;
+		reg-names = "core", "chnls", "obsrvr", "intr", "cnfg";
+		interrupts-extended = <&pdc 1 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "periph_irq";
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		#address-cells = <2>;
+		#size-cells = <0>;
+		cell-index = <0>;
+		qcom,channel = <0>;
+		qcom,ee = <0>;
+	};
+
+	dcc: dcc_v2@010a2000 {
+		compatible = "qcom,dcc-v2";
+		reg = <0x10a2000 0x1000>,
+		      <0x10ae000 0x2000>;
+		reg-names = "dcc-base", "dcc-ram-base";
+
+		dcc-ram-offset = <0x6000>;
 	};
 
 	timer {
@@ -809,15 +899,6 @@
 				< 1708800 MHZ_TO_MBPS(1017, 4) >,
 				< 2208000 MHZ_TO_MBPS(1804, 4) >;
 		};
-	};
-
-	pdc: interrupt-controller@b220000 {
-		compatible = "qcom,sm6150-pdc";
-		reg = <0xb220000 0x30000>, <0x17c000f0 0x60>;
-		qcom,pdc-ranges = <0 480 94>, <94 609 31>, <125 63 1>;
-		#interrupt-cells = <2>;
-		interrupt-parent = <&intc>;
-		interrupt-controller;
 	};
 
 	clocks {
@@ -1194,62 +1275,6 @@
 		};
 	};
 
-	apps_rsc: rsc@18200000 {
-		label = "apps_rsc";
-		compatible = "qcom,rpmh-rsc";
-		reg = <0x18200000 0x10000>,
-		      <0x18210000 0x10000>,
-		      <0x18220000 0x10000>;
-		reg-names = "drv-0", "drv-1", "drv-2";
-		interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI 4 IRQ_TYPE_LEVEL_HIGH>,
-			     <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>;
-		qcom,tcs-offset = <0xd00>;
-		qcom,drv-id = <2>;
-		qcom,tcs-config = <ACTIVE_TCS  2>,
-				  <SLEEP_TCS   3>,
-				  <WAKE_TCS    3>,
-				  <CONTROL_TCS 1>;
-
-		apps_bcm_voter: bcm_voter {
-			compatible = "qcom,bcm-voter";
-		};
-
-		rpmhcc: qcom,rpmhclk {
-			compatible = "qcom,sm6150-rpmh-clk";
-			#clock-cells = <1>;
-			status = "okay";
-		};
-
-		system_pm {
-			compatible = "qcom,system-pm";
-		};
-	};
-
-	disp_rsc: rsc@af20000 {
-		label = "disp_rsc";
-		compatible = "qcom,rpmh-rsc";
-		reg = <0xaf20000 0x10000>;
-		reg-names = "drv-0";
-		interrupts = <GIC_SPI 129 IRQ_TYPE_LEVEL_HIGH>;
-		qcom,tcs-offset = <0x1c00>;
-		qcom,drv-id = <0>;
-		qcom,tcs-config = <SLEEP_TCS   1>,
-				  <WAKE_TCS    1>,
-				  <ACTIVE_TCS  2>,
-				  <CONTROL_TCS 0>;
-
-		disp_bcm_voter: bcm_voter {
-			compatible = "qcom,bcm-voter";
-			qcom,tcs-wait = <QCOM_ICC_TAG_AMC>;
-		};
-
-		sde_rsc_rpmh {
-		    compatible = "qcom,sde-rsc-rpmh";
-		    cell-index = <0>;
-		};
-	};
-
 	camnoc_virt: interconnect@0 {
 		compatible = "qcom,sm6150-camnoc_virt";
 		#interconnect-cells = <1>;
@@ -1532,25 +1557,6 @@
 		#interconnect-cells = <1>;
 	};
 
-	spmi_bus: qcom,spmi@c440000 {
-		compatible = "qcom,spmi-pmic-arb";
-		reg = <0xc440000 0x1100>,
-		      <0xc600000 0x2000000>,
-		      <0xe600000 0x100000>,
-		      <0xe700000 0xa0000>,
-		      <0xc40a000 0x26000>;
-		reg-names = "core", "chnls", "obsrvr", "intr", "cnfg";
-		interrupts-extended = <&pdc 1 IRQ_TYPE_LEVEL_HIGH>;
-		interrupt-names = "periph_irq";
-		interrupt-controller;
-		#interrupt-cells = <4>;
-		#address-cells = <2>;
-		#size-cells = <0>;
-		cell-index = <0>;
-		qcom,channel = <0>;
-		qcom,ee = <0>;
-	};
-
 	thermal_zones: thermal-zones {
 	};
 
@@ -1569,6 +1575,7 @@
 		qcom,bus-vector-names = "MIN",
 					"MAX";
 		qcom,instance-type = "ufs";
+		qcom,num-fde-slots = <31>;
 	};
 
 	ufsphy_mem: ufsphy_mem@1d87000 {
@@ -2374,6 +2381,10 @@
 		reg-names = "secapp-region";
 	};
 
+	qcom-secure-buffer {
+		compatible = "qcom,secure-buffer";
+	};
+
 	qcom_rng: qrng@793000 {
 		compatible = "qcom,msm-rng";
 		reg = <0x793000 0x1000>;
@@ -2407,6 +2418,7 @@
 		qcom,bus-vector-names = "MIN",
 					"MAX";
 		qcom,instance-type = "sdcc";
+		qcom,num-fde-slots = <31>;
 	};
 
 	sdhc_1: sdhci@7c4000 {
@@ -2594,18 +2606,23 @@
 	};
 };
 
-&firmware {
-	scm {
-		compatible = "qcom,scm";
-	};
-};
-
-#include "sm6150-qupv3.dtsi"
-#include "sm6150-ssc-qupv3.dtsi"
-#include "sm6150-pinctrl.dtsi"
-#include "sm6150-pm.dtsi"
 #include "sm6150-regulator.dtsi"
 #include "sm6150-gdsc.dtsi"
+#include "sm6150-thermal.dtsi"
+#include "sm6150-pinctrl.dtsi"
+#include "sm6150-qupv3.dtsi"
+#include "sm6150-slpi-pinctrl.dtsi"
+#include "sm6150-ssc-qupv3.dtsi"
+#include "sm6150-ion.dtsi"
+#include "msm-arm-smmu-sm6150.dtsi"
+#include "sm6150-pm.dtsi"
+#include "sm6150-coresight.dtsi"
+#include "sm6150-usb.dtsi"
+#include "sm6150-gpu.dtsi"
+#include "sm6150-vidc.dtsi"
+#include "display/sm6150-sde-pll.dtsi"
+#include "display/sm6150-sde.dtsi"
+#include "camera/sm6150-camera.dtsi"
 
 &firmware {
 	scm {
@@ -2705,13 +2722,3 @@
 &venus_gdsc {
 	status = "ok";
 };
-
-#include "msm-arm-smmu-sm6150.dtsi"
-#include "sm6150-slpi-pinctrl.dtsi"
-#include "sm6150-gpu.dtsi"
-#include "sm6150-usb.dtsi"
-#include "sm6150-vidc.dtsi"
-#include "sm6150-ion.dtsi"
-#include "sm6150-thermal.dtsi"
-#include "camera/sm6150-camera.dtsi"
-#include "sm6150-coresight.dtsi"

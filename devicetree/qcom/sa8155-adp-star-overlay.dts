@@ -5,7 +5,6 @@
 #include "display/sa8155-adp-star-display-shd.dtsi"
 
 / {
-	model = "ADP-STAR";
 	compatible = "qcom,sa8155-adp-star", "qcom,sa8155",
 		"qcom,adp-star";
 	qcom,board-id = <25 0>;

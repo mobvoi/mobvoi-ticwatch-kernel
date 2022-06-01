@@ -190,6 +190,14 @@
 		compatible = "qcom,msm-lsm-client";
 	};
 
+	qcom,msm-dai-stub {
+		compatible = "qcom,msm-dai-stub";
+		dtmf_tx: qcom,msm-dai-stub-dtmf-tx {
+			compatible = "qcom,msm-dai-stub-dev";
+			qcom,msm-dai-stub-dev-id = <4>;
+		};
+	};
+
 	qcom,msm-dai-q6 {
 		compatible = "qcom,msm-dai-q6";
 		sb_7_rx: qcom,msm-dai-q6-sb-7-rx {
@@ -306,6 +314,10 @@
 			iommus = <&apps_smmu 0x1801 0x0>;
 			qcom,iommu-dma-addr-pool = <0x10000000 0x10000000>;
 		};
+	};
+
+	pcm_dtmf: qcom,msm-pcm-dtmf {
+		compatible = "qcom,msm-pcm-dtmf";
 	};
 
 	dai_pri_auxpcm: qcom,msm-pri-auxpcm {

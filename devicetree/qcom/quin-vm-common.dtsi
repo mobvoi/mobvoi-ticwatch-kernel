@@ -61,7 +61,7 @@
 	firmware: firmware {
 		android {
 			compatible = "android,firmware";
-			boot_devices = "vdevs/1c140000.virtio_blk,vdevs/1c0b0000.virtio_blk,vdevs/1c0f0000.virtio_blk,vdevs/1c160000.virtio_blk,vdevs/1c130000.virtio_blk,vdevs/1c0e0000.virtio_blk";
+			boot_devices = "vdevs/1c140000.virtio_blk,vdevs/1c0b0000.virtio_blk,vdevs/1c0f0000.virtio_blk,vdevs/1c160000.virtio_blk,vdevs/1c130000.virtio_blk,vdevs/1c0e0000.virtio_blk,vdevs/1c160000.virtio_blk,vdevs/1c130000.virtio_blk,vdevs/1c170000.virtio_blk,vdevs/1c180000.virtio_blk";
 
 			vbmeta {
 				compatible = "android,vbmeta";
