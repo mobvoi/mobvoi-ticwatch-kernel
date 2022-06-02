@@ -2250,6 +2250,7 @@ qcom,msm-adsprpc-mem {
 		zinitix,orientation = <0>;
 		zinitix,tsp_vdd_supply_type = <1>;
 		zinitix,pname = "SM-G5308W";
+		panel = <&dsi_rm69090_amoled_cmd>;
         };
 
 

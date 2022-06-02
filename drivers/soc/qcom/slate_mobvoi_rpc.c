@@ -172,7 +172,13 @@ err_ret:
 	return rc;
 }
 
-
+int slate_mobvoi_rpc_tx_msg_ext(void  *msg, size_t len)
+{
+    struct slatemobrpc_priv *dev =
+        container_of(slate_mobvoi_rpc_drv, struct slatemobrpc_priv, lhndl);
+    return slate_mobvoi_rpc_tx_msg(dev,msg,len);
+}
+EXPORT_SYMBOL(slate_mobvoi_rpc_tx_msg_ext);
 
 static int slate_mobvoi_rpc_char_open(struct inode *inode, struct file *file)
 {
@@ -312,7 +318,6 @@ static int slate_mobvoi_rpc_probe(struct platform_device *pdev)
 {
 	struct device_node *node;
 	int rc = 0;
-
 	node = pdev->dev.of_node;
 
 	dev = kzalloc(sizeof(struct slatemobrpc_priv), GFP_KERNEL);
@@ -401,7 +406,7 @@ static void ssr_register(void)
 
 static int __init init_slate_mobvoi_rpc_dev(void)
 {
-	int ret, i;
+	int ret;
 
 	ret = alloc_chrdev_region(&slate_dev, 0, 1, SLATE_MOBVOI_RPC);
 	if (ret  < 0) {
