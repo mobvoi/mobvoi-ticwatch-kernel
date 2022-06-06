@@ -4026,9 +4026,6 @@ static int msm_geni_serial_get_ver_info(struct uart_port *uport)
 	int hw_ver, ret = 0;
 	struct msm_geni_serial_port *msm_port = GET_DEV_PORT(uport);
 
-	/* clks_on/off only for HSUART, as console remains actve */
-	if (!msm_port->is_console)
-		se_geni_clks_on(&msm_port->serial_rsc);
 	/* Basic HW and FW info */
 	if (unlikely(get_se_proto(uport->membase) != UART)) {
 		dev_err(uport->dev, "%s: Invalid FW %d loaded.\n",
@@ -4059,10 +4056,7 @@ static int msm_geni_serial_get_ver_info(struct uart_port *uport)
 	msm_port->ver_info.hw_ver = geni_se_qupv3_get_hw_version(msm_port->wrapper_dev);
 	dev_err(uport->dev, "%s:HW version %d\n", __func__, msm_port->ver_info.hw_ver);
 
-	msm_geni_serial_enable_interrupts(uport);
 exit_ver_info:
-	if (!msm_port->is_console)
-		se_geni_clks_off(&msm_port->serial_rsc);
 	return ret;
 }
 
@@ -4129,12 +4123,12 @@ static int msm_geni_serial_get_irq_pinctrl(struct platform_device *pdev,
 		}
 	}
 
-	uport->irq = platform_get_irq(pdev, 0);
-	if (uport->irq < 0) {
-		ret = uport->irq;
+	ret = platform_get_irq(pdev, 0);
+	if (ret < 0) {
 		dev_err(&pdev->dev, "Failed to get IRQ %d\n", ret);
 		return ret;
 	}
+	uport->irq = ret;
 
 	dev_port->name = devm_kasprintf(uport->dev, GFP_KERNEL,
 					"msm_serial_geni%d", uport->line);
@@ -4410,14 +4404,23 @@ static int msm_geni_serial_probe(struct platform_device *pdev)
 	dev_port->port_setup = false;
 
 	dev_port->uart_error = UART_ERROR_DEFAULT;
+
+	/* clks_on/off only for HSUART, as console remains actve */
+	if (!dev_port->is_console)
+		se_geni_clks_on(&dev_port->serial_rsc);
+
 	ret = msm_geni_serial_get_ver_info(uport);
 	if (ret) {
 		dev_err(&pdev->dev, "Failed to Read FW ver: %d\n", ret);
+		se_geni_clks_off(&dev_port->serial_rsc);
 		goto exit_geni_serial_probe;
 	}
 
 	/* Initialize the GSI mode */
 	msm_geni_serial_init_gsi(uport);
+	msm_geni_serial_enable_interrupts(uport);
+	if (!dev_port->is_console)
+		se_geni_clks_off(&dev_port->serial_rsc);
 
 	/*
 	 * In abrupt kill scenarios, previous state of the uart causing runtime
@@ -4478,6 +4481,10 @@ static int msm_geni_serial_remove(struct platform_device *pdev)
 static void msm_geni_serial_allow_rx(struct msm_geni_serial_port *port)
 {
 	u32 uart_manual_rfr;
+
+	/* Avoid Manual RFR for HW version < 2.7 */
+	if (port->ver_info.hw_ver < QUP_SE_VERSION_2_7)
+		return;
 
 	uart_manual_rfr = (UART_MANUAL_RFR_EN | UART_RFR_READY);
 	geni_write_reg_nolog(uart_manual_rfr, port->uport.membase,

@@ -27,10 +27,10 @@ hab_pchan_alloc(struct hab_device *habdev, int otherend_id)
 	rwlock_init(&pchan->vchans_lock);
 	spin_lock_init(&pchan->rxbuf_lock);
 
-	spin_lock_bh(&habdev->pchan_lock);
+	write_lock_bh(&habdev->pchan_lock);
 	list_add_tail(&pchan->node, &habdev->pchannels);
 	habdev->pchan_cnt++;
-	spin_unlock_bh(&habdev->pchan_lock);
+	write_unlock_bh(&habdev->pchan_lock);
 
 	return pchan;
 }
@@ -44,10 +44,10 @@ static void hab_pchan_free(struct kref *ref)
 	pr_debug("pchan %s refcnt %d\n", pchan->name,
 			get_refcnt(pchan->refcount));
 
-	spin_lock_bh(&pchan->habdev->pchan_lock);
+	write_lock_bh(&pchan->habdev->pchan_lock);
 	list_del(&pchan->node);
 	pchan->habdev->pchan_cnt--;
-	spin_unlock_bh(&pchan->habdev->pchan_lock);
+	write_unlock_bh(&pchan->habdev->pchan_lock);
 
 	/* check vchan leaking */
 	read_lock(&pchan->vchans_lock);
@@ -67,7 +67,7 @@ hab_pchan_find_domid(struct hab_device *dev, int dom_id)
 {
 	struct physical_channel *pchan;
 
-	spin_lock_bh(&dev->pchan_lock);
+	read_lock_bh(&dev->pchan_lock);
 	list_for_each_entry(pchan, &dev->pchannels, node)
 		if (pchan->dom_id == dom_id || dom_id == HABCFG_VMID_DONT_CARE)
 			break;
@@ -81,7 +81,7 @@ hab_pchan_find_domid(struct hab_device *dev, int dom_id)
 	if (pchan && !kref_get_unless_zero(&pchan->refcount))
 		pchan = NULL;
 
-	spin_unlock_bh(&dev->pchan_lock);
+	read_unlock_bh(&dev->pchan_lock);
 
 	return pchan;
 }

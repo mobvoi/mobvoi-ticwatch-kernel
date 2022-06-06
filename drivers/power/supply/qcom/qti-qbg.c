@@ -28,6 +28,7 @@
 #include <linux/regmap.h>
 #include <linux/rtc.h>
 #include <linux/slab.h>
+#include <linux/suspend.h>
 #include <linux/uaccess.h>
 #include <linux/workqueue.h>
 
@@ -980,6 +981,7 @@ static int qbg_handle_fast_char(struct qti_qbg *chip)
 	}
 
 	if (chip->in_fast_char) {
+		qbg_dbg(chip, QBG_DEBUG_STATUS, "QBG ESR pulse disabled\n");
 		rc = qbg_force_fast_char(chip, false);
 		if (rc < 0) {
 			pr_err("Failed to get out of fast char mode, rc=%d\n",
@@ -991,7 +993,7 @@ static int qbg_handle_fast_char(struct qti_qbg *chip)
 		now = ktime_get();
 		if ((ktime_ms_delta(now, chip->last_fast_char_time) >
 			QBG_FAST_CHAR_DELTA_MS) && !chip->in_fast_char) {
-
+			qbg_dbg(chip, QBG_DEBUG_STATUS, "QBG ESR pulse enabled\n");
 			rc = qbg_force_fast_char(chip, true);
 			if (rc < 0) {
 				pr_err("Failed to put QBG to fast char mode, rc=%d\n",
@@ -1279,6 +1281,9 @@ static int parse_step_chg_jeita_params(struct qti_qbg *chip, struct device_node 
 	return 0;
 }
 
+#define QBG_DEFAULT_RECHARGE_ITERM_MA                   150
+#define QBG_DEFAULT_RECHARGE_SOC_DELTA                  5
+#define QBG_DEFAULT_RECHARGE_VFLT_DELTA                 100
 static int qbg_load_battery_profile(struct qti_qbg *chip)
 {
 	struct device_node *node = chip->dev->of_node;
@@ -1351,6 +1356,24 @@ static int qbg_load_battery_profile(struct qti_qbg *chip)
 		goto out;
 	}
 	chip->nominal_capacity = temp[0];
+
+	chip->recharge_iterm_ma = QBG_DEFAULT_RECHARGE_ITERM_MA;
+	rc = of_property_read_u32(profile_node, "qcom,recharge-iterm-ma", &temp[0]);
+	if (!rc)
+		chip->recharge_iterm_ma = temp[0];
+
+	chip->recharge_soc = 100 - QBG_DEFAULT_RECHARGE_SOC_DELTA;
+	rc = of_property_read_u32(profile_node, "qcom,recharge-soc-delta", &temp[0]);
+	if (!rc)
+		chip->recharge_soc = 100 - temp[0];
+
+	chip->recharge_vflt_delta_mv = QBG_DEFAULT_RECHARGE_VFLT_DELTA;
+	rc = of_property_read_u32(profile_node, "qcom,recharge-vflt-delta", &temp[0]);
+	if (!rc)
+		chip->recharge_vflt_delta_mv = temp[0];
+
+	qbg_dbg(chip, QBG_DEBUG_SDAM, "Recharge SOC=% Recharge-Vflt=%duV Recharge-Ibat=%dmA\n",
+		chip->recharge_soc, chip->recharge_vflt_delta_mv, chip->recharge_iterm_ma);
 
 	rc = parse_step_chg_jeita_params(chip, profile_node);
 out:
@@ -2488,9 +2511,6 @@ static int qbg_parse_sdam_dt(struct qti_qbg *chip, struct device_node *node)
 #define QBG_DEFAULT_VPH_MIN_MV				2700
 #define QBG_DEFAULT_ITERM_MA				100
 #define QBG_DEFAULT_RCONN_MOHM				0
-#define QBG_DEFAULT_RECHARGE_ITERM_MA			150
-#define QBG_DEFAULT_RECHARGE_SOC_DELTA			5
-#define QBG_DEFAULT_RECHARGE_VFLT_DELTA			100
 static int qbg_parse_dt(struct qti_qbg *chip)
 {
 	struct device_node *node = chip->dev->of_node;
@@ -2539,21 +2559,6 @@ static int qbg_parse_dt(struct qti_qbg *chip)
 	rc = of_property_read_u32(node, "qcom,rconn-mohm", &val);
 	if (!rc)
 		chip->rconn_mohm = val;
-
-	chip->recharge_iterm_ma = QBG_DEFAULT_RECHARGE_ITERM_MA;
-	rc = of_property_read_u32(node, "qcom,recharge-iterm-ma", &val);
-	if (!rc)
-		chip->recharge_iterm_ma = -1 * val;
-
-	chip->recharge_soc = 100 - QBG_DEFAULT_RECHARGE_SOC_DELTA;
-	rc = of_property_read_u32(node, "qcom,recharge-soc-delta", &val);
-	if (!rc)
-		chip->recharge_soc = 100 - val;
-
-	chip->recharge_vflt_delta_mv = QBG_DEFAULT_RECHARGE_VFLT_DELTA;
-	rc = of_property_read_u32(node, "qcom,recharge-vflt-delta", &val);
-	if (!rc)
-		chip->recharge_vflt_delta_mv = val;
 
 	if (of_find_property(node, "nvmem-cells", NULL)) {
 		chip->debug_mask_nvmem_low = devm_nvmem_cell_get(chip->dev, "qbg_debug_mask_low");
@@ -2763,6 +2768,60 @@ static int qti_qbg_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int qbg_freeze(struct device *dev)
+{
+	struct qti_qbg *chip = dev_get_drvdata(dev);
+	/*free irq*/
+	if (chip->irq > 0)
+		devm_free_irq(dev, chip->irq, chip);
+
+	return 0;
+}
+
+static int qbg_restore(struct device *dev)
+{
+	int ret = 0;
+	struct qti_qbg *chip = dev_get_drvdata(dev);
+
+	/* Init & clear SDAM to kick-start QBG sampling */
+	ret = qbg_init_sdam(chip);
+	if (ret < 0) {
+		dev_err(dev, "Failed to init qbg sdam rc = %d\n");
+		return ret;
+	}
+
+	ret = qbg_register_interrupts(chip);
+	if (ret < 0)
+		dev_err(dev, "Failed to register qbg interrupt rc = %d\n");
+
+	return ret;
+}
+
+static int qbg_suspend(struct device *dev)
+{
+#ifdef CONFIG_DEEPSLEEP
+	if (mem_sleep_current == PM_SUSPEND_MEM)
+		return qbg_freeze(dev);
+#endif
+	return 0;
+}
+
+static int qbg_resume(struct device *dev)
+{
+#ifdef CONFIG_DEEPSLEEP
+	if (mem_sleep_current == PM_SUSPEND_MEM)
+		return qbg_restore(dev);
+#endif
+	return 0;
+}
+
+static const struct dev_pm_ops qbg_pm_ops = {
+	.freeze = qbg_freeze,
+	.restore = qbg_restore,
+	.suspend = qbg_suspend,
+	.resume = qbg_resume,
+};
+
 static const struct of_device_id qbg_match_table[] = {
 	{ .compatible = "qcom,qbg", },
 	{ },
@@ -2772,6 +2831,7 @@ static struct platform_driver qti_qbg_driver = {
 	.driver = {
 		.name = "qti_qbg",
 		.of_match_table = qbg_match_table,
+		.pm = &qbg_pm_ops,
 	},
 	.probe = qti_qbg_probe,
 	.remove = qti_qbg_remove,

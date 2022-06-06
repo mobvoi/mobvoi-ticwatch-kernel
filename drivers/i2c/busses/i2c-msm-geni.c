@@ -144,6 +144,7 @@ struct geni_i2c_dev {
 	bool prev_cancel_pending; //Halt cancel till IOS in good state
 	bool is_deep_sleep; /* For deep sleep restore the config similar to the probe. */
 	struct geni_i2c_ssr i2c_ssr;
+	bool is_i2c_rtl_based; /* doing pending cancel only for rtl based SE's */
 };
 
 static struct geni_i2c_dev *gi2c_dev_dbg[MAX_SE];
@@ -258,6 +259,10 @@ static int do_pending_cancel(struct geni_i2c_dev *gi2c)
 {
 	int timeout = 0;
 	u32 geni_ios = 0;
+
+	/* doing pending cancel only rtl based SE's */
+	if (!gi2c->is_i2c_rtl_based)
+		return 0;
 
 	geni_ios = geni_read_reg_nolog(gi2c->base, SE_GENI_IOS);
 	if ((geni_ios & 0x3) != 0x3) {
@@ -376,7 +381,8 @@ static irqreturn_t geni_i2c_irq(int irq, void *dev)
 	if ((m_stat & M_CMD_FAILURE_EN) ||
 		    (dm_rx_st & (DM_I2C_CB_ERR)) ||
 		    (m_stat & M_CMD_CANCEL_EN) ||
-		    (m_stat & M_CMD_ABORT_EN)) {
+		    (m_stat & M_CMD_ABORT_EN) ||
+		    (m_stat & M_GP_IRQ_1_EN)) {
 
 		if (m_stat & M_GP_IRQ_1_EN)
 			geni_i2c_err(gi2c, I2C_NACK);
@@ -1134,6 +1140,8 @@ static int geni_i2c_xfer(struct i2c_adapter *adap,
 	if (gi2c->prev_cancel_pending) {
 		ret = do_pending_cancel(gi2c);
 		if (ret) {
+			pm_runtime_mark_last_busy(gi2c->dev);
+			pm_runtime_put_autosuspend(gi2c->dev);
 			mutex_unlock(&gi2c->i2c_ssr.ssr_lock);
 			return ret; //Don't perform xfer is cancel failed
 		}
@@ -1341,7 +1349,7 @@ geni_i2c_txn_ret:
 
 	gi2c->cur = NULL;
 	GENI_SE_DBG(gi2c->ipcl, false, gi2c->dev,
-		"i2c txn ret:%d, num:%d, err%:%d\n", ret, num, gi2c->err);
+		"i2c txn ret:%d, num:%d, err:%d\n", ret, num, gi2c->err);
 	mutex_unlock(&gi2c->i2c_ssr.ssr_lock);
 
 	if (gi2c->err)
@@ -1416,6 +1424,11 @@ static int geni_i2c_probe(struct platform_device *pdev)
 	gi2c->is_deep_sleep = false;
 	if (of_property_read_bool(pdev->dev.of_node, "qcom,leica-used-i2c"))
 		gi2c->i2c_rsc.skip_bw_vote = true;
+
+	if (of_property_read_bool(pdev->dev.of_node, "qcom,rtl_se")) {
+		gi2c->is_i2c_rtl_based  = true;
+		dev_info(&pdev->dev, "%s: RTL based SE\n", __func__);
+	}
 
 	gi2c->i2c_rsc.wrapper_dev = &wrapper_pdev->dev;
 	gi2c->i2c_rsc.ctrl_dev = gi2c->dev;
