@@ -116,9 +116,6 @@ struct bt541_ts_platform_data {
 	u32 gpio_int;
 	u32 gpio_int_flags;
 	u32 tsp_irq;
-#ifdef SUPPORTED_TOUCH_KEY_LED
-	int gpio_keyled;
-#endif
 	int tsp_vendor1;
 	int tsp_vendor2;
 	int tsp_en_gpio;

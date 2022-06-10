@@ -2159,13 +2159,13 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 #endif
 #if USE_WAKEUP_GESTURE
 	if ((tpd_halt) && (info->work_state == SUSPEND)) {
-		zinitix_debug(" gesture wakeup ");
+		zinitix_info(" gesture wakeup ");
 		if (read_data(client, 0x126, (u8 *)&gesture_flag, 2) < 0) {
 			zinitix_err(" gesture read reg error!\n");
 			ret = 0;
 		} else {
 			/* wake up */
-			zinitix_debug(" gesture_flag: %d\n", gesture_flag);
+			zinitix_info(" gesture_flag: %d\n", gesture_flag);
 			write_reg(client, 0x3da, gesture_flag);
 			if (gesture_flag == MOTION_CLICK ||
 			    gesture_flag == MOTION_DOUBLE_CLICK ||
@@ -2173,11 +2173,9 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 			    gesture_flag == MOTION_DOWN_ARROW ||
 			    gesture_flag == MOTION_LEFT_ARROW ||
 			    gesture_flag == MOTION_RIGHT_ARROW) {
-				input_report_key(info->input_dev, KEY_WAKEUP,
-						 1);
+				input_report_key(info->input_dev, KEY_WAKEUP,1);
 				input_sync(info->input_dev);
-				input_report_key(info->input_dev, KEY_WAKEUP,
-						 0);
+				input_report_key(info->input_dev, KEY_WAKEUP,0);
 				input_sync(info->input_dev);
 
 				zinitix_info("report wakeup key(%d)\n",gesture_flag);
@@ -2188,7 +2186,7 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 			}
 		}
 
-		zinitix_debug("wake up----\n");
+		zinitix_info("wake up----\n");
 		write_cmd(client, BT541_CLEAR_INT_STATUS_CMD);
 		goto out;
 	}
@@ -2356,8 +2354,7 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 			input_report_abs(info->input_dev, ABS_MT_PRESSURE,(u32)w);
 			input_report_abs(info->input_dev, ABS_MT_WIDTH_MAJOR,(u32)((palm == 1) ? w - 40 : w));
 #if (TOUCH_POINT_MODE == 2)
-			input_report_abs(info->input_dev,ABS_MT_TOUCH_MINOR,(u32) info->touch_info.coord[i].
-					 minor_width);
+			input_report_abs(info->input_dev,ABS_MT_TOUCH_MINOR,(u32) info->touch_info.coord[i].minor_width);
 #endif
 			input_report_abs(info->input_dev, ABS_MT_POSITION_X, x);
 			input_report_abs(info->input_dev, ABS_MT_POSITION_Y, y);
@@ -2393,7 +2390,7 @@ out:
 	return IRQ_HANDLED;
 }
 
-#if defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_FB)
+#if defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_FB) || defined(CONFIG_DRM)
 static int bt541_ts_resume(struct device *dev)
 {
 	int err = 0;
@@ -2401,10 +2398,10 @@ static int bt541_ts_resume(struct device *dev)
 	struct bt541_ts_info *info = i2c_get_clientdata(client);
 	struct bt541_ts_platform_data *pdata = info->pdata;
 
-	zinitix_debug("resume start\n");
+	zinitix_info("resume start\n");
 
 	if (info->device_enabled) {
-		zinitix_debug("already enabled\n");
+		zinitix_info("already enabled\n");
 		return 0;
 	}
 	info->device_enabled = 1;
@@ -2464,7 +2461,7 @@ static int bt541_ts_resume(struct device *dev)
 		zinitix_err("Failed to send power sequence(program start)\n");
 	msleep(50);
 
-	if (mini_init_touch(info) != I2C_SUCCESS) {
+	if (mini_init_touch(info) != true) {
 		zinitix_err("resume_reset: zinitix_resume_proc err\n");
 		goto reset_exit;
 	}
@@ -2482,7 +2479,7 @@ reset_exit:
 
 	tpd_halt = 0;
 	up(&info->work_lock);
-	zinitix_debug("resume end\n");
+	zinitix_info("resume end\n");
 
 	return 0;
 }
@@ -2540,8 +2537,7 @@ static int bt541_ts_suspend(struct device *dev)
 
 	for (i = 0; i < 3; i++) {
 		if (write_cmd(client, BT541_IDLE_CMD) < 0) {
-			zinitix_err("tpd_suspend fail to send sleep cmd(%d)\n",
-				    i);
+			zinitix_err("tpd_suspend fail to send sleep cmd(%d)\n",i);
 			msleep(20);
 			continue;
 		} else
@@ -3614,30 +3610,6 @@ static ssize_t show_menu_key_raw_data(struct device *dev,
 	return 0;
 }
 
-#ifdef SUPPORTED_TOUCH_KEY_LED
-static ssize_t touch_led_control(struct device *dev,
-				 struct device_attribute *attr, const char *buf,
-				 size_t size)
-{
-	struct bt541_ts_info *info = dev_get_drvdata(dev);
-	u8 data;
-	int ret;
-
-	ret = kstrtou8(buf, 0, &data);
-
-	if (ret)
-		return 0;
-	zinitix_info("[TKEY] : data %d\n", data);
-
-	if (data == 1)
-		gpio_direction_output(info->pdata->gpio_keyled, 1);
-	else
-		gpio_direction_output(info->pdata->gpio_keyled, 0);
-
-	return size;
-}
-#endif
-
 static DEVICE_ATTR(touchkey_threshold, 0444, show_touchkey_threshold, NULL);
 static DEVICE_ATTR(touchkey_menu, 0444, show_touchkey_sensitivity, NULL);
 static DEVICE_ATTR(touchkey_back, 0444, show_touchkey_sensitivity, NULL);
@@ -3654,9 +3626,6 @@ static DEVICE_ATTR(touchkey_dummy_btn6, 0444, show_touchkey_sensitivity,
 #endif
 static DEVICE_ATTR(touchkey_raw_back, 0444, show_back_key_raw_data, NULL);
 static DEVICE_ATTR(touchkey_raw_menu, 0444, show_menu_key_raw_data, NULL);
-#ifdef SUPPORTED_TOUCH_KEY_LED
-static DEVICE_ATTR(brightness, 0664, NULL, touch_led_control);
-#endif
 
 static struct attribute *touchkey_attributes[] = {
 	&dev_attr_touchkey_threshold.attr,
@@ -3670,9 +3639,6 @@ static struct attribute *touchkey_attributes[] = {
 	&dev_attr_touchkey_dummy_btn3.attr,
 	&dev_attr_touchkey_dummy_btn4.attr,
 	&dev_attr_touchkey_dummy_btn6.attr,
-#endif
-#ifdef SUPPORTED_TOUCH_KEY_LED
-	&dev_attr_brightness.attr,
 #endif
 	NULL,
 };
@@ -4224,7 +4190,6 @@ err_pinctrl_get:
 
 #ifdef CONFIG_OF
 static const struct of_device_id zinitix_match_table[] = {
-//	{.compatible = "zinitix,bt541_ts_device",},
 	{.compatible = "zinitix,zinitix-ts",},
 	{},
 };
@@ -4233,8 +4198,7 @@ static int bt451_reset(struct bt541_ts_info *data, bool on)
 {
 	int err = 0;
 
-	zinitix_info("bt451_reset: on = %d, gpio_reset = %d\n",
-		on, data->pdata->gpio_reset);
+	zinitix_info("bt451_reset: on = %d, gpio_reset = %d\n",on, data->pdata->gpio_reset);
 	if (on) {
 		if (gpio_is_valid(data->pdata->gpio_reset)) {
 			/*
@@ -4323,10 +4287,6 @@ static int bt541_ts_probe_dt(struct device_node *np,
 			     struct device *dev,
 			     struct bt541_ts_platform_data *pdata)
 {
-#ifdef SUPPORTED_TOUCH_KEY_LED
-	int keyled_n = -1;
-	int size_p;
-#endif
 	int ret = 0;
 	u32 temp;
 
@@ -4366,16 +4326,6 @@ static int bt541_ts_probe_dt(struct device_node *np,
 	pdata->tsp_vendor1 = of_get_named_gpio(np, "zinitix,vendor1", 0);
 	pdata->tsp_vendor2 = of_get_named_gpio(np, "zinitix,vendor2", 0);
 
-#ifdef SUPPORTED_TOUCH_KEY_LED
-	if (of_find_property(np, "keyled_gpio", &size_p)) {
-		keyled_n = of_get_named_gpio(np, "keyled_gpio", 0);
-		if (keyled_n < 0) {
-			zinitix_err("of_get_named_gpio failed: keyled_gpio %d\n",keyled_n);
-			return -EINVAL;
-		}
-	}
-	pdata->gpio_keyled = keyled_n;
-#endif
 
 	pdata->gpio_reset = of_get_named_gpio_flags(np, "zinitix,reset-gpio", 0,
 				    &pdata->gpio_reset_flags);
@@ -4431,7 +4381,7 @@ void bt541_register_callback(struct tsp_callbacks *cb)
 }
 #endif
 
-#if defined(CONFIG_FB)
+#if defined(CONFIG_FB) || defined(CONFIG_DRM)
 static void ts_resume_work(struct work_struct *work)
 {
 	struct bt541_ts_info *info = container_of(work, struct bt541_ts_info, resume_work);
@@ -4474,12 +4424,16 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 	//zinitix_info(" DRM Power - %s \n", (*blank == DRM_PANEL_BLANK_UNBLANK)?"UP":"DOWN");
 	if (*blank == DRM_PANEL_BLANK_UNBLANK) {
 		zinitix_info("DRM_PANEL_BLANK_UNBLANK,pannel power on!\n");
+		if (event == DRM_PANEL_EVENT_BLANK) {
+			schedule_work(&misc_touch_dev->resume_work);
+		}
 
-	} else if (*blank == DRM_PANEL_BLANK_POWERDOWN) {
+	} else if (*blank == DRM_PANEL_BLANK_POWERDOWN || *blank == DRM_PANEL_BLANK_LP ) {
 		zinitix_info("DRM_PANEL_BLANK_POWERDOWN,pannel power off!\n");
-	} else if(*blank == DRM_PANEL_BLANK_LP){
-		zinitix_info("DRM_PANEL_BLANK_LP,pannel power doze!\n");
-	}else{
+		if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
+			bt541_ts_suspend(&misc_touch_dev->client->dev);
+		}
+	} else{
 		zinitix_info("DRM BLANK(%d) do not need process\n", *blank);
 	}
 
@@ -4739,8 +4693,6 @@ static int bt541_ts_probe(struct i2c_client *client,
 	ret = fb_register_client(&info->fb_notif);
 	if (ret)
 		zinitix_err("Unable to register fb_notifier: %d\n", ret);
-
-	INIT_WORK(&info->resume_work, ts_resume_work);
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	info->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
 	info->early_suspend.suspend = zinitix_early_suspend;
@@ -4748,6 +4700,7 @@ static int bt541_ts_probe(struct i2c_client *client,
 	register_early_suspend(&info->early_suspend);
 #endif
 
+	INIT_WORK(&info->resume_work, ts_resume_work);
 	zinitix_setup_drm_notifier(info);
 
 
@@ -4800,10 +4753,6 @@ err_alloc:
 	if (gpio_is_valid(pdata->gpio_int))
 		gpio_free(pdata->gpio_int);
 err_gpio_request:
-#ifdef SUPPORTED_TOUCH_KEY_LED
-	if (pdata->gpio_keyled >= 0)
-		gpio_free(pdata->gpio_keyled);
-#endif
 
 	if (info->ts_pinctrl) {
 		if (IS_ERR_OR_NULL(info->pinctrl_state_release)) {
@@ -4862,11 +4811,6 @@ static int bt541_ts_remove(struct i2c_client *client)
 		gpio_free(pdata->gpio_reset);
 	if (gpio_is_valid(pdata->gpio_int))
 		gpio_free(pdata->gpio_int);
-
-#ifdef SUPPORTED_TOUCH_KEY_LED
-	if (gpio_is_valid(pdata->gpio_keyled))
-		gpio_free(pdata->gpio_keyled);
-#endif
 
 	if (info->ts_pinctrl) {
 		if (IS_ERR_OR_NULL(info->pinctrl_state_release)) {
