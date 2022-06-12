@@ -4422,6 +4422,11 @@ void icnss_recovery_timeout_hdlr(struct timer_list *t)
 {
 	struct icnss_priv *priv = from_timer(priv, t, recovery_timer);
 
+	if (test_bit(ICNSS_LOW_POWER, &priv->state)) {
+		icnss_pr_info("Device is in low power mode");
+		return;
+	}
+
 	icnss_pr_err("Timeout waiting for FW Ready 0x%lx\n", priv->state);
 	ICNSS_ASSERT(0);
 }
