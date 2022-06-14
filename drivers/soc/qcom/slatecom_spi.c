@@ -1661,6 +1661,7 @@ static int slatecom_pm_suspend(struct device *dev)
 		SLATECOM_ERR("Slate is in active, Abort Suspend\n");
 		atomic_set(&slate_is_runtime_suspend, 0);
 		atomic_set(&state, SLATECOM_STATE_ACTIVE);
+		atomic_set(&slate_is_spi_active, 1);
 		g_slave_status_auto_clear_reg = 0;
 		return -ECANCELED;
 	}
