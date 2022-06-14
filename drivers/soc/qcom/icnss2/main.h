@@ -452,7 +452,6 @@ struct icnss_priv {
 	bool vbatt_supported;
 	char function_name[WLFW_FUNCTION_NAME_LEN + 1];
 	bool is_ssr;
-	bool is_low_pwr_mode;
 	bool smmu_s1_enable;
 	struct kobject *icnss_kobject;
 	void *subsys;

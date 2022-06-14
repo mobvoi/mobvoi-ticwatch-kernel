@@ -877,7 +877,7 @@ static int icnss_pd_restart_complete(struct icnss_priv *priv)
 	clear_bit(ICNSS_PD_RESTART, &priv->state);
 	clear_bit(ICNSS_LOW_POWER, &priv->state);
 	priv->early_crash_ind = false;
-	priv->is_ssr = priv->is_low_pwr_mode = false;
+	priv->is_ssr = false;
 
 	if (!priv->ops || !priv->ops->reinit)
 		goto out;
@@ -1445,8 +1445,7 @@ static int icnss_driver_event_idle_shutdown(struct icnss_priv *priv,
 	if (!priv->ops || !priv->ops->idle_shutdown)
 		return 0;
 
-	if (priv->is_ssr || priv->is_low_pwr_mode ||
-	    test_bit(ICNSS_PDR, &priv->state) ||
+	if (priv->is_ssr || test_bit(ICNSS_PDR, &priv->state) ||
 	    test_bit(ICNSS_REJUVENATE, &priv->state)) {
 		icnss_pr_err("SSR/PDR is already in-progress during idle shutdown callback\n");
 		ret = -EBUSY;
@@ -1469,8 +1468,7 @@ static int icnss_driver_event_idle_restart(struct icnss_priv *priv,
 	if (!priv->ops || !priv->ops->idle_restart)
 		return 0;
 
-	if (priv->is_ssr || priv->is_low_pwr_mode ||
-	    test_bit(ICNSS_PDR, &priv->state) ||
+	if (priv->is_ssr || test_bit(ICNSS_PDR, &priv->state) ||
 	    test_bit(ICNSS_REJUVENATE, &priv->state)) {
 		icnss_pr_err("SSR/PDR is already in-progress during idle restart callback\n");
 		ret = -EBUSY;
@@ -2148,7 +2146,7 @@ static int icnss_service_notifier_notify(struct notifier_block *nb,
 	if (notification != SERVREG_NOTIF_SERVICE_STATE_DOWN_V01)
 		goto done;
 
-	if (!priv->is_ssr || !priv->is_low_pwr_mode)
+	if (!priv->is_ssr)
 		set_bit(ICNSS_PDR, &priv->state);
 
 	event_data = kzalloc(sizeof(*event_data), GFP_KERNEL);
@@ -3407,8 +3405,7 @@ int icnss_idle_shutdown(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (priv->is_ssr || priv->is_low_pwr_mode ||
-	    test_bit(ICNSS_PDR, &priv->state) ||
+	if (priv->is_ssr || test_bit(ICNSS_PDR, &priv->state) ||
 	    test_bit(ICNSS_REJUVENATE, &priv->state)) {
 		icnss_pr_err("SSR/PDR is already in-progress during idle shutdown\n");
 		return -EBUSY;
@@ -3428,8 +3425,7 @@ int icnss_idle_restart(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (priv->is_ssr || priv->is_low_pwr_mode ||
-	    test_bit(ICNSS_PDR, &priv->state) ||
+	if (priv->is_ssr || test_bit(ICNSS_PDR, &priv->state) ||
 	    test_bit(ICNSS_REJUVENATE, &priv->state)) {
 		icnss_pr_err("SSR/PDR is already in-progress during idle restart\n");
 		return -EBUSY;
