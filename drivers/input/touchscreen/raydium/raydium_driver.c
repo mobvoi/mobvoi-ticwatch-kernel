@@ -2286,7 +2286,7 @@ static int raydium_ts_probe(struct i2c_client *client,
 
 #ifdef GESTURE_EN
 	input_set_capability(input_dev, EV_KEY, KEY_SLEEP);
-	input_set_capability(input_dev, EV_KEY, KEY_POWER);
+	input_set_capability(input_dev, EV_KEY, KEY_WAKEUP);
 #endif
 
 	/*suspend/resume routine*/
