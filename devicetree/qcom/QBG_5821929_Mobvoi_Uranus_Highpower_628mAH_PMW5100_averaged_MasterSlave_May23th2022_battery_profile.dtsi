@@ -5,7 +5,7 @@ qcom,QBG_5821929_Mobvoi_Uranus_Highpower_628mAH_PMW5100_averaged_MasterSlave_May
 	qcom,batt-id-kohm = <100>;
 	qcom,capacity = <640>;
 	qcom,max-voltage-uv = <4450000>;
-	qcom,fastchg-current-ma = <628>;
+	qcom,fastchg-current-ma = <800>;
 	qcom,checksum = <4311056>; /*@5, 0.005V, 4% */
 	qcom,soh-range = <0 100>;
 	qcom,battery-impedance = <47336000 94672000>; /*Nominal_Impedance in 10nohm @ SOC 50% 25C* 0:fresh cell, 1: aged cell/
