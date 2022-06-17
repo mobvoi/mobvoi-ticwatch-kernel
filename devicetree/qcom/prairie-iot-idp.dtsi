@@ -502,7 +502,7 @@
 };
 
 &mdss_mdp {
-	connectors = <&smmu_sde_unsec &sde_dsi &sde_rscc>;
+	connectors = <&smmu_sde_unsec &sde_dsi &sde_rscc &sde_wb>;
 };
 
 &dsi_hx83112a_truly_video {

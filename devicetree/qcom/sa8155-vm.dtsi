@@ -247,10 +247,10 @@
 			supported-ids = <0x1101>;
 			wlan_vregs = "vdd-wlan-vl", "vdd-wlan-vm",
 				   "vdd-wlan-s5c", "vdd-wlan-vh";
-			qcom,vdd-wlan-vl-config = <1055000 1055000 0 0 1>;
-			qcom,vdd-wlan-vm-config = <1370000 1370000 0 0 1>;
-			qcom,vdd-wlan-s5c-config = <2040000 2040000 0 0 1>;
-			qcom,vdd-wlan-vh-config = <1900000 1900000 0 0 1>;
+			qcom,vdd-wlan-vl-config = <1055000 1055000 0 0 0>;
+			qcom,vdd-wlan-vm-config = <1370000 1370000 0 0 0>;
+			qcom,vdd-wlan-s5c-config = <2040000 2040000 0 0 0>;
+			qcom,vdd-wlan-vh-config = <1900000 1900000 0 0 0>;
 
 			qcom,wlan-ramdump-dynamic = <0x400000>;
 			mhi,max-channels = <30>;
@@ -357,10 +357,10 @@
 			supported-ids = <0x1102>;
 			wlan_vregs = "vdd-wlan-vl", "vdd-wlan-vm",
 				   "vdd-wlan-s5c", "vdd-wlan-vh";
-			qcom,vdd-wlan-vl-config = <1055000 1055000 0 0 1>;
-			qcom,vdd-wlan-vm-config = <1370000 1370000 0 0 1>;
-			qcom,vdd-wlan-s5c-config = <2040000 2040000 0 0 1>;
-			qcom,vdd-wlan-vh-config = <1900000 1900000 0 0 1>;
+			qcom,vdd-wlan-vl-config = <1055000 1055000 0 0 0>;
+			qcom,vdd-wlan-vm-config = <1370000 1370000 0 0 0>;
+			qcom,vdd-wlan-s5c-config = <2040000 2040000 0 0 0>;
+			qcom,vdd-wlan-vh-config = <1900000 1900000 0 0 0>;
 
 			qcom,wlan-ramdump-dynamic = <0x300000>;
 			mhi,max-channels = <30>;

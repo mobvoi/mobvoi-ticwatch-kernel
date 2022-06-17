@@ -953,6 +953,31 @@ Example:
 		compatible = "qcom,msm-audio-ion-cma";
 	};
 
+* msm-pcm-pinctrl
+
+Required properties:
+
+ - compatible : "qcom,msm-pcm-pinctrl"
+
+Optional properties:
+
+ - pinctrl-names: Pinctrl state names for each pin group
+				configuration.
+
+ - pinctrl-x: Defines pinctrl state for each pin group.
+
+Example:
+	spf_tdm_sec_rx: qcom,spf-msm-dai-tdm-sec-rx {
+		compatible = "qcom,msm-pcm-pinctrl";
+		pinctrl-names = "default", "active";
+		pinctrl-0 = <&sec_tdm_sleep &sec_tdm_din_sleep
+			&sec_tdm_dout_sleep>;
+		pinctrl-1 = <&sec_tdm_active &sec_tdm_din_active
+			&sec_tdm_dout_active>;
+		#gpio-cells = <0>;
+	};
+
+
 * msm-dai-tdm
 
 [First Level Nodes]

@@ -37,7 +37,7 @@
 	};
 
 	chosen {
-		bootargs = "rcupdate.rcu_expedited=1 rcu_nocbs=0-7 cgroup.memory=nokmem,nosocket androidboot.usbcontroller=a800000.dwc3";
+		bootargs = "rcupdate.rcu_expedited=1 rcu_nocbs=0-7 cgroup.memory=nokmem,nosocket androidboot.usbcontroller=a800000.dwc3 androidboot.fstab_suffix=gen4.qcom";
 	};
 };
 

@@ -7,6 +7,7 @@
 		#iommu-cells = <1>;
 		qcom,use-3-lvl-tables;
 		#global-interrupts = <2>;
+		#tcu-testbus-version = <1>;
 		qcom,regulator-names = "vdd";
 		vdd-supply = <&gpu_cx_gdsc>;
 		clock-names = "gcc_gpu_memnoc_gfx_clk";
@@ -45,6 +46,7 @@
 		qcom,skip-init;
 		qcom,use-3-lvl-tables;
 		#global-interrupts = <1>;
+		#tcu-testbus-version = <1>;
 		#size-cells = <1>;
 		#address-cells = <1>;
 		ranges;

@@ -40,6 +40,7 @@
 		qcom,core-clk-rate = <200000000>;
 		qcom,core-clk-rate-hs = <66666667>;
 		qcom,dwc-usb3-msm-tx-fifo-size = <21288>;
+		qcom,usb-charger;
 
 		qcom,ignore-wakeup-src-in-hostmode;
 

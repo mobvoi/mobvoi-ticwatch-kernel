@@ -97,7 +97,8 @@ Subsystem properties:
 			"mmw3_dsc" -> DSC based MMW cooling device3,
 			"mmw_ific_dsc" -> DSC based MMW IFIC cooling device,
 			"tmd_rf_cal" -> for acknowledging modem that bcl disable
-						is done.
+						is done,
+			"modem_v2x" -> modem CV2X mitigation cooling device.
 
 	-#cooling-cells:
 		Usage: required

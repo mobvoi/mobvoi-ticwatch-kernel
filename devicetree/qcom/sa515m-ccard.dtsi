@@ -1,0 +1,16 @@
+#include "sdx55-mtp.dtsi"
+#include "sa515m.dtsi"
+
+&soc {
+	codec_vreg: regulator-codec-tlv320aic3x {
+		compatible = "regulator-fixed";
+		regulator-name = "codec_vreg";
+		startup-delay-us = <100>;
+		gpio = <&tlmm 23 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&vbus_detect {
+	status = "okay";
+};

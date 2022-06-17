@@ -316,6 +316,16 @@
 		status = "disabled";
 	};
 
+	ptp_virtual {
+		compatible = "qcom,ptp_virtual";
+		reg = <0xeb600000 0x1000>,
+			<0x2700c 0x1000>,
+			<0x17c23000 0x1000>;
+		reg-names = "ptp_carveout_mem",
+				"ptp_reg",
+				"qtimer_reg";
+	};
+
 	qcom_rng_ee4: qrng@10d4000 {
 		compatible = "qcom,msm-rng";
 		reg = <0x10d4000 0x1000>;
@@ -344,11 +354,64 @@
 		qcom,qsee-reentrancy-support = <2>;
 	};
 
-	msm_gpu_hyp: qcom,hgsl {
-		compatible = "qcom,hgsl";
+	tcsr_compute_signal_glb: syscon@0x1fd8000 {
+		compatible = "syscon";
+		reg = <0x1fd8000 0x1000>;
+	};
 
-		/* TBD, complete doorbell */
-		db-off = <1>;
+	tcsr_compute_signal_sender0: syscon@0x1fd9000 {
+		compatible = "syscon";
+		reg = <0x1fd9000 0x1000>;
+	};
+
+	tcsr_compute_signal_sender1: syscon@0x1fdd000 {
+		compatible = "syscon";
+		reg = <0x1fdd000 0x1000>;
+	};
+
+	tcsr_compute_signal_receiver0: syscon@0x1fdb000 {
+		compatible = "syscon";
+		reg = <0x1fdb000 0x1000>;
+	};
+
+	tcsr_compute_signal_receiver1: syscon@0x1fdf000 {
+		compatible = "syscon";
+		reg = <0x1fdf000 0x1000>;
+	};
+
+	hgsl_tcsr_sender0: hgsl_tcsr_sender0 {
+		compatible = "qcom,hgsl-tcsr-sender";
+		syscon = <&tcsr_compute_signal_sender0>;
+		syscon-glb = <&tcsr_compute_signal_glb>;
+	};
+
+	hgsl_tcsr_sender1: hgsl_tcsr_sender1 {
+		compatible = "qcom,hgsl-tcsr-sender";
+		syscon = <&tcsr_compute_signal_sender1>;
+		syscon-glb = <&tcsr_compute_signal_glb>;
+	};
+
+	hgsl_tcsr_receiver0: hgsl_tcsr_receiver0 {
+		compatible = "qcom,hgsl-tcsr-receiver";
+		syscon = <&tcsr_compute_signal_receiver0>;
+		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	hgsl_tcsr_receiver1: hgsl_tcsr_receiver1 {
+		compatible = "qcom,hgsl-tcsr-receiver";
+		syscon = <&tcsr_compute_signal_receiver1>;
+		interrupts = <0 239 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	msm_gpu_hyp: qcom,hgsl@0x3d00000 {
+		compatible = "qcom,hgsl";
+		reg = <0x3d00000 0x8>, <0x3d8f000 0x4>;
+		reg-names = "hgsl_reg_hwinf", "hgsl_reg_gmucx";
+
+		qcom,glb-db-senders = <&hgsl_tcsr_sender0
+					&hgsl_tcsr_sender1>;
+		qcom,glb-db-receivers = <&hgsl_tcsr_receiver0
+					&hgsl_tcsr_receiver1>;
 	};
 
 	pdc: interrupt-controller@b220000 {
@@ -425,6 +488,34 @@
 		#clock-cells = <0>;
 	};
 
+	usb3_phy_wrapper_gcc_usb30_pipe_clk: usb3_phy_wrapper_gcc_usb30_pipe_clk {
+		compatible = "fixed-clock";
+		clock-frequency = <1000>;
+		clock-output-names = "usb3_phy_wrapper_gcc_usb30_pipe_clk";
+		#clock-cells = <0>;
+	};
+
+	usb3_uni_phy_mp_gcc_usb30_pipe_0_clk: usb3_uni_phy_mp_gcc_usb30_pipe_0_clk {
+		compatible = "fixed-clock";
+		clock-frequency = <1000>;
+		clock-output-names = "usb3_uni_phy_mp_gcc_usb30_pipe_0_clk";
+		#clock-cells = <0>;
+	};
+
+	usb3_uni_phy_mp_gcc_usb30_pipe_1_clk: usb3_uni_phy_mp_gcc_usb30_pipe_1_clk {
+		compatible = "fixed-clock";
+		clock-frequency = <1000>;
+		clock-output-names = "usb3_uni_phy_mp_gcc_usb30_pipe_1_clk";
+		#clock-cells = <0>;
+	};
+
+	usb3_uni_phy_sec_gcc_usb30_pipe_clk: usb3_uni_phy_sec_gcc_usb30_pipe_clk {
+		compatible = "fixed-clock";
+		clock-frequency = <1000>;
+		clock-output-names = "usb3_uni_phy_sec_gcc_usb30_pipe_clk";
+		#clock-cells = <0>;
+	};
+
 	rpmh_cxo_clk: rpmh_cxo_clk {
 		compatible = "qcom,dummycc";
 		clock-output-names = "bi_tcxo";
@@ -482,6 +573,7 @@
 		emac0_emb_smmu: emac0_emb_smmu {
 			compatible = "qcom,emac-smmu-embedded";
 			iommus = <&apps_smmu 0x4C4 0x1>;
+			qcom,iommu-dma = "fastmap";
 			qcom,iommu-dma-addr-pool = <0x80000000 0x40000000>;
 		};
 	};
@@ -513,6 +605,7 @@
 		emac1_emb_smmu: emac1_emb_smmu {
 			compatible = "qcom,emac-smmu-embedded";
 			iommus = <&apps_smmu 0x44 0x1>;
+			qcom,iommu-dma = "fastmap";
 			qcom,iommu-dma-addr-pool = <0x80000000 0x40000000>;
 		};
 	};
@@ -622,6 +715,12 @@
 		regulator-min-microvolt = <1620000>;
 		regulator-max-microvolt = <1980000>;
 	};
+
+	L4C0: pm8540_c0_l4: regulator-pm8540_c0-l4 {
+		regulator-name = "ldoc4";
+		regulator-min-microvolt = <1140000>;
+		regulator-max-microvolt = <1260000>;
+	};
 };
 
 &firmware {
@@ -641,16 +740,19 @@
 &qupv3_0 {
 	/delete-property/ qcom,msm-bus,num-paths;
 	/delete-property/ qcom,msm-bus,vectors-bus-ids;
+	qcom,iommu-dma = "bypass";
 };
 
 &qupv3_1 {
 	/delete-property/ qcom,msm-bus,num-paths;
 	/delete-property/ qcom,msm-bus,vectors-bus-ids;
+	qcom,iommu-dma = "bypass";
 };
 
 &qupv3_2 {
 	/delete-property/ qcom,msm-bus,num-paths;
 	/delete-property/ qcom,msm-bus,vectors-bus-ids;
+	qcom,iommu-dma = "bypass";
 };
 
 &cpu_pmu {

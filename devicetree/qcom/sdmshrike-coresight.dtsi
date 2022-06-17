@@ -76,7 +76,7 @@
 
 	tmc_etr: tmc@6048000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b961>;
+		arm,primecell-periphid = <0x000bb961>;
 
 		reg = <0x6048000 0x1000>,
 		      <0x6064000 0x15000>;
@@ -115,7 +115,7 @@
 
 	tmc_etf: tmc@6047000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b961>;
+		arm,primecell-periphid = <0x000bb961>;
 
 		reg = <0x6047000 0x1000>;
 		reg-names = "tmc-base";
@@ -152,7 +152,7 @@
 
 	funnel_merg: funnel@6045000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6045000 0x1000>;
 		reg-names = "funnel-base";
@@ -225,7 +225,7 @@
 
 	funnel_in0: funnel@6041000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6041000 0x1000>;
 		reg-names = "funnel-base";
@@ -269,7 +269,7 @@
 
 	funnel_in1: funnel@0x6042000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6042000 0x1000>;
 		reg-names = "funnel-base";
@@ -400,7 +400,7 @@
 
 	tmc_etf_swao: tmc@6b09000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b961>;
+		arm,primecell-periphid = <0x000bb961>;
 
 		reg = <0x6b09000 0x1000>;
 		reg-names = "tmc-base";
@@ -434,7 +434,7 @@
 
 	funnel_swao:funnel@6b08000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6b08000 0x1000>;
 		reg-names = "funnel-base";
@@ -723,7 +723,7 @@
 
 	funnel_dl_mm1: funnel_1@6c0b000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6867000 0x10>,
 			<0x6c0b000 0x1000>;
@@ -785,7 +785,7 @@
 
 	funnel_turing: funnel@6861000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6861000 0x1000>;
 		reg-names = "funnel-base";
@@ -845,7 +845,7 @@
 
 	funnel_turing_1: funnel_1@6861000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6867010 0x10>,
 			<0x6861000 0x1000>;
@@ -901,7 +901,7 @@
 
 	funnel_apss_merg: funnel@7810000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x7810000 0x1000>;
 		reg-names = "funnel-base";
@@ -1206,7 +1206,7 @@
 
 	funnel_apss: funnel@7800000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x7800000 0x1000>;
 		reg-names = "funnel-base";
@@ -2065,7 +2065,7 @@
 
 	funnel_qatb: funnel@6005000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6005000 0x1000>;
 		reg-names = "funnel-base";
@@ -2310,7 +2310,7 @@
 
 	funnel_lpass_1: funnel_1@6846000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6867020 0x10>,
 			<0x6846000 0x1000>;
@@ -2362,7 +2362,7 @@
 
 	funnel_dl_south: funnel@69c2000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 		reg = <0x69c2000 0x1000>;
 		reg-names = "funnel-base";
 
@@ -2428,7 +2428,7 @@
 
 	funnel_wcss: funnel@6ac2000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6ac2000 0x1000>;
 		reg-names = "funnel-base";
@@ -2475,7 +2475,7 @@
 
 	funnel_ddr_0: funnel@6a05000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b908>;
+		arm,primecell-periphid = <0x000bb908>;
 
 		reg = <0x6a05000 0x1000>;
 		reg-names = "funnel-base";
@@ -2612,8 +2612,6 @@
 
 	stm: stm@6002000 {
 		compatible = "arm,primecell";
-		arm,primecell-periphid = <0x0003b962>;
-
 		reg = <0x6002000 0x1000>,
 		      <0x16280000 0x180000>,
 		      <0x7820f0 0x4>;

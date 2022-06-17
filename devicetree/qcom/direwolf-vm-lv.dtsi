@@ -41,11 +41,19 @@
 	status = "okay";
 };
 
+&usb_qmp_dp_phy0 {
+	status = "okay";
+};
+
 &usb1 {
 	status = "okay";
 };
 
 &usb2_phy1 {
+	status = "okay";
+};
+
+&usb_qmp_dp_phy1 {
 	status = "okay";
 };
 
@@ -73,7 +81,15 @@
 	status = "okay";
 };
 
+&usb_qmp_phy0 {
+	status = "okay";
+};
+
 &usb2_phy3 {
+	status = "okay";
+};
+
+&usb_qmp_phy1 {
 	status = "okay";
 };
 

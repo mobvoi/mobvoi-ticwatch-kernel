@@ -345,7 +345,7 @@
 };
 
 &pm6150l_pwm_1 {
-	status = "disabled";
+	status = "okay";
 };
 
 &usb1 {
@@ -562,11 +562,78 @@
 };
 
 &sde_dp {
-	status="disabled";
+	/delete-property/ reg;
+	/delete-property/ reg-names;
+	/delete-property/ qcom,mux-sel-gpio;
+	/delete-property/ com,usbplug-cc-gpio;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-2;
+	/delete-property/ pinctrl-3;
+	/delete-property/ pinctrl-4;
+	/delete-property/ qcom,dp-usbpd-detection;
+
+	qcom,pll-revision = "14nm";
+	qcom,mst-enable;
+	qcom,dp-gpio-aux-switch;
+	qcom,dp-hpd-gpio = <&tlmm 89 0>;
+
+	vd11p8-supply = <&pm6150_l10>;
+	gdsc-supply = <&mdss_core_gdsc>;
+
+	#clock-cells = <1>;
+	reg = <0xae90000 0x0f4>,
+		<0xae90200 0x0c0>,
+		<0xae90400 0x5e0>,
+		<0xae90a00 0x098>,
+		<0x88e9000 0x17c>,
+		<0x88e9400 0x10c>,
+		<0x88e9800 0x10c>,
+		<0xaf02000 0x1a0>,
+		<0x780000 0x621c>,
+		<0x88e9c00 0x200>,
+		<0xaee1000 0x34>,
+		<0x1fcb200 0x50>,
+		<0xae91000 0x098>,
+		<0xaf03000 0x8>;
+
+	reg-names = "dp_ahb", "dp_aux", "dp_link",
+		"dp_p0", "dp_phy", "dp_ln_tx0", "dp_ln_tx1",
+		"dp_mmss_cc", "qfprom_physical", "dp_pll",
+		"hdcp_physical", "dp_tcsr","dp_p1", "gdsc";
+
+	pinctrl-names = "mdss_dp_hpd_active";
+	pinctrl-0 = <&sde_dp_hotplug_tlmm>;
+
+	qcom,ctrl-supply-entries {
+		qcom,ctrl-supply-entry@1 {
+			reg = <1>;
+			qcom,supply-name = "vdda-1p8";
+			qcom,supply-min-voltage = <1800000>;
+			qcom,supply-max-voltage = <1832000>;
+			qcom,supply-enable-load = <21800>;
+			qcom,supply-disable-load = <0>;
+		};
+	};
+
+	qcom,pll-supply-entries {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		qcom,pll-supply-entry@0 {
+			reg = <0>;
+			qcom,supply-name = "gdsc";
+			qcom,supply-min-voltage = <0>;
+			qcom,supply-max-voltage = <0>;
+			qcom,supply-enable-load = <0>;
+			qcom,supply-disable-load = <0>;
+		};
+	};
 };
 
 &mdss_mdp {
-	connectors = <&smmu_sde_unsec &sde_dsi &sde_rscc>;
+	connectors = <&smmu_sde_unsec &sde_dsi &sde_rscc &sde_wb &sde_dp>;
 };
 
 &dsi_ili9881c_720p_video {
@@ -624,6 +691,16 @@
 
 	config {
 		pins = "gpio87", "gpio75";
+	};
+};
+
+&sde_dp_hotplug_tlmm {
+	mux {
+		pins = "gpio89";
+	};
+
+	config {
+		pins = "gpio89";
 	};
 };
 

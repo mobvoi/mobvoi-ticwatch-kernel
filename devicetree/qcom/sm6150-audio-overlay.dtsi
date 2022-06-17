@@ -39,8 +39,8 @@
 			compatible = "qcom,swr-mstr";
 			#address-cells = <2>;
 			#size-cells = <0>;
-			clock-names = "lpass_audio_hw_vote";
-			clocks = <&lpass_audio_hw_vote 0>;
+			clock-names = "lpass_core_hw_vote";
+			clocks = <&lpass_core_hw_vote 0>;
 			qcom,swr-master-version = <0x1050000>;
 			qcom,swr_master_id = <3>;
 			swrm-io-base = <0x62ed0000 0x0>;
@@ -79,8 +79,8 @@
 			compatible = "qcom,swr-mstr";
 			#address-cells = <2>;
 			#size-cells = <0>;
-			clock-names = "lpass_audio_hw_vote";
-			clocks = <&lpass_audio_hw_vote 0>;
+			clock-names = "lpass_core_hw_vote";
+			clocks = <&lpass_core_hw_vote 0>;
 			qcom,swr-master-version = <0x1050000>;
 			qcom,swr_master_id = <2>;
 			swrm-io-base = <0x62ef0000 0x0>;
@@ -114,8 +114,8 @@
 			compatible = "qcom,swr-mstr";
 			#address-cells = <2>;
 			#size-cells = <0>;
-			clock-names = "lpass_audio_hw_vote";
-			clocks = <&lpass_audio_hw_vote 0>;
+			clock-names = "lpass_core_hw_vote";
+			clocks = <&lpass_core_hw_vote 0>;
 			qcom,swr-master-version = <0x1050000>;
 			qcom,swr_master_id = <1>;
 			swrm-io-base = <0x62f10000 0x0>;
@@ -166,8 +166,8 @@
 	va_macro: va-macro@62f20000 {
 		compatible = "qcom,va-macro";
 		reg = <0x62f20000 0x0>;
-		clock-names = "lpass_audio_hw_vote";
-		clocks = <&lpass_audio_hw_vote 0>;
+		clock-names = "lpass_core_hw_vote";
+		clocks = <&lpass_core_hw_vote 0>;
 		qcom,default-clk-id = <TX_CORE_CLK>;
 		qcom,is-used-swr-gpio = <0>;
 	};
@@ -452,6 +452,14 @@
 		startup-delay-us = <0>;
 		enable-active-high;
 	};
+
+	cdc_tert_mi2s_gpios: msm_cdc_pinctrl_pri {
+		compatible = "qcom,msm-cdc-pinctrl";
+		pinctrl-names = "aud_active", "aud_sleep";
+		pinctrl-0 = <&tert_i2s_sck_ws_d0_active>;
+		pinctrl-1 = <&tert_i2s_sck_ws_d0_sleep>;
+		#gpio-cells = <0>;
+	};
 };
 
 &slim_aud {
@@ -524,3 +532,16 @@
 		};
 	};
 };
+
+&sb_7_rx {
+	qcom,msm-dai-q6-slim-dev-id = <1>;
+};
+
+&sb_7_tx {
+	qcom,msm-dai-q6-slim-dev-id = <1>;
+};
+
+&sb_8_tx {
+	qcom,msm-dai-q6-slim-dev-id = <1>;
+};
+

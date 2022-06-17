@@ -850,12 +850,27 @@
 		};
 	};
 
+	suspendable_ddr_bw_opp_table: suspendable-ddr-bw-opp-table {
+		compatible = "operating-points-v2";
+		BW_OPP_ENTRY_DDR( 0, 4, 0x80);   /* 0 MB/s */
+		BW_OPP_ENTRY_DDR( 200, 4, 0x80); /* 762 MB/s */
+		BW_OPP_ENTRY_DDR( 300, 4, 0x80); /* 1144 MB/s */
+		BW_OPP_ENTRY_DDR( 451, 4, 0x80); /* 1720 MB/s */
+		BW_OPP_ENTRY_DDR( 547, 4, 0x80); /* 2086 MB/s */
+		BW_OPP_ENTRY_DDR( 681, 4, 0x80); /* 2597 MB/s */
+		BW_OPP_ENTRY_DDR( 768, 4, 0x80); /* 2929 MB/s */
+		BW_OPP_ENTRY_DDR(1017, 4, 0x80); /* 3879 MB/s */
+		BW_OPP_ENTRY_DDR(1296, 4, 0x80); /* 4943 MB/s */
+		BW_OPP_ENTRY_DDR(1555, 4, 0x80); /* 5931 MB/s */
+		BW_OPP_ENTRY_DDR(1804, 4, 0x80); /* 6881 MB/s */
+		BW_OPP_ENTRY_DDR(2092, 4, 0x80); /* 7980 MB/s */
+	};
+
 	npu_npu_ddr_bw: qcom,npu-npu-ddr-bw {
 		compatible = "qcom,devfreq-icc-ddr";
 		governor = "bw_hwmon";
 		interconnects = <&compute_noc MASTER_NPU &mc_virt SLAVE_EBI1>;
-		operating-points-v2 = <&ddr_bw_opp_table>;
-		qcom,active-only;
+		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
 	};
 
 	npu_npu_ddr_bwmon: qcom,npu-npu-ddr-bwmon@9960300 {
@@ -1411,12 +1426,6 @@
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "qdss_clk";
 		#clock-cells = <1>;
-	};
-
-	ddr_bwprofiler {
-		compatible = "qcom,ddr_bwprofiler";
-		clocks = <&aopcc QDSS_CLK>;
-		clock-names = "qdss_clk";
 	};
 
 	gcc: clock-controller@100000 {
@@ -2489,6 +2498,33 @@
 				"l1-l2-errirq",
 				"l3-scu-errirq",
 				"l3-scu-faultirq";
+	};
+
+	keepalive_opp_table: keepalive-opp-table {
+		compatible = "operating-points-v2";
+		opp-1 {
+			opp-hz = /bits/ 64 < 1 >;
+		};
+	};
+
+	cdsp_keepalive: qcom,cdsp_keepalive {
+		compatible = "qcom,devfreq-icc";
+		governor = "powersave";
+		interconnects = <&compute_noc MASTER_NPU
+				&compute_noc SLAVE_CDSP_MEM_NOC>;
+		qcom,active-only;
+		status = "ok";
+		operating-points-v2 = <&keepalive_opp_table>;
+	};
+
+	snoc_cnoc_keepalive: qcom,snoc_cnoc_keepalive {
+		compatible = "qcom,devfreq-icc";
+		governor = "powersave";
+		interconnects = <&gem_noc MASTER_APPSS_PROC
+				&config_noc SLAVE_IMEM_CFG>;
+		qcom,active-only;
+		status = "ok";
+		operating-points-v2 = <&keepalive_opp_table>;
 	};
 };
 

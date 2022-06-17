@@ -1,4 +1,3 @@
-#include "lemans.dtsi"
 #include <dt-bindings/clock/qcom,gcc-lemans.h>
 
 &arch_timer {
@@ -32,6 +31,72 @@
 				     0x10060 0x3c
 				     0x0 0x4
 				     0x9 0x14>;
+	};
+
+	bi_tcxo: bi_tcxo {
+		compatible = "fixed-factor-clock";
+		clock-mult = <1>;
+		clock-div = <2>;
+		clocks = <&xo_board>;
+		clock-output-names = "bi_tcxo";
+		#clock-cells = <0>;
+	};
+
+	bi_tcxo_ao: bi_tcxo_ao {
+		compatible = "fixed-factor-clock";
+		clock-mult = <1>;
+		clock-div = <2>;
+		clocks = <&xo_board>;
+		clock-output-names = "bi_tcxo_ao";
+		#clock-cells = <0>;
+	};
+
+	pcie0: qcom,pcie@0x01c00000 {
+		compatible = "qcom,pci-msm";
+
+		reg = <0x01c00000 0x3000>,
+			<0x1c04000 0x2000>,
+			<0x40000000 0xf20>,
+			<0x40000f20 0xa8>,
+			<0x40001000 0x4000>,
+			<0x40100000 0x100000>,
+			<0x01c03000 0x1000>,
+			<0x01c04500 0x1000>;
+		reg-names = "parf", "phy", "dm_core", "elbi",
+				"iatu", "conf", "mhi", "rumi";
+
+		linux,pci-domain = <0>;
+		qcom,target-link-speed = <0x1>;
+		qcom,link-check-max-count = <200>; /* 1 sec */
+		qcom,no-l0s-supported;
+		qcom,no-l1-supported;
+		qcom,no-l1ss-supported;
+		qcom,no-aux-clk-sync;
+		status = "ok";
+	};
+
+	 pcie1: qcom,pcie@0x01c10000 {
+		compatible = "qcom,pci-msm";
+
+		reg = <0x01c10000 0x3000>,
+			<0x01c14000 0x4000>,
+			<0x60000000 0xf20>,
+			<0x60000f20 0xa8>,
+			<0x60001000 0x4000>,
+			<0x60100000 0x100000>,
+			<0x01c13000 0x1000>,
+			<0x01c14500 0x1000>;
+		reg-names = "parf", "phy", "dm_core", "elbi",
+				"iatu", "conf", "mhi", "rumi";
+
+		linux,pci-domain = <1>;
+		qcom,target-link-speed = <0x1>;
+		qcom,link-check-max-count = <200>; /* 1 sec */
+		qcom,no-l0s-supported;
+		qcom,no-l1-supported;
+		qcom,no-l1ss-supported;
+		qcom,no-aux-clk-sync;
+		status = "ok";
 	};
 };
 
@@ -79,4 +144,63 @@
 &gpucc {
 	clocks = <&bi_tcxo>, <&gcc GCC_GPU_CFG_AHB_CLK>,
 		 <&gcc GCC_GPU_GPLL0_CLK_SRC>, <&gcc GCC_GPU_GPLL0_DIV_CLK_SRC>;
+};
+
+&dispcc0 {
+	clocks = <&bi_tcxo>, <&bi_tcxo_ao>, <&sleep_clk>,
+		<&gcc GCC_DISP_AHB_CLK>;
+};
+
+&dispcc1 {
+	clocks = <&bi_tcxo>, <&bi_tcxo_ao>, <&sleep_clk>,
+		<&gcc GCC_DISP1_AHB_CLK>;
+};
+
+&rpmhcc {
+	compatible = "qcom,dummycc";
+	clock-output-names = "rpmhcc_clocks";
+};
+
+&debugcc {
+	clocks = <&bi_tcxo>;
+};
+
+&cpufreq_hw {
+	clocks = <&bi_tcxo>, <&gcc GCC_GPLL0>;
+};
+
+&ufsphy_mem {
+	compatible = "qcom,ufs-phy-qrbtc-sdm845";
+
+	vdda-phy-supply = <&L4A>;
+	vdda-pll-supply = <&L1C>;
+	vdda-phy-max-microamp = <137000>;
+	vdda-pll-max-microamp = <18300>;
+
+	status = "ok";
+};
+
+&ufshc_mem {
+
+	limit-tx-hs-gear = <1>;
+	limit-rx-hs-gear = <1>;
+	limit-rate = <1>; /* HS Rate-B */
+
+	vdd-hba-supply = <&gcc_ufs_phy_gdsc>;
+	vdd-hba-fixed-regulator;
+
+	vcc-supply = <&L8A>;
+	vcc-max-microamp = <800000>;
+
+	vccq-supply = <&L4C>;
+	vccq-max-microamp = <800000>;
+
+	qcom,vddp-ref-clk-supply = <&L4C>;
+	qcom,vddp-ref-clk-max-microamp = <100>;
+
+	qcom,disable-lpm;
+	rpm-level = <0>;
+	spm-level = <0>;
+
+	status = "ok";
 };

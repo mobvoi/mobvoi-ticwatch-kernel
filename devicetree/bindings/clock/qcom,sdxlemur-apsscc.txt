@@ -9,6 +9,7 @@ Required properties:
 		"qcom,sdxlemur-apsscc"
 		"qcom,sdxnightjar-apsscc"
 		"qcom,qcs404-apsscc"
+		"qcom,sdx55-apsscc"
 - clocks:	Phandle to the clock device.
 - clock-names:	Names of the used clocks. Shall contain following:
 		"xo_ao", "gpll0_ao"
