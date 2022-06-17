@@ -73,6 +73,7 @@ static int hab_shmm_throughput_test(void)
 	source_data = kzalloc(size, GFP_ATOMIC);
 	if (!source_data) {
 		ret = -ENOMEM;
+		kfree(test_data);
 		return ret;
 	}
 

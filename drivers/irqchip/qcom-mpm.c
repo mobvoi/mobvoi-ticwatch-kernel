@@ -46,6 +46,7 @@
 #define MPM_REG_STATUS 4
 #define MPM_GPIO 0
 #define MPM_GIC 1
+#define MAX_REG_WIDTH	3
 
 #define QCOM_MPM_REG_WIDTH  DIV_ROUND_UP(num_mpm_irqs, 32)
 #define MPM_REGISTER(reg, index) ((reg * QCOM_MPM_REG_WIDTH + index + 2) * (4))
@@ -65,10 +66,10 @@ static int num_mpm_irqs = 64;
 static struct msm_mpm_device_data msm_mpm_dev_data;
 static unsigned int *mpm_to_irq;
 #ifdef CONFIG_DEEPSLEEP
-static unsigned int mpm_enabled[3];
-static unsigned int mpm_type_raising_edge[3];
-static unsigned int mpm_type_falling_edge[3];
-static unsigned int mpm_type_level[3];
+static unsigned int mpm_enabled[MAX_REG_WIDTH];
+static unsigned int mpm_type_raising_edge[MAX_REG_WIDTH];
+static unsigned int mpm_type_falling_edge[MAX_REG_WIDTH];
+static unsigned int mpm_type_level[MAX_REG_WIDTH];
 #endif
 static DEFINE_SPINLOCK(mpm_lock);
 

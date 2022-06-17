@@ -141,6 +141,7 @@ static void cdsp_loader_unload(struct platform_device *pdev)
 		dev_dbg(&pdev->dev, "%s: calling subsystem_put\n", __func__);
 		subsystem_put(priv->pil_h);
 		priv->pil_h = NULL;
+		cdsp_state = CDSP_SUBSYS_DOWN;
 	}
 }
 
@@ -214,6 +215,7 @@ static int cdsp_loader_remove(struct platform_device *pdev)
 	if (priv->pil_h) {
 		subsystem_put(priv->pil_h);
 		priv->pil_h = NULL;
+		cdsp_state = CDSP_SUBSYS_DOWN;
 	}
 
 	if (priv->boot_cdsp_obj) {

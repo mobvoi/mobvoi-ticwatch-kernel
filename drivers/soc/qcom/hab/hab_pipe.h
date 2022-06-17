@@ -33,11 +33,11 @@ struct hab_pipe_endpoint {
 	struct {
 		uint32_t wr_count;
 		uint32_t index;
-		struct hab_shared_buf *sh_buf;
+		struct hab_shared_buf *legacy_sh_buf;
 	} tx_info;
 	struct {
 		uint32_t index;
-		struct hab_shared_buf *sh_buf;
+		struct hab_shared_buf *legacy_sh_buf;
 	} rx_info;
 };
 

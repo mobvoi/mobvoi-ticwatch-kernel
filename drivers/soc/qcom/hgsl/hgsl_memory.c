@@ -450,13 +450,12 @@ int hgsl_mem_cache_op(struct device *dev, struct hgsl_mem_node *mem_node,
 		return -ERANGE;
 
 	/* Check that offset+length does not exceed memdesc->size */
-	sizebytes += offsetbytes & PAGE_MASK;
-	offsetbytes &= ~PAGE_MASK;
 	if ((sizebytes + offsetbytes) > mem_node->memdesc.size)
 		return -ERANGE;
 
-	pg_offset = offsetbytes >> PAGE_SHIFT;
+	sizebytes += offsetbytes & ~PAGE_MASK;
 	pg_size = PAGE_ALIGN(sizebytes) >> PAGE_SHIFT;
+	pg_offset = offsetbytes >> PAGE_SHIFT;
 
 	if (IS_ERR_OR_NULL(mem_node->sgt_ext)) {
 		hgsl_get_sgt(dev, mem_node, internal);
@@ -471,6 +470,7 @@ int hgsl_mem_cache_op(struct device *dev, struct hgsl_mem_node *mem_node,
 			struct page *page = nth_page(sg_page(s), pg_offset);
 
 			sg_size -= pg_offset;
+			pg_offset = 0;
 			sg_size = min(sg_size, pg_size);
 			_dma_cache_op(dev, page, sg_size, op);
 			pg_size -= sg_size;
@@ -603,5 +603,23 @@ void hgsl_sharedmem_free(struct hgsl_mem_node *mem_node)
 	else
 		hgsl_mem_free_actual(mem_node);
 
+}
+
+struct hgsl_mem_node *hgsl_mem_find_base_locked(struct list_head *head,
+	uint64_t gpuaddr, uint64_t size)
+{
+	struct hgsl_mem_node *node_found = NULL;
+	struct hgsl_mem_node *tmp = NULL;
+	uint64_t end = gpuaddr + size;
+
+	list_for_each_entry(tmp, head, node) {
+		if ((tmp->memdesc.gpuaddr <= gpuaddr)
+			&& ((tmp->memdesc.gpuaddr + tmp->memdesc.size) >= end)) {
+			node_found = tmp;
+			break;
+		}
+	}
+
+	return node_found;
 }
 

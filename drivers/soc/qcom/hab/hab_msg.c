@@ -87,7 +87,7 @@ hab_msg_alloc(struct physical_channel *pchan, size_t sizebytes)
 {
 	struct hab_message *message;
 
-	if (sizebytes > HAB_HEADER_SIZE_MASK) {
+	if (sizebytes > HAB_HEADER_SIZE_MAX) {
 		pr_err("pchan %s send size too large %zd\n",
 			pchan->name, sizebytes);
 		return NULL;
@@ -287,7 +287,7 @@ static void hab_msg_drop(struct physical_channel *pchan, size_t sizebytes)
 {
 	uint8_t *data = NULL;
 
-	if (sizebytes > HAB_HEADER_SIZE_MASK) {
+	if (sizebytes > HAB_HEADER_SIZE_MAX) {
 		pr_err("%s read size too large %zd\n", pchan->name, sizebytes);
 		return;
 	}
@@ -415,7 +415,7 @@ int hab_msg_recv(struct physical_channel *pchan,
 	case HAB_PAYLOAD_TYPE_EXPORT:
 		exp_desc_size_expected = sizeof(struct export_desc)
 							+ sizeof(struct compressed_pfns);
-		if (sizebytes > (size_t)(HAB_HEADER_SIZE_MASK) ||
+		if (sizebytes > (size_t)(HAB_HEADER_SIZE_MAX) ||
 			sizebytes < exp_desc_size_expected) {
 			pr_err("%s exp size too large/small %zu header %zu\n",
 				pchan->name, sizebytes, sizeof(*exp_desc));

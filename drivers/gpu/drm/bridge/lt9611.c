@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2018, The Linux Foundation. All rights reserved.
  * Copyright (c) 2019. Linaro Ltd
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #define DEBUG
@@ -19,12 +20,14 @@
 #include <linux/regmap.h>
 #include <linux/interrupt.h>
 #include <linux/component.h>
+#include <linux/workqueue.h>
 #include <linux/of_gpio.h>
 #include <linux/of_graph.h>
 #include <linux/of_irq.h>
 #include <linux/regulator/consumer.h>
 #include <drm/drm_probe_helper.h>
 #include <linux/hdmi.h>
+#include <drm/drmP.h>
 #include <drm/drm_atomic.h>
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_edid.h>
@@ -33,7 +36,7 @@
 #include <drm/drm_print.h>
 
 #define EDID_SEG_SIZE 256
-
+#define HPD_UEVENT_BUFFER_SIZE 32
 #define LT9611_4LANES	0
 
 struct lt9611 {
@@ -55,11 +58,20 @@ struct lt9611 {
 
 	bool power_on;
 
+	/* get display modes from device tree */
+	bool non_pluggable;
+	u32 num_of_modes;
+	struct list_head mode_list;
+	bool hdmi_mode;
+
 	struct regulator_bulk_data supplies[2];
 
 	struct i2c_client *client;
 
 	enum drm_connector_status status;
+
+	struct workqueue_struct *wq;
+	struct work_struct work;
 
 	u8 edid_buf[EDID_SEG_SIZE];
 	u32 vic;
@@ -88,6 +100,40 @@ static struct lt9611_mode lt9611_modes[] = {
 	{ 720, 576, 50, 2, 1 },
 	{ 640, 480, 60, 2, 1 },
 };
+
+static void lt9611_hpd_work(struct work_struct *work)
+{
+	struct drm_device *dev = NULL;
+	char name[HPD_UEVENT_BUFFER_SIZE], status[HPD_UEVENT_BUFFER_SIZE];
+	enum drm_connector_status last_status;
+	char *event_string = "HOTPLUG=1";
+	char *envp[5];
+	struct lt9611 *lt9611 = container_of(work, struct lt9611, work);
+
+	if (!lt9611 || !lt9611->connector.funcs || !lt9611->connector.funcs->detect)
+		return;
+
+	dev = lt9611->connector.dev;
+	last_status = lt9611->connector.status;
+	lt9611->connector.status =
+		lt9611->connector.funcs->detect(&lt9611->connector, true);
+
+	if (last_status == lt9611->connector.status)
+		return;
+
+	scnprintf(name, HPD_UEVENT_BUFFER_SIZE, "name=%s",
+		 lt9611->connector.name);
+	scnprintf(status, HPD_UEVENT_BUFFER_SIZE, "status=%s",
+		drm_get_connector_status_name(lt9611->connector.status));
+
+	pr_debug("[%s]:[%s]\n", name, status);
+	envp[0] = name;
+	envp[1] = status;
+	envp[2] = event_string;
+	envp[3] = NULL;
+	envp[4] = NULL;
+	kobject_uevent_env(&dev->primary->kdev->kobj, KOBJ_CHANGE, envp);
+}
 
 static struct lt9611 *bridge_to_lt9611(struct drm_bridge *bridge)
 {
@@ -429,8 +475,8 @@ static irqreturn_t lt9611_irq_thread_handler(int irq, void *dev_id)
 		regmap_write(lt9611->regmap, 0x07, 0x3f);
 	}
 
-//	if (irq_flag3 & 0xc0)
-//		drm_kms_helper_hotplug_event(lt9611->bridge.dev);
+	if (irq_flag3 & 0xc0 && lt9611->bridge.dev)
+		queue_work(lt9611->wq, &lt9611->work);
 
 	/* video input changed */
 	if (irq_flag0 & 0x01) {
@@ -704,19 +750,55 @@ static int lt9611_get_edid_block(void *data, u8 *buf, unsigned int block,
 	return 0;
 }
 
+static void lt9611_set_preferred_mode(struct drm_connector *connector)
+{
+	struct lt9611 *lt9611 = connector_to_lt9611(connector);
+	struct drm_display_mode *mode;
+	const char *string;
+
+	/* use specified mode as preferred */
+	if (!of_property_read_string(lt9611->dev->of_node,
+			"lt,preferred-mode", &string)) {
+		list_for_each_entry(mode, &connector->probed_modes, head) {
+			if (!strcmp(mode->name, string))
+				mode->type |= DRM_MODE_TYPE_PREFERRED;
+		}
+	}
+}
+
 static int lt9611_connector_get_modes(struct drm_connector *connector)
 {
 	struct lt9611 *lt9611 = connector_to_lt9611(connector);
+	struct drm_display_mode *mode, *m;
 	unsigned int count;
 	struct edid *edid;
 
 	dev_dbg(lt9611->dev, "get modes\n");
 
 	lt9611_power_on(lt9611);
-	edid = drm_do_get_edid(connector, lt9611_get_edid_block, lt9611);
-	drm_connector_update_edid_property(connector, edid);
-	count = drm_add_edid_modes(connector, edid);
-	kfree(edid);
+	if  (lt9611->non_pluggable) {
+		list_for_each_entry(mode, &lt9611->mode_list, head) {
+			m = drm_mode_duplicate(connector->dev, mode);
+			if (!m) {
+				pr_err("failed to add hdmi mode %dx%d\n",
+					mode->hdisplay, mode->vdisplay);
+				break;
+			}
+			drm_mode_probed_add(connector, m);
+		}
+		count = lt9611->num_of_modes;
+	} else {
+		edid = drm_do_get_edid(connector, lt9611_get_edid_block, lt9611);
+		drm_connector_update_edid_property(connector, edid);
+		count = drm_add_edid_modes(connector, edid);
+
+		lt9611->hdmi_mode = drm_detect_hdmi_monitor(edid);
+		pr_info("hdmi_mode = %d\n", lt9611->hdmi_mode);
+
+		kfree(edid);
+	}
+
+	lt9611_set_preferred_mode(connector);
 
 	return count;
 }
@@ -961,9 +1043,163 @@ static const struct drm_bridge_funcs lt9611_bridge_funcs = {
 	.mode_set = lt9611_bridge_mode_set,
 };
 
+static int lt9611_parse_dt_modes(struct device_node *np,
+					struct list_head *head,
+					u32 *num_of_modes)
+{
+	int rc = 0;
+	struct drm_display_mode *mode;
+	u32 mode_count = 0;
+	struct device_node *node = NULL;
+	struct device_node *root_node = NULL;
+	u32 h_front_porch, h_pulse_width, h_back_porch;
+	u32 v_front_porch, v_pulse_width, v_back_porch;
+	bool h_active_high, v_active_high;
+	u32 flags = 0;
+
+	root_node = of_get_child_by_name(np, "lt,customize-modes");
+	if (!root_node) {
+		root_node = of_parse_phandle(np, "lt,customize-modes", 0);
+		if (!root_node) {
+			pr_info("No entry present for lt,customize-modes\n");
+			goto end;
+		}
+	}
+
+	for_each_child_of_node(root_node, node) {
+		rc = 0;
+		mode = kzalloc(sizeof(*mode), GFP_KERNEL);
+		if (!mode) {
+			pr_err("Out of memory\n");
+			rc =  -ENOMEM;
+			continue;
+		}
+
+		rc = of_property_read_u32(node, "lt,mode-h-active",
+						&mode->hdisplay);
+		if (rc) {
+			pr_err("failed to read h-active, rc=%d\n", rc);
+			goto fail;
+		}
+
+		rc = of_property_read_u32(node, "lt,mode-h-front-porch",
+						&h_front_porch);
+		if (rc) {
+			pr_err("failed to read h-front-porch, rc=%d\n", rc);
+			goto fail;
+		}
+
+		rc = of_property_read_u32(node, "lt,mode-h-pulse-width",
+						&h_pulse_width);
+		if (rc) {
+			pr_err("failed to read h-pulse-width, rc=%d\n", rc);
+			goto fail;
+		}
+
+		rc = of_property_read_u32(node, "lt,mode-h-back-porch",
+						&h_back_porch);
+		if (rc) {
+			pr_err("failed to read h-back-porch, rc=%d\n", rc);
+			goto fail;
+		}
+
+		h_active_high = of_property_read_bool(node,
+						"lt,mode-h-active-high");
+
+		rc = of_property_read_u32(node, "lt,mode-v-active",
+						&mode->vdisplay);
+		if (rc) {
+			pr_err("failed to read v-active, rc=%d\n", rc);
+			goto fail;
+		}
+
+		rc = of_property_read_u32(node, "lt,mode-v-front-porch",
+						&v_front_porch);
+		if (rc) {
+			pr_err("failed to read v-front-porch, rc=%d\n", rc);
+			goto fail;
+		}
+
+		rc = of_property_read_u32(node, "lt,mode-v-pulse-width",
+						&v_pulse_width);
+		if (rc) {
+			pr_err("failed to read v-pulse-width, rc=%d\n", rc);
+			goto fail;
+		}
+
+		rc = of_property_read_u32(node, "lt,mode-v-back-porch",
+						&v_back_porch);
+		if (rc) {
+			pr_err("failed to read v-back-porch, rc=%d\n", rc);
+			goto fail;
+		}
+
+		v_active_high = of_property_read_bool(node,
+						"lt,mode-v-active-high");
+
+		rc = of_property_read_u32(node, "lt,mode-refresh-rate",
+						&mode->vrefresh);
+		if (rc) {
+			pr_err("failed to read refresh-rate, rc=%d\n", rc);
+			goto fail;
+		}
+
+		rc = of_property_read_u32(node, "lt,mode-clock-in-khz",
+						&mode->clock);
+		if (rc) {
+			pr_err("failed to read clock, rc=%d\n", rc);
+			goto fail;
+		}
+
+		mode->hsync_start = mode->hdisplay + h_front_porch;
+		mode->hsync_end = mode->hsync_start + h_pulse_width;
+		mode->htotal = mode->hsync_end + h_back_porch;
+		mode->vsync_start = mode->vdisplay + v_front_porch;
+		mode->vsync_end = mode->vsync_start + v_pulse_width;
+		mode->vtotal = mode->vsync_end + v_back_porch;
+		if (h_active_high)
+			flags |= DRM_MODE_FLAG_PHSYNC;
+		else
+			flags |= DRM_MODE_FLAG_NHSYNC;
+		if (v_active_high)
+			flags |= DRM_MODE_FLAG_PVSYNC;
+		else
+			flags |= DRM_MODE_FLAG_NVSYNC;
+		mode->flags = flags;
+
+		if (!rc) {
+			mode_count++;
+			list_add_tail(&mode->head, head);
+		}
+
+		drm_mode_set_name(mode);
+
+		pr_debug("mode[%s] h[%d,%d,%d,%d] v[%d,%d,%d,%d] %d %x %dkHZ\n",
+			mode->name, mode->hdisplay, mode->hsync_start,
+			mode->hsync_end, mode->htotal, mode->vdisplay,
+			mode->vsync_start, mode->vsync_end, mode->vtotal,
+			mode->vrefresh, mode->flags, mode->clock);
+
+fail:
+		if (rc) {
+			kfree(mode);
+			continue;
+		}
+	}
+
+	if (num_of_modes)
+		*num_of_modes = mode_count;
+
+end:
+	return rc;
+}
+
 static int lt9611_parse_dt(struct device *dev,
 	struct lt9611 *lt9611)
 {
+	struct device_node *np = dev->of_node;
+	int ret = 0;
+
 	lt9611->dsi0_node = of_graph_get_remote_node(dev->of_node, 0, 0);
 	if (!lt9611->dsi0_node) {
 		DRM_DEV_ERROR(dev,
@@ -976,7 +1212,15 @@ static int lt9611_parse_dt(struct device *dev,
 	lt9611->ac_mode = of_property_read_bool(dev->of_node, "lt,ac-mode");
 	dev_dbg(lt9611->dev, "ac_mode=%d\n", lt9611->ac_mode);
 
-	return 0;
+	lt9611->non_pluggable = of_property_read_bool(np, "lt,non-pluggable");
+	pr_debug("non_pluggable = %d\n", lt9611->non_pluggable);
+	if (lt9611->non_pluggable) {
+		INIT_LIST_HEAD(&lt9611->mode_list);
+		ret = lt9611_parse_dt_modes(np,
+			&lt9611->mode_list, &lt9611->num_of_modes);
+	}
+
+	return ret;
 }
 
 static int lt9611_gpio_init(struct lt9611 *lt9611)
@@ -1087,6 +1331,14 @@ static int lt9611_probe(struct i2c_client *client,
 
 	drm_bridge_add(&lt9611->bridge);
 
+	lt9611->wq = create_singlethread_workqueue("lt9611_wk");
+	if (!lt9611->wq) {
+		pr_err("Error creating lt9611 wq\n");
+		return -ENOMEM;
+	}
+
+	INIT_WORK(&lt9611->work, lt9611_hpd_work);
+
 	lt9611_enable_hpd_interrupts(lt9611);
 
 	return 0;
@@ -1103,6 +1355,7 @@ err_disable_regulators:
 static int lt9611_remove(struct i2c_client *client)
 {
 	struct lt9611 *lt9611 = i2c_get_clientdata(client);
+	struct drm_display_mode *mode, *n;
 
 	disable_irq(client->irq);
 
@@ -1112,6 +1365,16 @@ static int lt9611_remove(struct i2c_client *client)
 
 	of_node_put(lt9611->dsi0_node);
 	of_node_put(lt9611->dsi1_node);
+
+	if (lt9611->non_pluggable) {
+		list_for_each_entry_safe(mode, n, &lt9611->mode_list, head) {
+			list_del(&mode->head);
+			kfree(mode);
+		}
+	}
+
+	if (lt9611->wq)
+		destroy_workqueue(lt9611->wq);
 
 	return 0;
 }

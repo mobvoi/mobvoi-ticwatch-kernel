@@ -475,7 +475,7 @@ enum ipa_client_type {
 	IPA_CLIENT_MHI_PRIME_RMNET_CONS		= 99,
 
 	IPA_CLIENT_MHI_PRIME_DPL_PROD		= 100,
-	/* RESERVED CONS                        = 101, */
+	IPA_CLIENT_MHI_COAL_CONS			= 101,
 
 	IPA_CLIENT_AQC_ETHERNET_PROD		= 102,
 	IPA_CLIENT_AQC_ETHERNET_CONS		= 103,
@@ -542,6 +542,7 @@ enum ipa_client_type {
 #define IPA_CLIENT_APPS_WAN_LOW_LAT_DATA_PROD IPA_CLIENT_APPS_WAN_LOW_LAT_DATA_PROD
 #define IPA_CLIENT_APPS_WAN_LOW_LAT_DATA_CONS IPA_CLIENT_APPS_WAN_LOW_LAT_DATA_CONS
 #define IPA_CLIENT_Q6_DL_NLO_LL_DATA_PROD IPA_CLIENT_Q6_DL_NLO_LL_DATA_PROD
+#define IPA_CLIENT_MHI_COAL_CONS IPA_CLIENT_MHI_COAL_CONS
 
 #define IPA_CLIENT_IS_APPS_CONS(client) \
 	((client) == IPA_CLIENT_APPS_LAN_CONS || \
@@ -649,7 +650,8 @@ enum ipa_client_type {
 	(client) == IPA_CLIENT_MHI_DPL_CONS || \
 	(client) == IPA_CLIENT_MHI_LOW_LAT_CONS || \
 	(client) == IPA_CLIENT_MHI_LOW_LAT_PROD || \
-	(client) == IPA_CLIENT_MHI_QDSS_CONS)
+	(client) == IPA_CLIENT_MHI_QDSS_CONS || \
+	(client) == IPA_CLIENT_MHI_COAL_CONS)
 
 #define IPA_CLIENT_IS_TEST_PROD(client) \
 	((client) == IPA_CLIENT_TEST_PROD || \
@@ -2745,6 +2747,7 @@ struct ipa_msg_meta {
  * struct ipa_wlan_msg - To hold information about wlan client
  * @name: name of the wlan interface
  * @mac_addr: mac address of wlan client
+ * @if_index: netdev interface index
  *
  * wlan drivers need to pass name of wlan iface and mac address of
  * wlan client along with ipa_wlan_event, whenever a wlan client is
@@ -2753,6 +2756,7 @@ struct ipa_msg_meta {
 struct ipa_wlan_msg {
 	char name[IPA_RESOURCE_NAME_MAX];
 	uint8_t mac_addr[IPA_MAC_ADDR_SIZE];
+	int16_t if_index;
 };
 
 /**

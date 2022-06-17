@@ -1210,6 +1210,23 @@ err_arch_supported:
 	return ret;
 }
 
+#ifdef CONFIG_DEEPSLEEP
+static int etm_suspend(struct device *dev)
+{
+	struct etmv4_drvdata *drvdata = dev_get_drvdata(dev);
+
+	coresight_disable(drvdata->csdev);
+
+	return 0;
+}
+#endif
+
+static const struct dev_pm_ops etm_dev_pm_ops = {
+#ifdef CONFIG_DEEPSLEEP
+	.suspend = etm_suspend,
+#endif
+};
+
 static struct amba_cs_uci_id uci_id_etm4[] = {
 	{
 		/*  ETMv4 UCI data */
@@ -1236,6 +1253,7 @@ static struct amba_driver etm4x_driver = {
 	.drv = {
 		.name   = "coresight-etm4x",
 		.suppress_bind_attrs = true,
+		.pm	= &etm_dev_pm_ops,
 	},
 	.probe		= etm4_probe,
 	.id_table	= etm4_ids,

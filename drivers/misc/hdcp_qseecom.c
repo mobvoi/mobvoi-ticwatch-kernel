@@ -587,7 +587,7 @@ static const char *hdcp_cmd_status_to_str(uint32_t err)
 {
 	int len = ARRAY_SIZE(HdcpErrors);
 
-	if (err >= 0 && err < len)
+	if (err < len)
 		return HdcpErrors[err];
 	else
 		return "";
