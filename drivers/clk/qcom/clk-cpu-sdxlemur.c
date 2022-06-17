@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/cpu.h>
@@ -366,6 +367,32 @@ static struct clk_pll apcs_cpu_pll_qcs404 = {
 	},
 };
 
+/* Initial configuration for 1094.4MHz */
+static const struct alpha_pll_config apcs_cpu_alpha_pll_config_sdx55 = {
+	.l = 0x39,
+	.vco_val = 0x0,
+	.vco_mask = 0x3 << 20,
+	.pre_div_val = 0x0,
+	.pre_div_mask = 0x7 << 12,
+	.post_div_val = 0x0,
+	.post_div_mask = 0x3 << 8,
+	.main_output_mask = BIT(3),
+	.config_ctl_val = 0x20485699,
+	.config_ctl_hi_val = 0x2261,
+	.config_ctl_hi1_val = 0x329A699C,
+	.user_ctl_val = 0x1,
+	.user_ctl_hi_val = 0x805,
+};
+
+static struct clk_init_data apcs_cpu_pll_sdx55 = {
+	.name = "apcs_cpu_pll",
+	.parent_data = &(const struct clk_parent_data){
+		.fw_name = "bi_tcxo_ao",
+	},
+	.num_parents = 1,
+	.ops = &clk_alpha_pll_lucid_ops,
+};
+
 static const struct parent_map apcs_mux_clk_parent_map[] = {
 	{ P_BI_TCXO, 0 },
 	{ P_GPLL0, 1 },
@@ -421,6 +448,7 @@ static const struct of_device_id match_table[] = {
 	{ .compatible = "qcom,sdxlemur-apsscc" },
 	{ .compatible = "qcom,sdxnightjar-apsscc" },
 	{ .compatible = "qcom,qcs404-apsscc" },
+	{ .compatible = "qcom,sdx55-apsscc" },
 	{}
 };
 
@@ -669,6 +697,21 @@ static void cpucc_qcs404_fixup(void)
 				apcs_cpu_pll_qcs404.config_reg, 0x0100000f);
 }
 
+static void cpucc_sdx55_fixup(void)
+{
+	apcs_cpu_pll.flags = SUPPORTS_NO_PLL_LATCH;
+	apcs_cpu_pll.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_LUCID];
+
+	apcs_cpu_pll.clkr.hw.init = &apcs_cpu_pll_sdx55;
+	apcs_cpu_pll.clkr.vdd_data.rate_max[VDD_MIN] = 615000000;
+	apcs_cpu_pll.clkr.vdd_data.rate_max[VDD_LOW] = 1066000000;
+	apcs_cpu_pll.clkr.vdd_data.rate_max[VDD_LOW_L1] = 1600000000;
+	apcs_cpu_pll.clkr.vdd_data.rate_max[VDD_NOMINAL] = 2000000000;
+
+	clk_lucid_pll_configure(&apcs_cpu_pll, apcs_cpu_pll.clkr.regmap,
+			&apcs_cpu_alpha_pll_config_sdx55);
+}
+
 static int cpucc_get_and_parse_dt_resource_qcs404(struct platform_device *pdev)
 {
 	/* Rail Regulator for apcs_pll */
@@ -690,6 +733,7 @@ static int cpucc_get_and_parse_dt_resource_qcs404(struct platform_device *pdev)
 
 	return 0;
 }
+
 static int cpucc_get_and_parse_dt_resource(struct platform_device *pdev,
 						unsigned long *xo_rate)
 {
@@ -817,7 +861,7 @@ static int cpucc_driver_probe(struct platform_device *pdev)
 	struct clk_hw_onecell_data *data;
 	struct device *dev = &pdev->dev;
 	int i, ret, cpu;
-	bool is_sdxnightjar, is_qcs404;
+	bool is_sdxnightjar, is_qcs404, is_sdx55;
 	unsigned long xo_rate;
 	u32 l_val;
 
@@ -829,12 +873,17 @@ static int cpucc_driver_probe(struct platform_device *pdev)
 						 "qcom,sdxnightjar-apsscc");
 	is_qcs404 = of_device_is_compatible(pdev->dev.of_node,
 						 "qcom,qcs404-apsscc");
+	is_sdx55 = of_device_is_compatible(pdev->dev.of_node,
+						 "qcom,sdx55-apsscc");
 	if (is_sdxnightjar) {
 		l_val = apcs_cpu_alpha_pll_config.l;
 		cpucc_sdxnightjar_fixup();
 	} else if (is_qcs404) {
 		l_val = apcs_cpu_pll_config_qcs404.l;
 		cpucc_qcs404_fixup();
+	} else if (is_sdx55) {
+		l_val = apcs_cpu_alpha_pll_config_sdx55.l;
+		cpucc_sdx55_fixup();
 	} else {
 		l_val = apcs_cpu_pll_config.l;
 		clk_lucid_5lpe_pll_configure(&apcs_cpu_pll, apcs_cpu_pll.clkr.regmap,

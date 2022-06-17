@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include "hab.h"
 
@@ -11,7 +12,7 @@
 	.name = __name__,\
 	.id = __id__,\
 	.pchannels = LIST_HEAD_INIT(hab_devices[__num__].pchannels),\
-	.pchan_lock = __SPIN_LOCK_UNLOCKED(hab_devices[__num__].pchan_lock),\
+	.pchan_lock = __RW_LOCK_UNLOCKED(hab_devices[__num__].pchan_lock),\
 	.openq_list = LIST_HEAD_INIT(hab_devices[__num__].openq_list),\
 	.openlock = __SPIN_LOCK_UNLOCKED(&hab_devices[__num__].openlock)\
 	}
@@ -189,11 +190,11 @@ void hab_ctx_free(struct kref *ref)
 	for (i = 0; i < hab_driver.ndevices; i++) {
 		struct hab_device *habdev = &hab_driver.devp[i];
 
-		spin_lock_bh(&habdev->pchan_lock);
+		read_lock_bh(&habdev->pchan_lock);
 		list_for_each_entry(pchan, &habdev->pchannels, node) {
 
 			/* check vchan ctx owner */
-			write_lock(&pchan->vchans_lock);
+			read_lock(&pchan->vchans_lock);
 			list_for_each_entry(vchan, &pchan->vchannels, pnode) {
 				if (vchan->ctx == ctx) {
 					pr_warn("leak vcid %X cnt %d pchan %s local %d remote %d\n",
@@ -203,9 +204,9 @@ void hab_ctx_free(struct kref *ref)
 						pchan->vmid_remote);
 				}
 			}
-			write_unlock(&pchan->vchans_lock);
+			read_unlock(&pchan->vchans_lock);
 		}
-		spin_unlock_bh(&habdev->pchan_lock);
+		read_unlock_bh(&habdev->pchan_lock);
 	}
 	kfree(ctx);
 }
@@ -551,9 +552,9 @@ long hab_vchan_send(struct uhab_context *ctx,
 	struct hab_header header = HAB_HEADER_INITIALIZER;
 	int nonblocking_flag = flags & HABMM_SOCKET_SEND_FLAGS_NON_BLOCKING;
 
-	if (sizebytes > (size_t)HAB_HEADER_SIZE_MASK) {
+	if (sizebytes > (size_t)HAB_HEADER_SIZE_MAX) {
 		pr_err("Message too large, %lu bytes, max is %d\n",
-			sizebytes, HAB_HEADER_SIZE_MASK);
+			sizebytes, HAB_HEADER_SIZE_MAX);
 		return -EINVAL;
 	}
 

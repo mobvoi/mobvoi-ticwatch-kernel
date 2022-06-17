@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include "hab.h"
 #include "hab_grantable.h"
@@ -191,9 +192,9 @@ static int habmem_export_vchan(struct uhab_context *ctx,
 	struct hab_export_ack expected_ack = {0};
 	struct hab_header header = HAB_HEADER_INITIALIZER;
 
-	if (sizebytes > (uint32_t)HAB_HEADER_SIZE_MASK) {
+	if (sizebytes > (uint32_t)HAB_HEADER_SIZE_MAX) {
 		pr_err("exp message too large, %u bytes, max is %d\n",
-			sizebytes, HAB_HEADER_SIZE_MASK);
+			sizebytes, HAB_HEADER_SIZE_MAX);
 		return -EINVAL;
 	}
 

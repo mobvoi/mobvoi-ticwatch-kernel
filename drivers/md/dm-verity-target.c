@@ -273,6 +273,13 @@ out:
 	if (v->mode == DM_VERITY_MODE_LOGGING)
 		return 0;
 
+	if (v->mode == DM_VERITY_MODE_EIO) {
+#ifdef CONFIG_DM_VERITY_AVB
+		dm_verity_avb_error_handler();
+#endif
+		kernel_halt();
+	}
+
 	if (v->mode == DM_VERITY_MODE_RESTART) {
 #ifdef CONFIG_DM_VERITY_AVB
 		dm_verity_avb_error_handler();

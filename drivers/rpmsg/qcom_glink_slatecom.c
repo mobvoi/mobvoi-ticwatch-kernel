@@ -639,7 +639,8 @@ static void glink_slatecom_handle_intent_req(struct glink_slatecom *glink,
 	}
 
 	if (!strcmp(channel->name, "ssc_hal")) {
-		pr_err("%s max no of intents reached for cid %d\n", __func__, cid);
+		GLINK_ERR(glink, "%s: max intents reached for cid %d\n",
+							__func__, cid);
 		glink_slatecom_send_intent_req_ack(glink, channel, true);
 		return;
 	}
@@ -681,7 +682,8 @@ static int glink_slatecom_request_intent(struct glink_slatecom *glink,
 	}
 
 	if (!channel->intent_req_result) {
-		dev_err(glink->dev, "intent request not granted for lcid\n");
+		GLINK_ERR(glink, "intent request not granted for lcid %d\n",
+								channel->lcid);
 		ret = -EAGAIN;
 		goto unlock;
 	}
@@ -959,6 +961,9 @@ static int glink_slatecom_send_open_req(struct glink_slatecom *glink,
 	int name_len = strlen(channel->name) + 1;
 	int req_len = ALIGN(sizeof(req.msg) + name_len, SLATECOM_ALIGNMENT);
 	int ret;
+
+	if (req_len > sizeof(req))
+		return -EINVAL;
 
 	kref_get(&channel->refcount);
 
@@ -2095,6 +2100,11 @@ static void glink_slatecom_event_handler(void *handle,
 		break;
 	case SLATECOM_EVENT_TO_MASTER_FIFO_USED:
 		rx_pkt_info = kzalloc(sizeof(struct rx_pkt), GFP_KERNEL);
+		if (!rx_pkt_info) {
+			GLINK_ERR(glink, "%s:Error ENOMEM Event %d\n",
+					__func__, event);
+			break;
+		}
 		rx_pkt_info->rx_buf = data->fifo_data.data;
 		rx_pkt_info->rx_len = data->fifo_data.to_master_fifo_used;
 		rx_pkt_info->glink = glink;

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef SLATE_EVENTS_BRIDGE_INTF_H
@@ -13,6 +14,7 @@ enum event_group_type {
 	GMI_SLATE_EVENT_RSB     = 0x02,
 	GMI_SLATE_EVENT_BUTTON  = 0x03,
 	GMI_SLATE_EVENT_TOUCH   = 0x04,
+	GMI_SLATE_EVENT_SENSOR  = 0x05,
 
 	GLINK_CHANNEL_STATE_UP   = 0xfd,
 	GLINK_CHANNEL_STATE_DOWN = 0xfe,

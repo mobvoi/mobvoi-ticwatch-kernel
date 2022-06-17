@@ -1209,11 +1209,11 @@ static void raydium_work_handler(struct work_struct *work)
 		/*if (u8_tp_status[POS_GES_STATUS] == RAD_WAKE_UP */
 		 /*&& g_u8_wakeup_flag == false) { */
 		if (u8_tp_status[POS_GES_STATUS] == 0)	{
-			input_report_key(g_raydium_ts->input_dev, KEY_POWER, true);
+			input_report_key(g_raydium_ts->input_dev, KEY_WAKEUP, true);
 			usleep_range(9500, 10500);
 			input_sync(g_raydium_ts->input_dev);
 
-			input_report_key(g_raydium_ts->input_dev, KEY_POWER, false);
+			input_report_key(g_raydium_ts->input_dev, KEY_WAKEUP, false);
 			input_sync(g_raydium_ts->input_dev);
 			LOGD(LOG_INFO, "[touch]display wake up with g_u8_resetflag true\n");
 			/*goto exit;*/
@@ -2286,7 +2286,7 @@ static int raydium_ts_probe(struct i2c_client *client,
 
 #ifdef GESTURE_EN
 	input_set_capability(input_dev, EV_KEY, KEY_SLEEP);
-	input_set_capability(input_dev, EV_KEY, KEY_POWER);
+	input_set_capability(input_dev, EV_KEY, KEY_WAKEUP);
 #endif
 
 	/*suspend/resume routine*/
@@ -2391,6 +2391,43 @@ exit_check_functionality_failed:
 
 }
 
+
+void raydium_ts_shutdown(struct i2c_client *client)
+{
+
+#if defined(CONFIG_FB)
+	raydium_unregister_notifier();
+#elif defined(CONFIG_HAS_EARLYSUSPEND)
+	unregister_early_suspend(&g_raydium_ts->early_suspend);
+#elif defined(CONFIG_DRM)
+	if (active_panel)
+		drm_panel_notifier_unregister(active_panel, &g_raydium_ts->fb_notifier);
+#endif/*end of CONFIG_FB*/
+	input_unregister_device(g_raydium_ts->input_dev);
+	input_free_device(g_raydium_ts->input_dev);
+	gpio_free(g_raydium_ts->rst_gpio);
+
+#ifdef CONFIG_RM_SYSFS_DEBUG
+	raydium_release_sysfs(client);
+#endif /*end of CONFIG_RM_SYSFS_DEBUG*/
+
+	free_irq(client->irq, g_raydium_ts);
+
+	if (gpio_is_valid(g_raydium_ts->rst_gpio))
+		gpio_free(g_raydium_ts->rst_gpio);
+
+	if (gpio_is_valid(g_raydium_ts->irq_gpio))
+		gpio_free(g_raydium_ts->irq_gpio);
+
+	cancel_work_sync(&g_raydium_ts->work);
+	destroy_workqueue(g_raydium_ts->workqueue);
+
+	raydium_enable_regulator(g_raydium_ts, false);
+	raydium_get_regulator(g_raydium_ts, false);
+
+	i2c_set_clientdata(client, NULL);
+}
+
 static int raydium_ts_remove(struct i2c_client *client)
 {
 
@@ -2447,6 +2484,7 @@ static const struct of_device_id raydium_match_table[] = {
 static struct i2c_driver raydium_ts_driver = {
 	.probe = raydium_ts_probe,
 	.remove = raydium_ts_remove,
+	.shutdown = raydium_ts_shutdown,
 	.id_table = raydium_ts_id,
 	.driver = {
 		.name = RAYDIUM_NAME,

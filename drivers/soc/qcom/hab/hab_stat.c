@@ -47,7 +47,7 @@ int hab_stat_show_vchan(struct hab_driver *driver,
 		struct physical_channel *pchan;
 		struct virtual_channel *vc;
 
-		spin_lock_bh(&dev->pchan_lock);
+		read_lock_bh(&dev->pchan_lock);
 		list_for_each_entry(pchan, &dev->pchannels, node) {
 			if (!pchan->vcnt)
 				continue;
@@ -71,7 +71,7 @@ int hab_stat_show_vchan(struct hab_driver *driver,
 			ret = hab_stat_buffer_print(buf, size, "\n");
 			read_unlock(&pchan->vchans_lock);
 		}
-		spin_unlock_bh(&dev->pchan_lock);
+		read_unlock_bh(&dev->pchan_lock);
 	}
 
 	return ret;

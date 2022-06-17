@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  */
 
@@ -363,6 +363,15 @@ static struct qcom_icc_node qnm_gemnoc_cfg = {
 		   SLAVE_SERVICE_GEM_NOC, SLAVE_SERVICE_GEM_NOC2 },
 };
 
+static struct qcom_icc_node qnm_gpdsp_sail = {
+	.name = "qnm_gpdsp_sail",
+	.id = MASTER_GPDSP_SAIL,
+	.channels = 1,
+	.buswidth = 16,
+	.num_links = 2,
+	.links = { SLAVE_GEM_NOC_CNOC, SLAVE_LLCC },
+};
+
 static struct qcom_icc_node qnm_gpu = {
 	.name = "qnm_gpu",
 	.id = MASTER_GFX3D,
@@ -417,6 +426,24 @@ static struct qcom_icc_node qnm_snoc_sf = {
 	.num_links = 3,
 	.links = { SLAVE_GEM_NOC_CNOC, SLAVE_LLCC,
 		   SLAVE_GEM_NOC_PCIE_CNOC },
+};
+
+static struct qcom_icc_node qxm_dsp0 = {
+	.name = "qxm_dsp0",
+	.id = MASTER_DSP0,
+	.channels = 1,
+	.buswidth = 16,
+	.num_links = 1,
+	.links = { SLAVE_GP_DSP_SAIL_NOC },
+};
+
+static struct qcom_icc_node qxm_dsp1 = {
+	.name = "qxm_dsp1",
+	.id = MASTER_DSP1,
+	.channels = 1,
+	.buswidth = 16,
+	.num_links = 1,
+	.links = { SLAVE_GP_DSP_SAIL_NOC },
 };
 
 static struct qcom_icc_node qhm_config_noc = {
@@ -1488,6 +1515,15 @@ static struct qcom_icc_node srvc_sys_gemnoc_2 = {
 	.num_links = 0,
 };
 
+static struct qcom_icc_node qns_gp_dsp_sail_noc = {
+	.name = "qns_gp_dsp_sail_noc",
+	.id = SLAVE_GP_DSP_SAIL_NOC,
+	.channels = 1,
+	.buswidth = 16,
+	.num_links = 1,
+	.links = { MASTER_GPDSP_SAIL },
+};
+
 static struct qcom_icc_node qhs_lpass_core = {
 	.name = "qhs_lpass_core",
 	.id = SLAVE_LPASS_CORE_CFG,
@@ -1750,6 +1786,20 @@ static struct qcom_icc_bcm bcm_cn3 = {
 	.voter_idx = 0,
 	.num_nodes = 2,
 	.nodes = { &xs_pcie_0, &xs_pcie_1 },
+};
+
+static struct qcom_icc_bcm bcm_gna0 = {
+	.name = "GNA0",
+	.voter_idx = 0,
+	.num_nodes = 1,
+	.nodes = { &qxm_dsp0 },
+};
+
+static struct qcom_icc_bcm bcm_gnb0 = {
+	.name = "GNB0",
+	.voter_idx = 0,
+	.num_nodes = 1,
+	.nodes = { &qxm_dsp1 },
 };
 
 static struct qcom_icc_bcm bcm_mc0 = {
@@ -2140,6 +2190,7 @@ static struct qcom_icc_node *gem_noc_nodes[] = {
 	[MASTER_COMPUTE_NOC] = &qnm_cmpnoc0,
 	[MASTER_COMPUTE_NOC_1] = &qnm_cmpnoc1,
 	[MASTER_GEM_NOC_CFG] = &qnm_gemnoc_cfg,
+	[MASTER_GPDSP_SAIL] = &qnm_gpdsp_sail,
 	[MASTER_GFX3D] = &qnm_gpu,
 	[MASTER_MNOC_HF_MEM_NOC] = &qnm_mnoc_hf,
 	[MASTER_MNOC_SF_MEM_NOC] = &qnm_mnoc_sf,
@@ -2167,6 +2218,31 @@ static struct qcom_icc_desc lemans_gem_noc = {
 	.num_bcms = ARRAY_SIZE(gem_noc_bcms),
 	.voters = gem_noc_voters,
 	.num_voters = ARRAY_SIZE(gem_noc_voters),
+};
+
+static struct qcom_icc_bcm *gpdsp_anoc_bcms[] = {
+	&bcm_gna0,
+	&bcm_gnb0,
+};
+
+static struct qcom_icc_node *gpdsp_anoc_nodes[] = {
+	[MASTER_DSP0] = &qxm_dsp0,
+	[MASTER_DSP1] = &qxm_dsp1,
+	[SLAVE_GP_DSP_SAIL_NOC] = &qns_gp_dsp_sail_noc,
+};
+
+static char *gpdsp_anoc_voters[] = {
+	"hlos",
+};
+
+static struct qcom_icc_desc lemans_gpdsp_anoc = {
+	.config = &icc_regmap_config,
+	.nodes = gpdsp_anoc_nodes,
+	.num_nodes = ARRAY_SIZE(gpdsp_anoc_nodes),
+	.bcms = gpdsp_anoc_bcms,
+	.num_bcms = ARRAY_SIZE(gpdsp_anoc_bcms),
+	.voters = gpdsp_anoc_voters,
+	.num_voters = ARRAY_SIZE(gpdsp_anoc_voters),
 };
 
 static struct qcom_icc_bcm *lpass_ag_noc_bcms[] = {
@@ -2388,6 +2464,8 @@ static const struct of_device_id qnoc_of_match[] = {
 	  .data = &lemans_dc_noc},
 	{ .compatible = "qcom,lemans-gem_noc",
 	  .data = &lemans_gem_noc},
+	{ .compatible = "qcom,lemans-gpdsp_anoc",
+	  .data = &lemans_gpdsp_anoc},
 	{ .compatible = "qcom,lemans-lpass_ag_noc",
 	  .data = &lemans_lpass_ag_noc},
 	{ .compatible = "qcom,lemans-mc_virt",

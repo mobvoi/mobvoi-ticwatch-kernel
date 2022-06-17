@@ -4244,6 +4244,24 @@ static int tpdm_probe(struct amba_device *adev, const struct amba_id *id)
 	return 0;
 }
 
+#ifdef CONFIG_DEEPSLEEP
+static int tpdm_suspend(struct device *dev)
+{
+	struct tpdm_drvdata *drvdata = dev_get_drvdata(dev);
+
+	coresight_disable(drvdata->csdev);
+
+	return 0;
+}
+#endif
+
+static const struct dev_pm_ops tpdm_dev_pm_ops = {
+#ifdef CONFIG_DEEPSLEEP
+	.suspend = tpdm_suspend,
+#endif
+};
+
+
 static struct amba_id tpdm_ids[] = {
 	{
 		.id     = 0x0003b968,
@@ -4258,6 +4276,7 @@ static struct amba_driver tpdm_driver = {
 		.name   = "coresight-tpdm",
 		.owner	= THIS_MODULE,
 		.suppress_bind_attrs = true,
+		.pm	= &tpdm_dev_pm_ops,
 	},
 	.probe          = tpdm_probe,
 	.id_table	= tpdm_ids,

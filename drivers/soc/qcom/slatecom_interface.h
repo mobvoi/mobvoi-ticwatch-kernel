@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef SLATECOM_INTERFACE_H
 #define SLATECOM_INTERFACE_H
@@ -121,6 +122,10 @@ enum WMSlateCtrlChnlOpcode {
 	 * Notification to slate about boot complete
 	 */
 	GMI_MGR_WLAN_BOOT_COMPLETE = 17,
+
+	GMI_WLAN_5G_CONNECT = 18,
+
+	GMI_WLAN_5G_DISCONNECT  = 19,
 
 	/*
 	 * DEBUG Opcodes

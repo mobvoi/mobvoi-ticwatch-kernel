@@ -283,7 +283,7 @@ struct qcom_glink *glink_rpm_register(struct device *parent,
 	dev->parent = parent;
 	dev->of_node = node;
 	dev->release = glink_rpm_release;
-	dev_set_name(dev, "%s:%pOFn", dev_name(parent->parent), node);
+	dev_set_name(dev, "%s:%pKOFn", dev_name(parent->parent), node);
 
 	ret = device_register(dev);
 	if (ret) {

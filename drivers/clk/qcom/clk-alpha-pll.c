@@ -3060,18 +3060,24 @@ static int alpha_pll_lucid_set_rate(struct clk_hw *hw, unsigned long rate,
 	if (ret)
 		return ret;
 
-	/* Wait for 2 reference cycles before checking the ACK bit. */
-	udelay(1);
-	regmap_read(pll->clkr.regmap, PLL_MODE(pll), &regval);
-	if (!(regval & PLL_UPDATE_BYPASS)) {
-		ret = wait_for_pll_update(pll);
-		if (ret)
-			WARN_CLK(&pll->clkr.hw, 1, "PLL Update clear failed\n");
-		return ret;
-	} else if (!(regval & ALPHA_PLL_ACK_LATCH)) {
-		WARN_CLK(&pll->clkr.hw, 1,
+	/*
+	 * When PLL_HW_UPDATE_LOGIC_BYPASS bit is not set then waiting for
+	 * pll_ack_latch to return to zero can be bypassed.
+	 */
+	if (!(pll->flags & SUPPORTS_NO_PLL_LATCH)) {
+		/* Wait for 2 reference cycles before checking the ACK bit. */
+		udelay(1);
+		regmap_read(pll->clkr.regmap, PLL_MODE(pll), &regval);
+		if (!(regval & PLL_UPDATE_BYPASS)) {
+			ret = wait_for_pll_update(pll);
+			if (ret)
+				WARN_CLK(&pll->clkr.hw, 1, "PLL Update clear failed\n");
+			return ret;
+		} else if (!(regval & ALPHA_PLL_ACK_LATCH)) {
+			WARN_CLK(&pll->clkr.hw, 1,
 				"PLL latch failed. Output may be unstable!\n");
-		return -EINVAL;
+			return -EINVAL;
+		}
 	}
 
 	/* Return the latch input to 0 */

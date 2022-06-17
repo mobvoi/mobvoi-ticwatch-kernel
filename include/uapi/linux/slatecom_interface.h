@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef LINUX_SLATECOM_INTERFACE_H
 #define LINUX_SLATECOM_INTERFACE_H
@@ -48,6 +49,8 @@ enum slate_event_type {
 	SLATE_DSP_READY,
 	SLATE_BT_ERROR,
 	SLATE_BT_READY,
+	SLATE_SNS_ERROR,
+	SLATE_SNS_READY,
 };
 
 enum device_state_transition {

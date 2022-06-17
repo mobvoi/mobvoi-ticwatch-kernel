@@ -12,11 +12,11 @@
 #include <linux/virtio.h>
 
 
-#define MINOR_NUM_DEV			0
-#define MINOR_NUM_SECURE_DEV		1
+#define MINOR_NUM_DEV	0
+#define MINOR_NUM_SECURE_DEV	1
 
-#define PID_SIZE			10
-#define FASTRPC_MSG_MAX			256
+#define PID_SIZE		10
+#define FASTRPC_MSG_MAX	256
 
 struct fastrpc_dsp_capabilities {
 	uint32_t is_cached;	/* ! Flag if dsp attributes are cached */

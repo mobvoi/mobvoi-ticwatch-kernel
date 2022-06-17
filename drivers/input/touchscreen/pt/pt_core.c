@@ -7562,9 +7562,6 @@ static int pt_put_device_into_easy_wakeup_(struct pt_core_data *cd)
 	int rc = 0;
 	u8 status = 0;
 
-	mutex_lock(&cd->system_lock);
-	cd->wait_until_wake = 0;
-	mutex_unlock(&cd->system_lock);
 
 	rc = pt_hid_output_enter_easywake_state_(cd,
 		cd->easy_wakeup_gesture, &status);
@@ -9108,11 +9105,6 @@ static int pt_core_wake_device_from_easy_wake_(struct pt_core_data *cd)
 {
 	int rc = 0;
 
-	mutex_lock(&cd->system_lock);
-	cd->wait_until_wake = 1;
-	mutex_unlock(&cd->system_lock);
-	wake_up(&cd->wait_q);
-	msleep(20);
 
 	rc = pt_core_wake_device_from_deep_sleep_(cd);
 	return rc;
@@ -10763,26 +10755,29 @@ static int pt_core_suspend_(struct device *dev)
 static int pt_core_suspend(struct device *dev)
 {
 	struct pt_core_data *cd = dev_get_drvdata(dev);
-	int rc = 0, status = 0;
+	int rc = 0;
 
 	if (cd->drv_debug_suspend || (cd->cpdata->flags & PT_CORE_FLAG_SKIP_SYS_SLEEP))
 		return 0;
 
-	pt_debug(cd->dev, DL_INFO, "%s start\n", __func__);
+	pt_debug(cd->dev, DL_INFO, "%s Suspend start\n", __func__);
 	cancel_work_sync(&cd->resume_work);
 	cancel_work_sync(&cd->suspend_work);
+
+	mutex_lock(&cd->system_lock);
+	cd->wait_until_wake = 0;
+	mutex_unlock(&cd->system_lock);
 
 	if (mem_sleep_current == PM_SUSPEND_MEM) {
 		rc = pt_core_suspend_(cd->dev);
 		cd->quick_boot = true;
 	} else {
-		rc = pt_core_easywake_on(cd);
+		rc = pt_enable_i2c_regulator(cd, false);
 		if (rc < 0)
-			pt_debug(cd->dev, DL_ERROR, "%s: Error on sleep\n", __func__);
-		cd->fb_state = FB_OFF;
-		status = pt_enable_i2c_regulator(cd, false);
-		pt_debug(cd->dev, DL_INFO, "%s Exit - rc = %d\n", __func__, status);
+			pt_debug(cd->dev, DL_ERROR,
+				"%s: Error on disabling i2c regulator\n", __func__);
 	}
+	pt_debug(cd->dev, DL_INFO, "%s Suspend exit - rc = %d\n", __func__, rc);
 	return rc;
 }
 
@@ -10968,15 +10963,19 @@ static int pt_core_resume(struct device *dev)
 	if (cd->drv_debug_suspend || (cd->cpdata->flags & PT_CORE_FLAG_SKIP_SYS_SLEEP))
 		return 0;
 
+
 	if (mem_sleep_current == PM_SUSPEND_MEM) {
 		rc = pt_core_restore(cd->dev);
 	} else {
 		pt_debug(cd->dev, DL_INFO, "%s start\n", __func__);
 		rc = pt_enable_i2c_regulator(cd, true);
 		pt_debug(cd->dev, DL_INFO, "%s i2c regulator rc %d\n", __func__, rc);
-
-		pt_debug(cd->dev, DL_INFO, "%s End\n", __func__);
 	}
+
+	mutex_lock(&cd->system_lock);
+	cd->wait_until_wake = 1;
+	mutex_unlock(&cd->system_lock);
+	wake_up(&cd->wait_q);
 
 	pt_debug(cd->dev, DL_INFO, "%s End rc = %d\n", __func__, rc);
 	return rc;
