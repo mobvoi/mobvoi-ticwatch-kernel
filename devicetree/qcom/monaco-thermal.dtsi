@@ -464,8 +464,8 @@
 		thermal-governor = "step_wise";
 		trips {
 			rf_cal_trip: rf-cal-config {
-				temperature = <2>;
-				hysteresis = <1>;
+				temperature = <2000>;
+				hysteresis = <1000>;
 				type = "passive";
 			};
 		};

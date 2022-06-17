@@ -71,7 +71,7 @@
 		qcom,hpm-min-load = <100000>;
 		status = "disabled";
 
-		regulator-s4 {
+		regulator-s5 {
 			compatible = "qcom,rpm-smd-regulator";
 			regulator-name = "pm5100_s5";
 			qcom,set = <3>;

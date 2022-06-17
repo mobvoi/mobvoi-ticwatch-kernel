@@ -85,7 +85,7 @@
 		status = "okay";
 		S5A: pm5100_s5: regulator-s5 {
 			regulator-min-microvolt = <664000>;
-			regulator-max-microvolt = <952000>;
+			regulator-max-microvolt = <1000000>;
 			qcom,init-voltage = <952000>;
 			status = "okay";
 		};

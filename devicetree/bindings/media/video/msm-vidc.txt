@@ -18,6 +18,7 @@ Required properties:
 	- "qcom,monaco-vidc" : Invokes driver specific data for MONACO.
 	- "qcom,qcm6490-vidc" : Invokes driver specific data for YUPIK-IOT.
 	- "qcom,direwolf-vidc" : Invokes driver specific data for DIREWOLF.
+	- "qcom,kona-vidc" : Invokes driver specific data for KONA.
 Optional properties:
 - vidc,firmware-name : Video Firmware ELF image name to be loaded by PIL
 - reg : offset and length of the register set for the device.

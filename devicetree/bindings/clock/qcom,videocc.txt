@@ -17,6 +17,8 @@ Required properties :
 			"qcom,direwolf-videocc"
 			"qcom,direwolf-videocc-v2"
 			"qcom,lemans-videocc"
+			"qcom,videocc-kona"
+			"qcom,videocc-kona-v2"
 
 - reg : shall contain base register location and length
 - #clock-cells : from common clock binding, shall contain 1.

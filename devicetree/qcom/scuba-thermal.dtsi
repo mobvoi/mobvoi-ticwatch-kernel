@@ -360,7 +360,7 @@
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
 		thermal-governor = "user_space";
-		thermal-sensors = <&pm2250_adc_tm_iio ADC5_AMUX_THM2_100K_PU>;
+		thermal-sensors = <&pm2250_adc_tm_iio ADC5_AMUX_THM3_100K_PU>;
 		trips {
 			active-config0 {
 				temperature = <125000>;

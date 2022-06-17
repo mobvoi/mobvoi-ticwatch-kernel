@@ -332,9 +332,18 @@ ifneq ($(CONFIG_ARCH_SA410M),y)
 				qrb2210-rb1.dtb \
 				qrb2210-rb1-v2.dtb
 else
+ifneq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 	dtb-$(CONFIG_ARCH_SA410M) += \
 				sa410m-idp.dtb \
-				sa410m-qrd.dtb
+				sa410m-qrd.dtb \
+				sa410m-rumi.dtb
+else
+	dtbo-$(CONFIG_ARCH_SA410M) += \
+				sa410m-idp-overlay.dtbo \
+				sa410m-qrd-overlay.dtbo
+	sa410m-idp-overlay.dtbo-base := sa410m.dtb
+	sa410m-qrd-overlay.dtbo-base := sa410m.dtb
+endif
 endif
 
 dtb-$(CONFIG_ARCH_BENGAL) += \
@@ -446,21 +455,34 @@ endif
 dtb-$(CONFIG_ARCH_SA2150P) += sa2150p-ccard-emmc.dtb
 endif
 
+dtb-$(CONFIG_ARCH_KONA) += kona-v2-qrd.dtb \
+	kona-v2-mtp.dtb \
+	kona-v2.1-mtp.dtb \
+	kona-v2.1-qrd.dtb \
+	kona-v2.1-iot-rb5.dtb \
+	qrb5165-iot-rb5.dtb \
+        qrb5165m-iot-rb5.dtb \
+        qrb5165n-v2-iot-rb5.dtb \
+	qrb5165n-iot-rb5.dtb
+
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 	dtbo-$(CONFIG_ARCH_SM6150) += \
 		qcs610-iot-overlay.dtbo \
 		prairie-iot-idp-overlay.dtbo \
-		qcs610-opk-overlay.dtbo
+		qcs610-opk-overlay.dtbo \
+		qcs410-opk-overlay.dtbo
 
 qcs610-iot-overlay.dtbo-base := qcs610.dtb
 prairie-iot-idp-overlay.dtbo-base := qcs610.dtb
 qcs610-opk-overlay.dtbo-base := qcs610.dtb
+qcs410-opk-overlay.dtbo-base := qcs410.dtb
 
 else
-dtb-$(CONFIG_ARCH_SM6150)	+= \
+dtb-$(CONFIG_ARCH_SM6150) += \
 	qcs610-iot.dtb \
 	prairie-iot-idp.dtb \
-	qcs610-opk.dtb
+	qcs610-opk.dtb \
+	qcs410-opk.dtb
 endif
 
 ifeq ($(CONFIG_ARCH_LAHAINA), y)
@@ -617,9 +639,19 @@ dtb-$(CONFIG_ARCH_DIREWOLF) += direwolf-ivi-rumi.dtb \
 	direwolf-adas-adp-ride-v2.dtb
 endif
 
+ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+	dtbo-$(CONFIG_ARCH_LEMANS) += lemans-rumi-overlay.dtbo \
+		lemans-adp-air-overlay.dtbo \
+		lemans-adp-star-overlay.dtbo
+
+lemans-rumi-overlay.dtbo-base	:= lemans.dtb
+lemans-adp-air-overlay.dtbo-base	:= lemans.dtb
+lemans-adp-star-overlay.dtbo-base	:= lemans.dtb
+else
 dtb-$(CONFIG_ARCH_LEMANS) += lemans-rumi.dtb \
 	lemans-adp-air.dtb \
 	lemans-adp-star.dtb
+endif
 
 always		:= $(dtb-y)
 subdir-y	:= $(dts-dirs)

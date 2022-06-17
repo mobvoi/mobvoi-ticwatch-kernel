@@ -26,6 +26,11 @@ Properties:
 	Definition: Specifies the base physical address for PDC hardware and
 	            the interrupt type configuration register.
 
+-reg-names:
+	Usage: optional
+	Value type: <string>, <string>
+	Definition: Specifies the address field names.
+
 - interrupt-cells:
 	Usage: required
 	Value type: <u32>
@@ -51,12 +56,36 @@ Properties:
 		    The second element is the GIC hwirq number for the PDC port.
 		    The third element is the number of interrupts in sequence.
 
+- qcom,pdc-mux-ranges:
+	Usage: optional
+	Value type: <u32 array>
+	Definition: Specifies the PDC pin offset and the number of PDC ports.
+		    The tuples indicates the valid mapping of valid PDC ports
+		    and their hwirq mapping.
+		    The first element of the tuple is the starting PDC port.
+		    The second element is the Mux number with GPIO mapped.
+		    The third element is the index of Mux.
+
 Example:
 
 	pdc: interrupt-controller@b220000 {
 		compatible = "qcom,sdm845-pdc";
 		reg = <0xb220000 0x30000>, <0x179900f0 0x60>;
 		qcom,pdc-ranges = <0 512 94>, <94 641 15>, <115 662 7>;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&intc>;
+		interrupt-controller;
+	};
+
+Example with Mux:
+	pdc: interrupt-controller@b210000 {
+		compatible = "qcom,sa515m-pdc";
+		reg = <0xb210000 0x30000>,
+		      <0xb204900 0x700>;
+		reg-names = "base", "mux-base";
+		qcom,pdc-ranges = <0 147 52>;
+		qcom,pdc-mux-ranges = <20 28 0>, <21 32 1>, <22 35 2>,
+				      <23 57 3>, <24 49 4>, <25 103 5>;
 		#interrupt-cells = <2>;
 		interrupt-parent = <&intc>;
 		interrupt-controller;

@@ -143,7 +143,7 @@
 };
 
 &pm6150l_pwm_1 {
-	status = "disabled";
+	status = "okay";
 };
 
 &usb1 {
@@ -397,7 +397,7 @@
 };
 
 &mdss_mdp {
-	connectors = <&smmu_sde_unsec &sde_dsi &sde_rscc>;
+	connectors = <&smmu_sde_unsec &sde_dsi &sde_rscc &sde_wb>;
 };
 
 &dsi_ili9881c_720p_video {
@@ -499,6 +499,26 @@
 
 		vdd-supply = <&pm6150_l13>;
 		vcc-supply = <&pm6150_l16>;
+
+		lt,non-pluggable;
+		lt,preferred-mode = "1920x1080";
+
+		lt,customize-modes {
+			lt,customize-mode-id@0 {
+				lt,mode-h-active = <1920>;
+				lt,mode-h-front-porch = <88>;
+				lt,mode-h-pulse-width = <44>;
+				lt,mode-h-back-porch = <148>;
+				lt,mode-h-active-high;
+				lt,mode-v-active = <1080>;
+				lt,mode-v-front-porch = <4>;
+				lt,mode-v-pulse-width = <5>;
+				lt,mode-v-back-porch = <36>;
+				lt,mode-v-active-high;
+				lt,mode-refresh-rate = <60>;
+				lt,mode-clock-in-khz = <148500>;
+			};
+		};
 
 		ports {
 			#address-cells = <1>;
