@@ -167,7 +167,7 @@
 
 	monaco_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
-		#include "QBG_5821929_Mobvoi_Uranus_Highpower_628mAH_PMW5100_averaged_MasterSlave_May23th2022_battery_profile.dtsi"
+		#include "qbg-battery-profile-alium-860-89032-0000-3600mAh.dtsi"
 		#include "qbg-battery-profile-qrd-zwd-520mAh.dtsi"
 	};
 };
