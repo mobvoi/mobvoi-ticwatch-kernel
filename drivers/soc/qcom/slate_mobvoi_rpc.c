@@ -134,7 +134,10 @@ static int slate_mobvoi_rpc_tx_msg(struct slatemobrpc_priv *dev, void  *msg, siz
 	int rc = 0;
 	uint8_t resp = 0;
 
+	__pm_stay_awake(dev->slatemobrpc_ws);
+	pr_info("rpc tx msg,wakeup pm");
 	mutex_lock(&dev->glink_mutex);
+
 	if (!dev->slate_mobvoi_rpc_rpmsg) {
 		pr_err("slatemobrpc-rpmsg is not probed yet, waiting for it to be probed\n");
 		goto err_ret;
@@ -169,6 +172,7 @@ static int slate_mobvoi_rpc_tx_msg(struct slatemobrpc_priv *dev, void  *msg, siz
 
 err_ret:
 	mutex_unlock(&dev->glink_mutex);
+	__pm_relax(dev->slatemobrpc_ws);
 	return rc;
 }
 
@@ -324,7 +328,7 @@ static int slate_mobvoi_rpc_probe(struct platform_device *pdev)
 	if (!dev)
 		return -ENOMEM;
 	/* Add wake lock for PM suspend */
-	dev->slatemobrpc_ws = wakeup_source_register(&pdev->dev, "Slatemobrpc_wake_lock");
+	dev->slatemobrpc_ws = wakeup_source_register(&pdev->dev, "mob_rpc_wake_lock");
 	dev->slate_mobvoi_rpc_current_state = SLATE_MOBVOI_RPC_STATE_UNKNOWN;
 	rc = slate_mobvoi_rpc_rpmsg_init(dev);
 	if (rc)

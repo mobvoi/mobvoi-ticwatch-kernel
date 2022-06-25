@@ -4398,14 +4398,12 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 	struct drm_panel_notifier *evdata = data;
 	int *blank,i = 0;
 	unsigned char  panel_power_state = 0;
-    char  *tx_buf;
-	unsigned int tx_buf_size;
 	wear_header_t req_header;
-
+	char  tx_buf[32];
+	unsigned int tx_buf_size;
 	tx_buf_size = sizeof(req_header) + 4;
-
-	tx_buf = kzalloc(tx_buf_size, GFP_KERNEL);
-	if (!tx_buf) {
+	if(tx_buf_size>32)
+	{
 		return -ENOMEM;
 	}
 
@@ -4422,30 +4420,32 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 	panel_power_state = (unsigned char  )*blank;
 	zinitix_info(" DRM event:%lu,blank:%d,panel_power_state:%d ", event, *blank,panel_power_state);
 	//zinitix_info(" DRM Power - %s \n", (*blank == DRM_PANEL_BLANK_UNBLANK)?"UP":"DOWN");
+	req_header.opcode = GMI_SLATE_MOBVOI_RPC_PANNEL_POWER_STATE;//0x3;
+	req_header.payload_size = sizeof(panel_power_state);
+	memset(tx_buf,0,sizeof(tx_buf));
+	memcpy(tx_buf, &req_header, sizeof(req_header));
+	memcpy(tx_buf+sizeof(req_header), &panel_power_state, sizeof(panel_power_state));
+	for(i=0; i< req_header.payload_size + sizeof(req_header);i++)
+	{
+		zinitix_debug("tx_buf[%d]=%d\n",i, tx_buf[i]);
+	}
+
 	if (*blank == DRM_PANEL_BLANK_UNBLANK) {
 		zinitix_info("DRM_PANEL_BLANK_UNBLANK,pannel power on!\n");
+		slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
 		if (event == DRM_PANEL_EVENT_BLANK) {
 			schedule_work(&misc_touch_dev->resume_work);
 		}
 
 	} else if (*blank == DRM_PANEL_BLANK_POWERDOWN || *blank == DRM_PANEL_BLANK_LP ) {
 		zinitix_info("DRM_PANEL_BLANK_POWERDOWN,pannel power off!\n");
+		slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
 		if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
 			bt541_ts_suspend(&misc_touch_dev->client->dev);
 		}
 	} else{
 		zinitix_info("DRM BLANK(%d) do not need process\n", *blank);
 	}
-
-	req_header.opcode = GMI_SLATE_MOBVOI_RPC_PANNEL_POWER_STATE;//0x3;
-	req_header.payload_size = sizeof(panel_power_state);
-
-	memcpy(tx_buf, &req_header, sizeof(req_header));
-	memcpy(tx_buf+sizeof(req_header), &panel_power_state, sizeof(panel_power_state));
-	for(i=0; i< req_header.payload_size + sizeof(req_header);i++)
-		zinitix_debug("tx_buf[%d]=%d\n",i, tx_buf[i]);
-
-	slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
 
 	return 0;
 }
