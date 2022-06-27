@@ -51,6 +51,8 @@ static struct hab_device hab_devices[] = {
 	HAB_DEVICE_CNSTR(DEVICE_XVM1_NAME, MM_XVM_1, 23),
 	HAB_DEVICE_CNSTR(DEVICE_XVM2_NAME, MM_XVM_2, 24),
 	HAB_DEVICE_CNSTR(DEVICE_XVM3_NAME, MM_XVM_3, 25),
+	HAB_DEVICE_CNSTR(DEVICE_VNW1_NAME, MM_VNW_1, 26),
+	HAB_DEVICE_CNSTR(DEVICE_EXT1_NAME, MM_EXT_1, 27),
 };
 
 struct hab_driver hab_driver = {
@@ -848,146 +850,83 @@ static int hab_initialize_pchan_entry(struct hab_device *mmid_device,
 	return ret;
 }
 
+static int hab_generate_pchan_group(struct local_vmid *settings,
+								int i, int j, int start, int end)
+{
+	int k, ret = 0;
+
+	for (k = start + 1; k < end; k++) {
+		/*
+		 * if this local pchan end is BE, then use
+		 * remote FE's vmid. If local end is FE, then
+		 * use self vmid
+		 */
+		ret += hab_initialize_pchan_entry(
+				find_hab_device(k),
+				settings->self,
+				HABCFG_GET_VMID(settings, i),
+				HABCFG_GET_BE(settings, i, j));
+	}
+
+	return ret;
+}
+
 /*
  * generate pchan list based on hab settings table.
  * return status 0: success, otherwise failure
  */
 static int hab_generate_pchan(struct local_vmid *settings, int i, int j)
 {
-	int k, ret = 0;
+	int ret = 0;
 
 	pr_debug("%d as mmid %d in vmid %d\n",
 			HABCFG_GET_MMID(settings, i, j), j, i);
 
 	switch (HABCFG_GET_MMID(settings, i, j)) {
 	case MM_AUD_START/100:
-		for (k = MM_AUD_START + 1; k < MM_AUD_END; k++) {
-			/*
-			 * if this local pchan end is BE, then use
-			 * remote FE's vmid. If local end is FE, then
-			 * use self vmid
-			 */
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_AUD_START, MM_AUD_END);
 		break;
-
 	case MM_CAM_START/100:
-		for (k = MM_CAM_START + 1; k < MM_CAM_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_CAM_START, MM_CAM_END);
 		break;
-
 	case MM_DISP_START/100:
-		for (k = MM_DISP_START + 1; k < MM_DISP_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_DISP_START, MM_DISP_END);
 		break;
-
 	case MM_GFX_START/100:
-		for (k = MM_GFX_START + 1; k < MM_GFX_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_GFX_START, MM_GFX_END);
 		break;
-
 	case MM_VID_START/100:
-		for (k = MM_VID_START + 1; k < MM_VID_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_VID_START, MM_VID_END);
 		break;
-
 	case MM_MISC_START/100:
-		for (k = MM_MISC_START + 1; k < MM_MISC_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_MISC_START, MM_MISC_END);
 		break;
-
 	case MM_QCPE_START/100:
-		for (k = MM_QCPE_START + 1; k < MM_QCPE_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_QCPE_START, MM_QCPE_END);
 		break;
-
 	case MM_CLK_START/100:
-		for (k = MM_CLK_START + 1; k < MM_CLK_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_CLK_START, MM_CLK_END);
 		break;
 	case MM_FDE_START/100:
-		for (k = MM_FDE_START + 1; k < MM_FDE_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_FDE_START, MM_FDE_END);
 		break;
 	case MM_BUFFERQ_START/100:
-		for (k = MM_BUFFERQ_START + 1; k < MM_BUFFERQ_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_BUFFERQ_START, MM_BUFFERQ_END);
 		break;
 	case MM_DATA_START/100:
-		for (k = MM_DATA_START + 1; k < MM_DATA_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_DATA_START, MM_DATA_END);
 		break;
 	case MM_HSI2S_START/100:
-		for (k = MM_HSI2S_START + 1; k < MM_HSI2S_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_HSI2S_START, MM_HSI2S_END);
 		break;
 	case MM_XVM_START/100:
-		for (k = MM_XVM_START + 1; k < MM_XVM_END; k++) {
-			ret += hab_initialize_pchan_entry(
-					find_hab_device(k),
-					settings->self,
-					HABCFG_GET_VMID(settings, i),
-					HABCFG_GET_BE(settings, i, j));
-		}
+		ret = hab_generate_pchan_group(settings, i, j, MM_XVM_START, MM_XVM_END);
+		break;
+	case MM_VNW_START/100:
+		ret = hab_generate_pchan_group(settings, i, j, MM_VNW_START, MM_VNW_END);
+		break;
+	case MM_EXT_START/100:
+		ret = hab_generate_pchan_group(settings, i, j, MM_EXT_START, MM_EXT_END);
 		break;
 	default:
 		pr_err("failed to find mmid %d, i %d, j %d\n",

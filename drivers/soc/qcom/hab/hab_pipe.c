@@ -59,8 +59,7 @@ struct hab_pipe_endpoint *hab_pipe_init(struct hab_pipe *pipe,
 		buf_b->size = shared_buf_size;
 
 		pipe->legacy_buf_b = NULL;
-		pipe->total_size =
-			hab_pipe_calc_required_bytes(shared_buf_size);
+		pipe->legacy_total_size = 0;
 	}
 
 	*itms = its;

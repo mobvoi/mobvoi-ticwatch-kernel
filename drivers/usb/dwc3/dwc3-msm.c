@@ -4941,7 +4941,7 @@ static int dwc3_msm_probe(struct platform_device *pdev)
 
 	}
 	for (i = 0; i < USB_MAX_IRQ; i++) {
-		mdwc->wakeup_irq[i].irq = platform_get_irq_byname(pdev,
+		mdwc->wakeup_irq[i].irq = platform_get_irq_byname_optional(pdev,
 					usb_irq_info[i].name);
 		/* pwr_evnt_irq is mandatory for cores allowing SSPHY suspend */
 		if (mdwc->wakeup_irq[i].irq < 0) {

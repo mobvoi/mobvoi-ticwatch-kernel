@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef HABMMID_H
 #define HABMMID_H
@@ -72,6 +73,14 @@
 #define	MM_XVM_3 1303
 #define	MM_XVM_END 1304
 
-#define	MM_ID_MAX	1305
+#define	MM_VNW_START 1400
+#define	MM_VNW_1 1401
+#define	MM_VNW_END 1402
+
+#define	MM_EXT_START 1500
+#define	MM_EXT_1 1501
+#define	MM_EXT_END 1502
+
+#define	MM_ID_MAX	1503
 
 #endif /* HABMMID_H */

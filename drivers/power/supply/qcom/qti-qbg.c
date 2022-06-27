@@ -443,6 +443,25 @@ static void status_change_work(struct work_struct *work)
 	}
 }
 
+static int qbg_get_max_fifo_count(struct qti_qbg *chip)
+{
+	int rc = 0;
+	u8 val[2];
+
+	rc = qbg_sdam_read(chip,
+		QBG_SDAM_BASE(chip, SDAM_CTRL0) + QBG_SDAM_MAX_FIFO_COUNT_OFFSET,
+		val, 2);
+	if (rc < 0) {
+		pr_err("Failed to read QBG SDAM_MAX_FIFO_COUNT_OFFSET, rc=%d\n", rc);
+		return rc;
+	}
+
+	chip->max_fifo_count = (val[1] << 8) | val[0];
+	qbg_dbg(chip, QBG_DEBUG_SDAM, "max FIFO count=%d\n", chip->max_fifo_count);
+
+	return rc;
+}
+
 static int qbg_get_fifo_count(struct qti_qbg *chip, u32 *fifo_count)
 {
 	int rc = 0;
@@ -471,6 +490,9 @@ static int qbg_hpm_fifo_depth_half(struct qti_qbg *chip, int current_fifo_count,
 		val = current_fifo_count / 2;
 	else
 		val = current_fifo_count * 2;
+
+	if (val > chip->max_fifo_count)
+		val = chip->max_fifo_count;
 
 	rc = qbg_sdam_write(chip, QBG_SDAM_BASE(chip, SDAM_CTRL0) +
 			QBG_SDAM_HPM_FIFO_COUNT_OFFSET, &val, 1);
@@ -2699,6 +2721,12 @@ static int qti_qbg_probe(struct platform_device *pdev)
 	rc = qbg_init_sdam(chip);
 	if (rc < 0) {
 		dev_err(&pdev->dev, "Failed to initialize QBG sdam, rc=%d\n", rc);
+		return rc;
+	}
+
+	rc = qbg_get_max_fifo_count(chip);
+	if (rc < 0) {
+		dev_err(&pdev->dev, "Failed to get fifo count, rc=%d\n", rc);
 		return rc;
 	}
 

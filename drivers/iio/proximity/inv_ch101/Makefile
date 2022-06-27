@@ -24,10 +24,11 @@ ch101-core-objs 	+= src/ch_api.o
 ch101-core-objs 	+= src/ch_common.o
 ch101-core-objs 	+= src/ch_driver.o
 ch101-core-objs         += src/ch201_gprmt_fw.o
-ch101-core-objs         += src/ch101_floor_fw.o
 
 obj-$(CONFIG_CH101_I2C)	+= ch101-i2c.o
 ch101-i2c-objs		+= ch101_i2c.o
 
 # disable some warning flags
 ccflags-y += -Wno-format
+
+ccflags-$(CONFIG_ARCH_BENGAL) += -DTDK_RB2

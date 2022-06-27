@@ -349,6 +349,7 @@ static void vhost_hab_stop(struct vhost_hab_dev *vh_dev)
 		vhost_hab_stop_vq(vh_dev,
 				vh_pchan->vqs + VHOST_HAB_PCHAN_RX_VQ);
 	}
+	vh_dev->started = 0;
 }
 
 static void vhost_hab_flush_vq(struct vhost_hab_dev *vh_dev,

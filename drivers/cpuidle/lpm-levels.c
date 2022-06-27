@@ -1904,7 +1904,9 @@ static int lpm_probe(struct platform_device *pdev)
 		goto failed;
 	}
 
+#ifndef CONFIG_ARCH_LEMANS
 	suspend_set_ops(&lpm_suspend_ops);
+#endif
 	s2idle_set_ops(&lpm_s2idle_ops);
 
 	return 0;

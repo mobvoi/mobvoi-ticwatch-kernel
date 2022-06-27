@@ -4113,8 +4113,8 @@ static void smblite_lib_thermal_regulation_work(struct work_struct *work)
 {
 	struct smb_charger *chg = container_of(work, struct smb_charger,
 						thermal_regulation_work.work);
-	int rc, icl_ua, input_present;
-	u8 stat;
+	int rc = 0, icl_ua = 0, input_present = 0;
+	u8 stat = 0;
 
 
 	if (!chg->usb_icl_votable)

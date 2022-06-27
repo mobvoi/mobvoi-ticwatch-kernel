@@ -13,3 +13,5 @@ obj-$(CONFIG_QRTR_ETHERNET) += qrtr-ethernet.o
 qrtr-ethernet-y       := ethernet.o
 obj-$(CONFIG_QRTR_MHI_DEV) += qrtr-mhi-dev.o
 qrtr-mhi-dev-y	:= mhi_dev.o
+obj-$(CONFIG_QRTR_BPF_FILTER) += qrtr-bpf_service.o
+qrtr-bpf_service-y»	:= bpf_service.o

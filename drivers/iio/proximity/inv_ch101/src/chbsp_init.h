@@ -56,8 +56,13 @@
 #define CHBSP_RTC_CAL_PULSE_MS		63
 
 /* I2C Address assignments for each possible device */
+#ifdef TDK_RB2
+#define CHIRP_I2C_ADDRS		{42, 43, 44, 52, 53, 54}  //, 62, 63, 64}
+#define CHIRP_I2C_BUSES         {0, 0, 0, 0, 0, 0,} //, 2, 2, 2}
+#else
 #define CHIRP_I2C_ADDRS		{45, 43, 44, 52, 53, 54} //, 62, 63, 64}
 #define CHIRP_I2C_BUSES         {0, 0, 0, 1, 1, 1} //, 2, 2, 2}
+#endif
 
 extern u8 chirp_i2c_addrs[CHBSP_MAX_DEVICES];
 extern u8 chirp_i2c_buses[CHBSP_MAX_DEVICES];

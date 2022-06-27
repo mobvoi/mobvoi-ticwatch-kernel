@@ -10,6 +10,7 @@
  *
  * Usage: modpost vmlinux module1.o module2.o ...
  */
+#define __EXPORTED_HEADERS__
 
 #define _GNU_SOURCE
 #include <stdio.h>

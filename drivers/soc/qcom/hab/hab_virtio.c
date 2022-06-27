@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/module.h>
 #include <linux/virtio.h>
@@ -11,17 +12,9 @@
 
 #include "hab_virtio.h" /* requires hab.h */
 
-/* enable this when single virtio hab device is enabled */
-/* #define USE_VIRTIO_HAB */
-
-/* To be removed to handle multiple virthab for each domain */
-static struct virtio_hab *g_hab_virtio;
-
-static struct vh_vdev_link {
-	struct virtio_device *vdev;
-	struct virtio_hab *vh;
-} vh_vdev_array[5];
-
+/* all probed virtio_hab stored in this list */
+static struct list_head vhab_list = LIST_HEAD_INIT(vhab_list);
+static DEFINE_SPINLOCK(vh_lock);
 
 enum pool_type_t {
 	PT_OUT_SMALL = 0, /* 512 bytes */
@@ -49,14 +42,8 @@ struct vh_buf_header {
 #define OUT_MEDIUM_BUF_SIZE 5120
 #define OUT_LARGE_BUF_SIZE  51200
 
-#ifdef USE_VIRTIO_HAB
 #define IN_BUF_NUM         100 /*64*/
 #define OUT_SMALL_BUF_NUM  200 /*64*/
-#else
-/* vendor virtio gpu size max is 1024 */
-#define IN_BUF_NUM         100
-#define OUT_SMALL_BUF_NUM  800 /*200*/
-#endif
 #define OUT_MEDIUM_BUF_NUM 100 /*20*/
 #define OUT_LARGE_BUF_NUM  10
 
@@ -78,21 +65,19 @@ struct vh_buf_header {
 #define OUT_MEDIUM_POOL_SIZE (OUT_MEDIUM_BUF_SLOT * OUT_MEDIUM_BUF_NUM)
 #define OUT_LARGE_POOL_SIZE (OUT_LARGE_BUF_SLOT * OUT_LARGE_BUF_NUM)
 
-static int store_vdev(struct virtio_device *vdev, struct virtio_hab *vh)
-{
-	vh_vdev_array[0].vdev = vdev;
-	vh_vdev_array[0].vh = vh;
-	return 0;
-}
-
 struct virtio_hab *get_vh(struct virtio_device *vdev)
 {
-	if (vdev == vh_vdev_array[0].vdev)
-		return vh_vdev_array[0].vh;
+	struct virtio_hab *vh = NULL;
+	unsigned long flags;
 
-	pr_err("failed to find match vh from vdev %pK\n", vdev);
+	spin_lock_irqsave(&vh_lock, flags);
+	list_for_each_entry(vh, &vhab_list, node) {
+		if (vdev == vh->vdev)
+			break;
+	}
+	spin_unlock_irqrestore(&vh_lock, flags);
 
-	return NULL;
+	return vh;
 }
 
 static struct vq_pchan *get_virtio_pchan(struct virtio_hab *vhab,
@@ -487,7 +472,6 @@ int virthab_init_vqs_post(struct virtio_hab *vh)
 }
 EXPORT_SYMBOL(virthab_init_vqs_post);
 
-#if defined(USE_VIRTIO_HAB)
 static int virthab_init_vqs(struct virtio_hab *vh)
 {
 	int ret;
@@ -498,9 +482,10 @@ static int virthab_init_vqs(struct virtio_hab *vh)
 	if (ret)
 		return ret;
 
-	pr_info("request %d vqs\n", vh->mmid_range * HAB_PCHAN_VQ_MAX);
+	pr_info("mmid %d request %d vqs\n", vh->mmid_start,
+		vh->mmid_range * HAB_PCHAN_VQ_MAX);
 
-	ret = virtio_find_vqs(vh->vdev, hab_driver.ndevices * HAB_PCHAN_VQ_MAX,
+	ret = virtio_find_vqs(vh->vdev, vh->mmid_range * HAB_PCHAN_VQ_MAX,
 				vh->vqs, cbs, (const char * const*)names, NULL);
 	if (ret) {
 		pr_err("failed to find vqs %d\n", ret);
@@ -516,7 +501,6 @@ static int virthab_init_vqs(struct virtio_hab *vh)
 
 	return 0;
 }
-#endif
 
 static int virthab_alloc_mmid_device(struct virtio_hab *vh,
 			uint32_t mmid_start, int mmid_range)
@@ -561,6 +545,7 @@ int virthab_alloc(struct virtio_device *vdev, struct virtio_hab **pvh,
 {
 	struct virtio_hab *vh;
 	int ret;
+	unsigned long flags;
 
 	vh = kzalloc(sizeof(*vh), GFP_KERNEL);
 	if (!vh)
@@ -569,46 +554,116 @@ int virthab_alloc(struct virtio_device *vdev, struct virtio_hab **pvh,
 	ret = virthab_alloc_mmid_device(vh, mmid_start, mmid_range);
 
 	if (!ret)
-		pr_info("alloc done\n");
+		pr_info("alloc done mmid %d range %d\n",
+				mmid_start, mmid_range);
 	else
 		return ret;
 
-	store_vdev(vdev, vh);
 	vh->vdev = vdev; /* store virtio device locally */
 
 	*pvh = vh;
-	g_hab_virtio = vh; /* need link list to store */
+	spin_lock_irqsave(&vh_lock, flags);
+	list_add_tail(&vh->node, &vhab_list);
+	spin_unlock_irqrestore(&vh_lock, flags);
 
 	spin_lock_init(&vh->mlock);
-	pr_info("start vqs init\n");
+	pr_info("start vqs init vh list empty %d\n", list_empty(&vhab_list));
 
 	return 0;
 }
 EXPORT_SYMBOL(virthab_alloc);
 
-#if defined(USE_VIRTIO_HAB)
+static void taken_range_calc(uint32_t mmid_start, int mmid_range,
+				uint32_t *taken_start, uint32_t *taken_end)
+{
+	int i;
+
+	*taken_start = 0;
+	*taken_end = 0;
+	for (i = 0; i < hab_driver.ndevices; i++) {
+		if (mmid_start == hab_driver.devp[i].id) {
+			*taken_start = mmid_start;
+			*taken_end = hab_driver.devp[i + mmid_range].id;
+			pr_info("taken range %d %d\n", *taken_start, *taken_end);
+		}
+	}
+}
+
+static int virthab_pchan_avail_check(__u32 id, uint32_t mmid_start, int mmid_range)
+{
+	int avail = 1; /* available */
+	struct virtio_hab *vh = NULL;
+	uint32_t taken_start = 0, taken_end = 0;
+
+	list_for_each_entry(vh, &vhab_list, node) {
+		if (vh->vdev->id.device == id) { /* virtio device id check */
+			avail = 0;
+			break;
+		}
+		taken_range_calc(vh->mmid_start, vh->mmid_range,
+				&taken_start, &taken_end);
+		if (mmid_start >= taken_start && mmid_start <= taken_end) {
+			avail = 0;
+			break;
+		}
+	}
+	pr_info("avail check input %d %d %d ret %d\n", id, mmid_start, mmid_range, avail);
+	return avail;
+}
+
 /* probe is called when GVM detects virtio device from devtree */
 static int virthab_probe(struct virtio_device *vdev)
 {
 	struct virtio_hab *vh = NULL;
-	int err;
-	int ret;
+	int err = 0, ret = 0;
+	int mmid_range = hab_driver.ndevices;
+	uint32_t mmid_start = hab_driver.devp[0].id;
 
 	if (!virtio_has_feature(vdev, VIRTIO_F_VERSION_1)) {
 		pr_info("virtio has feature missing\n");
 		return -ENODEV;
 	}
-	pr_info("virtio has feature %llX virtio devid %X vid %d gvi %pK\n",
-		vdev->features, vdev->id.device, vdev->id.vendor, g_hab_virtio);
-	if (g_hab_virtio)
-		pr_err("already allocated gvi %pK\n", g_hab_virtio);
+	pr_info("virtio has feature %llX virtio devid %X vid %d empty %d\n",
+		vdev->features, vdev->id.device, vdev->id.vendor,
+		list_empty(&vhab_list));
 
-	ret = virthab_alloc(vdev, &vh, hab_driver.devp[0].id,
-				hab_driver.ndevices);
+	/* find out which virtio device is calling us.
+	 * if this is hab's own virtio device, all the pchans are available
+	 */
+	if (vdev->id.device == 88) {
+		/* all MMIDs are taken cannot co-exist with others */
+		mmid_start = hab_driver.devp[0].id;
+		mmid_range = hab_driver.ndevices;
+	} else if (vdev->id.device == 89) {
+		mmid_start = MM_BUFFERQ_1;
+		mmid_range = 1;
+	} else if (vdev->id.device == 90) {
+		mmid_start = MM_MISC;
+		mmid_range = 1;
+	} else if (vdev->id.device == 91) {
+		mmid_start = MM_AUD_1;
+		mmid_range = 4;
+	} else {
+		pr_err("unknown virtio device is detected %d\n",
+			vdev->id.device);
+		mmid_start = 0;
+		mmid_range = 0;
+	}
+	pr_info("virtio device id %d mmid %d range %d\n",
+			vdev->id.device, mmid_start, mmid_range);
+
+	if (!virthab_pchan_avail_check(vdev->id.device, mmid_start, mmid_range))
+		return -EINVAL;
+
+	ret = virthab_alloc(vdev, &vh, mmid_start, mmid_range);
 	if (!ret)
-		pr_info("alloc done\n");
-	else
+		pr_info("alloc done %d mmid %d range %d\n",
+			ret, mmid_start, mmid_range);
+	else {
+		pr_err("probe failed mmid %d range %d\n",
+			mmid_start, mmid_range);
 		return ret;
+	}
 
 	err = virthab_init_vqs(vh);
 	if (err)
@@ -618,19 +673,7 @@ static int virthab_probe(struct virtio_device *vdev)
 	pr_info("virto device ready\n");
 
 	vh->ready = true;
-	g_hab_virtio = vh; /* To Be Removed */
-	pr_info("store virto device %pK\n", vh);
-
-	/* find out which virtio device is calling us.
-	 * if this is hab's own virtio device, all the pchans are available
-	 */
-	if (vdev->id.device == 88) {
-		pr_info("virtio hab device is detected! id %d\n",
-			vdev->id.device);
-	} else {
-		pr_err("unknown virtio device is detected %d\n",
-			vdev->id.device);
-	}
+	pr_info("store virto device %pK empty %d\n", vh, list_empty(&vhab_list));
 
 	ret = virthab_queue_inbufs(vh, 1);
 	if (ret)
@@ -650,13 +693,14 @@ static void virthab_remove(struct virtio_device *vdev)
 	void *buf;
 	unsigned long flags;
 	int i, j;
+	struct virtio_pchan_link *link;
 
 	spin_lock_irqsave(&vh->mlock, flags);
 	vh->ready = false;
 	spin_unlock_irqrestore(&vh->mlock, flags);
 
 	vdev->config->reset(vdev);
-	for (i = 0; i < hab_driver.ndevices; i++) {
+	for (i = 0; i < vh->mmid_range; i++) {
 		struct vq_pchan *vpc = &vh->vqpchans[i];
 
 		j = 0;
@@ -670,20 +714,26 @@ static void virthab_remove(struct virtio_device *vdev)
 		kfree(vpc->s_pool);
 		kfree(vpc->m_pool);
 		kfree(vpc->l_pool);
+
+		link = vpc->pchan->hyp_data;
+		link->vhab = NULL;
+		link->vpc = NULL;
 	}
 
 	vdev->config->del_vqs(vdev);
 	kfree(vh->vqs);
 	kfree(vh->cbs);
-	for (i = 0; i < hab_driver.ndevices * HAB_PCHAN_VQ_MAX; i++)
+	for (i = 0; i < vh->mmid_range * HAB_PCHAN_VQ_MAX; i++)
 		kfree(vh->names[i]);
 	kfree(vh->names);
 	kfree(vh->vqpchans);
-	if (g_hab_virtio != vh)
-		pr_err("virtio device mismatch gvi %pK vh %pK\n",
-			g_hab_virtio, vh);
+
+	spin_lock_irqsave(&vh_lock, flags);
+	list_del(&vh->node);
+	spin_unlock_irqrestore(&vh_lock, flags);
+	pr_info("remove virthab mmid %d range %d empty %d\n",
+		vh->mmid_start, vh->mmid_range, list_empty(&vhab_list));
 	kfree(vh);
-	g_hab_virtio = NULL;
 }
 
 #ifdef CONFIG_PM_SLEEP
@@ -724,7 +774,10 @@ static unsigned int features[] = {
 	/* none */
 };
 static struct virtio_device_id id_table[] = {
-	{ 88, VIRTIO_DEV_ANY_ID },
+	{ 88, VIRTIO_DEV_ANY_ID }, /* virtio-hab with all mmids ready to use */
+	{ 89, VIRTIO_DEV_ANY_ID }, /* virtio-bufferq only */
+	{ 90, VIRTIO_DEV_ANY_ID }, /* virtio-misc */
+	{ 91, VIRTIO_DEV_ANY_ID }, /* virtio-audio */
 	{ 0 },
 };
 
@@ -741,7 +794,6 @@ static struct virtio_driver virtio_hab_driver = {
 	.restore             = virthab_restore,
 #endif
 };
-#endif
 
 /* register / unregister */
 #ifdef HAB_DESKTOP
@@ -763,10 +815,8 @@ int hab_hypervisor_register(void)
 			   cma_get_base(c), cma_get_size(c));
 #endif
 
-#if defined(USE_VIRTIO_HAB)
 	/* one virtio device */
 	register_virtio_driver(&virtio_hab_driver);
-#endif
 	pr_info("alloc virtio_pchan_array of %d devices\n",
 			hab_driver.ndevices);
 	return 0;
@@ -776,9 +826,7 @@ void hab_hypervisor_unregister(void)
 {
 	hab_hypervisor_unregister_common();
 
-#if defined(USE_VIRTIO_HAB)
 	unregister_virtio_driver(&virtio_hab_driver);
-#endif
 #ifdef HAB_DESKTOP
 	if (c && cma_pgs)
 		cma_release(c, cma_pgs, (16 * 1024 * 1024) >> PAGE_SHIFT);
@@ -799,7 +847,6 @@ static struct vh_buf_header *get_vh_buf_header(spinlock_t *lock,
 	while (list_empty(list)) {
 		spin_unlock_irqrestore(lock, flags);
 		wait_event(*wq, !list_empty(list));
-		pr_warn("wq cnt %d\n", *cnt);
 		spin_lock_irqsave(lock, flags);
 	}
 	hd = list_first_entry(list, struct vh_buf_header, node);
@@ -854,9 +901,6 @@ int physical_channel_send(struct physical_channel *pchan,
 						&vpc->out_wq, &vpc->l_cnt);
 		}
 		BUG_ON(!hd);
-
-		header->sequence = pchan->sequence_tx++;
-		header->signature = HAB_HEAD_SIGNATURE;
 
 		if (HAB_HEADER_GET_TYPE(*header) == HAB_PAYLOAD_TYPE_PROFILE) {
 			struct habmm_xing_vm_stat *pstat =
@@ -950,13 +994,13 @@ void physical_channel_rx_dispatch(unsigned long data)
 		return;
 	}
 
-	virthab_recv_txq(vpc->vq[HAB_PCHAN_TX_VQ]);
+	virthab_recv_rxq_task(vpc->vq[HAB_PCHAN_RX_VQ]);
 }
 
 /* pchan is directly added into the hab_device */
 static int habvirtio_pchan_create(struct hab_device *dev, char *pchan_name)
 {
-	int result, i, bfound;
+	int result = 0;
 	struct physical_channel *pchan = NULL;
 	struct virtio_pchan_link *link = NULL;
 
@@ -979,27 +1023,12 @@ static int habvirtio_pchan_create(struct hab_device *dev, char *pchan_name)
 	link->mmid = dev->id;
 	pchan->hyp_data = link;
 
-	if (unlikely(g_hab_virtio)) {
-		pr_warn("virtio device has been initialized already gvi %pK %s is ready\n",
-			g_hab_virtio, pchan->name);
-		link->vhab = g_hab_virtio;
+	link->vpc = NULL;
+	link->vhab = NULL;
 
-		bfound = 0;
-		for (i = 0; i < hab_driver.ndevices; i++) {
-			if (g_hab_virtio->vqpchans[i].mmid == link->mmid)
-				link->vpc = &g_hab_virtio->vqpchans[i];
-			bfound = 1;
-		}
-		if (!bfound)
-			pr_err("can't find virtio pchan object %s in vhab %pK total %d\n",
-				pchan_name, g_hab_virtio, hab_driver.ndevices);
-	} else {
-		link->vpc = NULL;
-		link->vhab = NULL;
-
-		pr_warn("virtio device has NOT been initialized yet. %s has to wait for probe\n",
+	/* create PCHAN first then wait for virtq later during probe */
+	pr_info("virtio device has NOT been initialized yet. %s has to wait for probe\n",
 			pchan->name);
-	}
 
 	return 0;
 err:
@@ -1026,7 +1055,6 @@ int habhyp_commdev_alloc(void **commdev, int is_be, char *name, int vmid_remote,
 	pchan = hab_pchan_find_domid(mmid_device, HABCFG_VMID_DONT_CARE);
 	/* in this implementation, commdev is same as pchan */
 	*commdev = pchan;
-	hab_pchan_put(pchan);
 
 	pr_info("pchan %s vchans %d refcnt %d\n",
 		pchan->name, pchan->vcnt, get_refcnt(pchan->refcount));
@@ -1039,8 +1067,9 @@ int habhyp_commdev_dealloc(void *commdev)
 	struct physical_channel *pchan = link->pchan;
 
 	pr_info("free commdev %s\n", pchan->name);
-	hab_pchan_put(pchan);
+	link->pchan = NULL;
 	kfree(link);
+	hab_pchan_put(pchan);
 
 	return 0;
 }
@@ -1051,6 +1080,9 @@ int hab_stat_log(struct physical_channel **pchans, int pchan_cnt, char *dest,
 	struct virtio_pchan_link *link;
 	struct vq_pchan *vpc;
 	int i, ret = 0;
+	bool tx_pending, rx_pending;
+	void *tx_buf, *rx_buf;
+	unsigned int tx_len = 0, rx_len = 0;
 
 	for (i = 0; i < pchan_cnt; i++) {
 		link = (struct virtio_pchan_link *)pchans[i]->hyp_data;
@@ -1060,8 +1092,18 @@ int hab_stat_log(struct physical_channel **pchans, int pchan_cnt, char *dest,
 			continue;
 		}
 
-		ret = hab_stat_buffer_print(dest, dest_size, "tx cnt %d %d %d rx %d\n",
-			vpc->s_cnt, vpc->m_cnt, vpc->l_cnt, vpc->in_cnt);
+		tx_pending = !virtqueue_enable_cb(vpc->vq[HAB_PCHAN_TX_VQ]);
+		rx_pending = !virtqueue_enable_cb(vpc->vq[HAB_PCHAN_RX_VQ]);
+		tx_buf = virtqueue_get_buf(vpc->vq[HAB_PCHAN_TX_VQ], &tx_len);
+		rx_buf = virtqueue_get_buf(vpc->vq[HAB_PCHAN_RX_VQ], &rx_len);
+
+		pr_info("pchan %d tx cnt %d %d %d rx %d txpend %d rxpend %d txlen %d rxlen %d\n",
+			i, vpc->s_cnt, vpc->m_cnt, vpc->l_cnt, vpc->in_cnt, tx_pending, rx_pending,
+			tx_len, rx_len);
+		ret = hab_stat_buffer_print(dest, dest_size,
+			"tx cnt %d %d %d rx %d txpend %d rxpend %d txlen %d rxlen %d\n",
+			vpc->s_cnt, vpc->m_cnt, vpc->l_cnt, vpc->in_cnt, tx_pending, rx_pending,
+			tx_len, rx_len);
 		if (ret)
 			break;
 	}
