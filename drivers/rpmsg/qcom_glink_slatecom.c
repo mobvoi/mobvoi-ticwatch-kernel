@@ -30,6 +30,7 @@
 #include <linux/component.h>
 #include <linux/ipc_logging.h>
 #include <linux/termios.h>
+#include <linux/pm_wakeup.h>
 #include <linux/unistd.h>
 #include "../soc/qcom/slatecom.h"
 
@@ -187,6 +188,7 @@ struct glink_slatecom {
 	atomic_t activity_cnt;
 	atomic_t in_reset;
 
+	struct wakeup_source *ws;
 	void *ilc;
 	bool sent_read_notify;
 
@@ -268,6 +270,8 @@ struct rx_pkt {
 			struct glink_slatecom_channel, ept)
 
 static const struct rpmsg_endpoint_ops glink_endpoint_ops;
+static unsigned int glink_slatecom_wakeup_ms =
+			CONFIG_RPMSG_GLINK_SLATECOM_WAKEUP_MS;
 
 #define SLATECOM_CMD_VERSION			0
 #define SLATECOM_CMD_VERSION_ACK			1
@@ -639,8 +643,6 @@ static void glink_slatecom_handle_intent_req(struct glink_slatecom *glink,
 	}
 
 	if (!strcmp(channel->name, "ssc_hal")) {
-		GLINK_ERR(glink, "%s: max intents reached for cid %d\n",
-							__func__, cid);
 		glink_slatecom_send_intent_req_ack(glink, channel, true);
 		return;
 	}
@@ -2109,6 +2111,7 @@ static void glink_slatecom_event_handler(void *handle,
 		rx_pkt_info->rx_len = data->fifo_data.to_master_fifo_used;
 		rx_pkt_info->glink = glink;
 		kthread_init_work(&rx_pkt_info->kwork, rx_worker);
+		pm_wakeup_ws_event(glink->ws, glink_slatecom_wakeup_ms, true);
 		kthread_queue_work(&glink->kworker, &rx_pkt_info->kwork);
 		break;
 	case SLATECOM_EVENT_TO_SLAVE_FIFO_FREE:
@@ -2236,6 +2239,7 @@ static int glink_slatecom_probe(struct platform_device *pdev)
 		goto err_put_dev;
 	}
 
+	glink->ws = wakeup_source_register(NULL, "glink_slatecom_ws");
 	glink->ilc = ipc_log_context_create(GLINK_LOG_PAGE_CNT, glink->name, 0);
 
 	glink->slatecom_config.priv = (void *)glink;
