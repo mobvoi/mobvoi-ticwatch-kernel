@@ -166,7 +166,14 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
-
+		
+		ramoops@9ff00000 {
+			compatible = "ramoops";
+			reg = <0 0x9ff00000 0 0x100000>;
+			record-size = <0x40000>;
+			console-size = <0x40000>;
+		};
+		
 		oda_region: oda_region@45700000 {
 			no-map;
 			reg = <0x0 0x45700000 0x0 0x300000>;
