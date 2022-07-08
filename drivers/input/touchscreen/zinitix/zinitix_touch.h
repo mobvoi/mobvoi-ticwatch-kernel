@@ -22,7 +22,7 @@
 #include "zinitix_touch_zxt_firmware.h"
 
 /*used for fw compatible*/
-#define TSP_TYPE_COUNT	1 
+#define TSP_TYPE_COUNT	1
 
 
 /* Upgrade Method*/
@@ -35,7 +35,7 @@
 #define SUPPORTED_PALM_TOUCH       1
 
 /*Support Finger Number*/
-#define MAX_SUPPORTED_FINGER_NUM	5 
+#define MAX_SUPPORTED_FINGER_NUM	5
 
 /*Touch Mode Select*/
 //#define TOUCH_POINT_FLAG
@@ -76,8 +76,8 @@
 #define SEC_PDND_U_COUNT          3
 #define SEC_PDND_FREQUENCY        240
 
-#define SEC_SELF_N_COUNT          11 /* >12 */
-#define SEC_SELF_U_COUNT          1  /* 6~12 */
+#define SEC_SELF_N_COUNT          15 /* >12 */
+#define SEC_SELF_U_COUNT          2  /* 6~12 */
 #define SEC_SELF_FREQUENCY        60 /* 79 */
 #define ZINITIX_DEBUG               1
 #define TSP_VERBOSE_DEBUG
@@ -123,7 +123,7 @@ struct bt541_ts_platform_data {
 	void (*register_cb) (struct tsp_callbacks *);
 	struct tsp_callbacks callbacks;
 #endif
-	
+
 };
 
  struct class *sec_class;
