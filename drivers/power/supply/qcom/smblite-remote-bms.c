@@ -130,8 +130,9 @@ int remote_bms_get_prop(int channel, int *val, int src)
 		if (is_debug_batt_id(the_bms)) {
 			*val = REMOTE_FG_DEBUG_BATT_SOC;
 		} else if (!the_bms->is_seb_up) {
-			pr_debug("Wait for remote GLINK to be up\n");
-			return -EAGAIN;
+			printk("Wait for remote GLINK to be up,battery capacity fake 50%\n");
+			*val=50;
+			//return -EAGAIN;
 		} else
 			rc = bms_get_buffered_data(channel, val, src);
 		break;
