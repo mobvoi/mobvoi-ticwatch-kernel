@@ -248,6 +248,7 @@ int slatecom_set_spi_state(enum slatecom_spi_state state)
 		 * reloaded, it is unaware of previous context.
 		 */
 		atomic_set(&ok_to_sleep, 0);
+		atomic_set(&slate_is_runtime_suspend, 0);
 	}
 	spi_state = state;
 	SLATECOM_INFO("state = %d\n", state);
