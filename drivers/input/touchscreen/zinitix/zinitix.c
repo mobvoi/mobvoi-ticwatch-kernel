@@ -2304,27 +2304,26 @@ static int bt541_ts_resume(struct device *dev)
 	//Link  modified  on  20190703//Resume reset 
 	resume_hw_reset(info,true);
 	mdelay(50);	
-	
 	//resume sequence
 	if(!zinitix_resume_sequence(info)){
 		dev_err(&client->dev, "zinitix_resume_sequence Fail\n");
-		mdelay(10);
-			
+		mdelay(10);	
 	}
+
 	
-		
     #if ESD_TIMER_INTERVAL
 		esd_timer_start(CHECK_ESD_TIMER, info);
     #endif
-	
-	
+
+
 	info->work_state = NOTHING;
+	disable_irq(info->irq);
 	enable_irq(info->irq);
-	
-	
+
+
 	up(&info->work_lock);
 	dev_err(&client->dev, "bt541_ts_resume end info->work_state=%d\n",info->work_state);
-	
+
 	tpd_halt = 0;
 
 	return 0;
@@ -4067,7 +4066,7 @@ static int bt541_ts_probe(struct i2c_client *client,
 #endif
 
 	snprintf(info->phys, sizeof(info->phys),"%s/input0", dev_name(&client->dev));
-	input_dev->name = "sec_touchscreen";
+	input_dev->name = "zinitix_ts";
 	input_dev->id.bustype = BUS_I2C;
 	input_dev->phys = info->phys;
 	input_dev->dev.parent = &client->dev;
