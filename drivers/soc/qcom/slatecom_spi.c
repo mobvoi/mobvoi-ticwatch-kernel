@@ -309,6 +309,11 @@ static int read_slate_locl(enum slatecom_req_type req_type,
 	return ret;
 }
 
+int slatecom_is_spi_active_ext(void)
+{
+	return atomic_read(&slate_is_spi_active);
+}
+
 static int slatecom_transfer(void *handle, uint8_t *tx_buf,
 	uint8_t *rx_buf, uint32_t txn_len, uint32_t freq)
 {

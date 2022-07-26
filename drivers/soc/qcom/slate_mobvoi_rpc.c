@@ -175,10 +175,15 @@ err_ret:
 	__pm_relax(dev->slatemobrpc_ws);
 	return rc;
 }
-
+extern int slatecom_is_spi_active_ext(void);
 int slate_mobvoi_rpc_tx_msg_ext(void  *msg, size_t len)
 {
-    struct slatemobrpc_priv *dev =
+    if(!slatecom_is_spi_active_ext())
+	{
+		pr_err("spi is inactive,slate_mobvoi_rpc_tx_msg_ext return\n");
+		return -1;
+	}
+	struct slatemobrpc_priv *dev =
         container_of(slate_mobvoi_rpc_drv, struct slatemobrpc_priv, lhndl);
     return slate_mobvoi_rpc_tx_msg(dev,msg,len);
 }
