@@ -268,7 +268,7 @@
         compatible = "qcom,mobvoi-rpc-rpmsg";
         qcom,glink-channels = "slate-mobvoi-rpc";
         qcom,glinkpkt-edge = "slate";
-        intents = <0x0181 1>;
+        intents = <0x85 16>;
     };
 
     qcom,slate-mobvoirpc {

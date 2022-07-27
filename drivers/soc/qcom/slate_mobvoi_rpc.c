@@ -135,7 +135,7 @@ static int slate_mobvoi_rpc_tx_msg(struct slatemobrpc_priv *dev, void  *msg, siz
 	uint8_t resp = 0;
 
 	__pm_stay_awake(dev->slatemobrpc_ws);
-	pr_info("rpc tx msg,wakeup pm");
+	pr_info("rpc tx msg,wakeup hold");
 	mutex_lock(&dev->glink_mutex);
 
 	if (!dev->slate_mobvoi_rpc_rpmsg) {
@@ -176,16 +176,31 @@ err_ret:
 	return rc;
 }
 extern int slatecom_is_spi_active_ext(void);
+static int rpc_tx_flag=0;
 int slate_mobvoi_rpc_tx_msg_ext(void  *msg, size_t len)
 {
-    if(!slatecom_is_spi_active_ext())
+    int ret=0;
+	if(!slatecom_is_spi_active_ext())
 	{
 		pr_err("spi is inactive,slate_mobvoi_rpc_tx_msg_ext return\n");
 		return -1;
 	}
+	if(rpc_tx_flag!=0)
+	{
+		pr_err("slate_mobvoi_rpc_tx busy\n");
+		return -1;
+	}
 	struct slatemobrpc_priv *dev =
         container_of(slate_mobvoi_rpc_drv, struct slatemobrpc_priv, lhndl);
-    return slate_mobvoi_rpc_tx_msg(dev,msg,len);
+
+	if(!dev)
+	{
+		return -1;
+	}	
+	rpc_tx_flag=1;
+    ret=slate_mobvoi_rpc_tx_msg(dev,msg,len);
+    rpc_tx_flag=0;
+	return ret;
 }
 EXPORT_SYMBOL(slate_mobvoi_rpc_tx_msg_ext);
 
@@ -216,7 +231,7 @@ static long slate_mobvoi_rpc_ioctl(struct file *filp,
 			if(p_rpc_data->header.payload_size>128){
 				return -1;
 			}
-			rs=slate_mobvoi_rpc_tx_msg(dev,p_rpc_data,p_rpc_data->header.payload_size+sizeof(wear_header_t));
+			rs=slate_mobvoi_rpc_tx_msg_ext(p_rpc_data,p_rpc_data->header.payload_size+sizeof(wear_header_t));
 			pr_info("slate_mobvoi_rpc_ioctl rs=%d\n",rs);
 			ret=rs;
 			break;
@@ -457,7 +472,7 @@ static ssize_t store_tn_enable(struct device *dev, struct device_attribute
 	for(i=0; i< req_header.payload_size + sizeof(req_header);i++)
 		pr_err("tx_buf[%d]=%d\n",i, tx_buf[i]);
 
-	slate_mobvoi_rpc_tx_msg(pdev,tx_buf,req_header.payload_size + sizeof(req_header));
+	slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
 	return count;
 }
 
