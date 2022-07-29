@@ -16,6 +16,7 @@ Properties:
 	            or "qcom,yupik-llcc" or "qcom,sm8150-llcc"
 		    or "qcom,sdmshrike-llcc" or "qcom,sm6150-llcc"
 		    or "qcom,direwolf-llcc"
+		    or "qcom,lemans-llcc"
 		    "qcom,llcc-v2" must be appended for V2 hardware.
 
 - reg:

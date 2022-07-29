@@ -101,6 +101,8 @@ Subsystem properties:
 		68. qfe_wtr_pa6_fr1
 		69. qfe_ret_pa1
 		70. qfe_ret_pa1_fr1
+		71. sdr0_pa
+		72. sdr1_pa
 
 Example:
 

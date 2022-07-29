@@ -1276,8 +1276,10 @@
 		clock-names = "apb_pclk";
 
 		out-ports {
-			tpdm_qm_out_funnel_dl_mm: endpoint {
-				remote-endpoint = <&funnel_dl_mm_in_tpdm_qm>;
+			port {
+				tpdm_qm_out_funnel_dl_mm: endpoint {
+					remote-endpoint = <&funnel_dl_mm_in_tpdm_qm>;
+				};
 			};
 		};
 	};
@@ -1329,8 +1331,10 @@
 		clock-names = "apb_pclk";
 
 		out-ports {
-			tpdm_apss_out_tpda_apss: endpoint {
-				remote-endpoint = <&tpda_apss_in_tpdm_apss>;
+			port {
+				tpdm_apss_out_tpda_apss: endpoint {
+					remote-endpoint = <&tpda_apss_in_tpdm_apss>;
+				};
 			};
 		};
 	};
@@ -1382,9 +1386,11 @@
 		clock-names = "apb_pclk";
 
 		out-ports {
-			tpdm_llm_silver_out_tpda_llm_silver: endpoint {
-				remote-endpoint =
-					<&tpda_llm_silver_in_tpdm_llm_silver>;
+			port {
+				tpdm_llm_silver_out_tpda_llm_silver: endpoint {
+					remote-endpoint =
+						<&tpda_llm_silver_in_tpdm_llm_silver>;
+				};
 			};
 		};
 	};

@@ -20,6 +20,8 @@
 	chosen: chosen { };
 
 	aliases {
+		pci-domain0 = &pcie0; /* PCIe0 domain */
+		sdhc1 = &sdhc_1; /* SDC1 eMMC/SD/SDIO slot */
 	};
 
 	reserved_mem: reserved-memory {
@@ -135,6 +137,7 @@
 			compatible = "arm,cortex-a7";
 			reg = <0x0>;
 			enable-method = "psci";
+			cpu-idle-states = <&A7_SPC &A7_PC &CX_MIN>;
 			#cooling-cells = <2>;
 		};
 	};
@@ -179,6 +182,10 @@
 		apps_bcm_voter: bcm_voter {
 			compatible = "qcom,bcm-voter";
 		};
+
+		system_pm {
+			compatible = "qcom,system-pm";
+		};
 	};
 
 	intc: interrupt-controller@17800000 {
@@ -197,7 +204,7 @@
 		reg-names = "base", "mux-base";
 		qcom,pdc-ranges = <0 147 52>;
 		qcom,pdc-mux-ranges = <20 28 0>, <21 32 1>, <22 35 2>,
-				      <23 57 3>, <24 49 4>, <25 103 5>;
+				      <23 57 3>, <24 49 4>, <25 58 5>;
 		#interrupt-cells = <2>;
 		interrupt-parent = <&intc>;
 		interrupt-controller;
@@ -448,10 +455,83 @@
 		qcom,rtb-size = <0x100000>;
 	};
 
+
+	qnand_1: nand@1b00000 {
+		compatible = "qcom,msm-nand";
+		reg =   <0x01b00000 0x1000>,
+			<0x01b04000 0x1c000>;
+		reg-names =     "nand_phys",
+				"bam_phys";
+		qcom,reg-adjustment-offset = <0x4000>;
+
+		interrupts = <0 135 0>;
+		interrupt-names = "bam_irq";
+
+		qcom,msm-bus,name = "qpic_nand";
+		qcom,msm-bus,num-cases = <2>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =
+			<91 512 0 0>,
+		/* Voting for max b/w on PNOC bus for now */
+			<91 512 400000 400000>;
+
+		clock-names = "core_clk";
+		clocks = <&rpmhcc RPMH_QPIC_CLK>;
+
+		status = "ok";
+	};
+
+
+	sdhc_1: sdhci@8804000 {
+		compatible = "qcom,sdhci-msm-v5";
+		reg = <0x8804000 0x1000>;
+		reg-names = "hc_mem";
+
+		interrupts = <GIC_SPI 210 IRQ_TYPE_NONE>,
+			<GIC_SPI 227 IRQ_TYPE_NONE>;
+		interrupt-names = "hc_irq", "pwr_irq";
+
+		bus-width = <4>;
+
+		qcom,msm-bus,name = "sdhc1";
+		qcom,msm-bus,num-cases = <8>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,msm-bus,vectors-KBps =  <78 512 0 0>, /* No vote */
+				<78 512 1600 3200>,    /* 400 KB/s*/
+				<78 512 80000 160000>, /* 20 MB/s */
+				<78 512 100000 200000>, /* 25 MB/s */
+				<78 512 200000 400000>, /* 50 MB/s */
+				<78 512 400000 800000>, /* 100 MB/s */
+				<78 512 400000 800000>, /* 200 MB/s */
+				<78 512 2048000 4096000>; /* Max. bandwidth */
+		qcom,bus-bw-vectors-bps = <0 400000 20000000 25000000 50000000
+						100000000 200000000 4294967295>;
+
+		clocks = <&gcc GCC_SDCC1_AHB_CLK>,
+			<&gcc GCC_SDCC1_APPS_CLK>;
+		clock-names = "iface", "core";
+
+		//qcom,restore-after-cx-collapse;
+
+		/* DLL HSR settings. Refer go/hsr - <Target> DLL settings */
+		qcom,dll-hsr-list = <0x0007642c 0xa800 0x10
+					0x2c010800 0x80040868>;
+
+		qcom,devfreq,freq-table = <50000000 200000000>;
+		no-sdio;
+		no-mmc;
+
+		status = "disabled";
+	};
+
+
 	serial_uart: serial@831000 {
 		compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
 		reg = <0x831000 0x200>;
 		interrupts = <0 26 0>;
+		clocks = <&gcc GCC_BLSP1_UART3_APPS_CLK>,
+			<&gcc GCC_BLSP1_AHB_CLK>;
+		clock-names = "core", "iface";
 		pinctrl-names = "default", "sleep";
 		pinctrl-0 = <&uart3_console_active>;
 		pinctrl-1 = <&uart3_console_sleep>;
@@ -788,6 +868,7 @@
 		qcom,msm-bus,name = "ipa";
 		qcom,ipa-wdi2_over_gsi;
 		qcom,ipa-endp-delay-wa;
+		qcom,ipa-config-is-auto;
 		qcom,ipa-wdi3-holb-2g = <8>;
 		qcom,ipa-wdi3-holb-5g = <15>;
 		qcom,msm-bus,num-cases = <5>;
@@ -799,11 +880,11 @@
 		qcom,interconnect,num-cases = <5>;
 		qcom,interconnect,num-paths = <5>;
 		interconnects = <&system_noc MASTER_IPA &system_noc SLAVE_SNOC_MEM_NOC_GC>,
-				<&system_noc MASTER_IPA &mc_virt SLAVE_EBI1>,
+				<&mem_noc MASTER_SNOC_GC_MEM_NOC &mc_virt SLAVE_EBI1>,
 				<&system_noc MASTER_IPA &system_noc SLAVE_IMEM>,
 				<&mem_noc MASTER_APPSS_PROC &system_noc SLAVE_IPA_CFG>,
 				<&ipa_virt MASTER_IPA_CORE &ipa_virt SLAVE_IPA_CORE>;
-		interconnect-names = "ipa_to_memnoc", "ipa_to_ebi1", "ipa_to_imem", "ipacore_to_ipacore", "ipacore_to_ipacore";
+		interconnect-names = "ipa_to_memnoc", "ipa_to_ebi1", "ipa_to_imem", "appsproc_to_ipacfg", "ipacore_to_ipacore";
 
 		/* No vote */
 		qcom,no-vote =
@@ -877,6 +958,9 @@
 #include "sa515m-ion.dtsi"
 #include "msm-arm-smmu-sa515m.dtsi"
 #include "sa515m-usb.dtsi"
+#include "sa515m-pcie.dtsi"
+#include "sa515m-pm.dtsi"
+#include "sa515m-audio.dtsi"
 
 &vreg_rgmii_io_pads {
 	regulator-min-microvolt = <1800000>;
@@ -890,5 +974,26 @@
 };
 
 &gdsc_usb30 {
+	status = "ok";
+};
+
+&sdhc_1 {
+	vdd-supply = <&vreg_sd_vdd>;
+	qcom,vdd-voltage-level = <2950000 2950000>;
+	qcom,vdd-current-level = <0 800000>;
+
+	vdd-io-supply = <&vreg_vddpx_2>;
+	qcom,vdd-io-voltage-level = <1800000 2850000>;
+	qcom,vdd-io-current-level = <0 10000>;
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdc1_on>;
+	pinctrl-1 = <&sdc1_off>;
+
+	qcom,clk-rates = <400000 20000000 25000000 50000000 100000000
+				200000000>;
+	qcom,devfreq,freq-table = <50000000 200000000>;
+
+	cd-gpios = <&tlmm 99 GPIO_ACTIVE_LOW>;
 	status = "ok";
 };

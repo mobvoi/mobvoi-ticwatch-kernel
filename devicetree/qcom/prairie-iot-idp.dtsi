@@ -217,7 +217,7 @@
 	vdda-phy-max-microamp = <30000>;
 	vdda-pll-max-microamp = <12000>;
 
-	status = "ok";
+	status="disabled";
 };
 
 &ufshc_mem {
@@ -234,7 +234,7 @@
 	qcom,vddp-ref-clk-min-uV = <1232000>;
 	qcom,vddp-ref-clk-max-uV = <1260000>;
 
-	status = "ok";
+	status="disabled";
 };
 
 &qupv3_se1_i2c {

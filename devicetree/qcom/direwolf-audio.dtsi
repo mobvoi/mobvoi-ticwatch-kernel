@@ -1,4 +1,5 @@
 #include "msm-audio-lpass.dtsi"
+#include "msm-arm-smmu-direwolf.dtsi"
 
 / {
 	aliases {
@@ -7,12 +8,21 @@
 };
 
 
+&soc {
+	spf_core_platform: spf_core_platform {
+		compatible = "qcom,spf-core-platform";
+	};
+
+	audio_pkt_core_platform: audio-pkt-platform {
+		compatible = "qcom,audio-pkt-core-platform";
+	};
+};
+
 &msm_audio_ion {
 	iommus = <&apps_smmu 0x0c01 0x0>;
 	qcom,smmu-sid-mask = /bits/ 64 <0xf>;
 	/delete-property/ qcom,iommu-dma-addr-pool;
 };
-
 
 &soc {
 	tdm_pri_rx: qcom,msm-dai-tdm-pri-rx {
@@ -1093,7 +1103,6 @@
 
 };
 
-
 &audio_apr {
 	q6core: qcom,q6core-audio {
 		compatible = "qcom,q6core-audio";
@@ -1285,6 +1294,59 @@
 		asoc-codec = <&stub_codec>;
 		asoc-codec-names = "msm-stub-codec.1";
 		qcom,msm_audio_ssr_devs = <&audio_apr>, <&q6core>;
+	};
+};
+
+&spf_core_platform {
+	spf_msm_audio_ion: qcom,spf-msm-audio-ion {
+		compatible = "qcom,msm-audio-ion";
+		qcom,smmu-version = <2>;
+		qcom,smmu-enabled;
+		iommus = <&apps_smmu 0x0c01 0x0>;
+		qcom,smmu-sid-mask = /bits/ 64 <0xf>;
+	};
+
+	spf_tdm_pri_rx: qcom,spf-msm-dai-tdm-pri-rx {
+		compatible = "qcom,msm-pcm-pinctrl";
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&pri_tdm_sck_active &pri_tdm_ws_active
+			&pri_tdm_din_active &pri_tdm_dout_active>;
+		pinctrl-1 = <&pri_tdm_sck_sleep &pri_tdm_ws_sleep
+			&pri_tdm_din_sleep &pri_tdm_dout_sleep>;
+		#gpio-cells = <0>;
+	};
+
+	spf_tdm_tert_rx: qcom,spf-msm-dai-tdm-tert-rx {
+		compatible = "qcom,msm-pcm-pinctrl";
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&tert_tdm_sck_active &tert_tdm_ws_active
+			&tert_tdm_din_active &tert_tdm_dout_active>;
+		pinctrl-1 = <&tert_tdm_sck_sleep &tert_tdm_ws_sleep
+			&tert_tdm_din_sleep &tert_tdm_dout_sleep>;
+		#gpio-cells = <0>;
+	};
+
+	spf_internal_mclk1: qcom,spf-msm-internal-mclk1 {
+		compatible = "qcom,msm-pcm-pinctrl";
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&audio_internal_mclk1_active>;
+		pinctrl-1 = <&audio_internal_mclk1_sleep>;
+		#gpio-cells = <0>;
+	};
+
+	spf_snd_8295: spf-sound-adp-star {
+		compatible = "qcom,sa8295-asoc-snd-adp-star";
+		qcom,model = "sa8295-adp-star-snd-card";
+		qcom,mi2s-audio-intf;
+		qcom,auxpcm-audio-intf;
+		qcom,msm-mi2s-master = <1>, <1>, <1>, <1>, <1>;
+
+		qcom,pri-tdm-gpios = <&spf_tdm_pri_rx>;
+		qcom,tert-tdm-gpios = <&spf_tdm_tert_rx>;
+		qcom,internal-mclk1-gpios = <&spf_internal_mclk1>;
+
+		asoc-codec = <&stub_codec>;
+		asoc-codec-names = "msm-stub-codec.1";
 	};
 };
 

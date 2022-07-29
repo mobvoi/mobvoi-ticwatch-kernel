@@ -1702,6 +1702,12 @@
 		#mbox-cells = <1>;
 	};
 
+	aop-msg-client {
+		compatible = "qcom,debugfs-qmp-client";
+		mboxes = <&qmp_aop 0>;
+		mbox-names = "aop";
+	};
+
 	slim_aud: slim@62dc0000 {
 		cell-index = <1>;
 		compatible = "qcom,slim-ngd";

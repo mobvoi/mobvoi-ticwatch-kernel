@@ -24,6 +24,8 @@ Required properties:
 			 present on holi chipset.
 			"qcom,ufs-phy-qmp-v3-660" for V3 ufs phy present
 			 on SM6150 chipset.
+			"qcom,ufs-phy-qmp-v4-waipio" for V4 ufs phy
+			 present on Lemans chipset.
 
 - reg               : should contain PHY register address space (mandatory),
 - reg-names         : indicates various resources passed to driver (via reg proptery) by name.

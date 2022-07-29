@@ -53,6 +53,7 @@
 
 &icnss {
 	qcom,rf_subtype = <1>;
+	vdd-1.8-xo-supply = <>;
 };
 
 &qupv3_se5_4uart {

@@ -53,7 +53,7 @@
 			config {
 				pins = "gpio20", "gpio21",
 						"gpio22", "gpio23";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -113,7 +113,7 @@
 			config {
 				pins = "gpio24", "gpio25",
 						"gpio26", "gpio27";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -173,7 +173,7 @@
 			config {
 				pins = "gpio36", "gpio37",
 						"gpio38", "gpio39";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -233,7 +233,7 @@
 			config {
 				pins = "gpio28", "gpio29",
 						"gpio30", "gpio31";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -293,7 +293,7 @@
 			config {
 				pins = "gpio32", "gpio33",
 						"gpio34", "gpio35";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -353,7 +353,7 @@
 			config {
 				pins = "gpio36", "gpio37",
 						"gpio38", "gpio39";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -441,7 +441,7 @@
 			config {
 				pins = "gpio40", "gpio41",
 						"gpio42", "gpio43";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -501,7 +501,7 @@
 			config {
 				pins = "gpio42", "gpio43",
 						"gpio40", "gpio41";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -561,7 +561,7 @@
 			config {
 				pins = "gpio46", "gpio47",
 						"gpio44", "gpio45";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -649,7 +649,7 @@
 			config {
 				pins = "gpio44", "gpio45",
 						"gpio46", "gpio47";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -737,7 +737,7 @@
 			config {
 				pins = "gpio48", "gpio49",
 						"gpio50", "gpio51";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -797,8 +797,88 @@
 			config {
 				pins = "gpio52", "gpio53",
 						"gpio54", "gpio55";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
+			};
+		};
+	};
+
+	qupv3_se12_4uart_pins: qupv3_se12_4uart_pins {
+		qupv3_se12_default_cts: qupv3_se12_default_cts {
+			mux {
+				pins = "gpio52";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio52";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+
+		qupv3_se12_default_rtsrx: qupv3_se12_default_rtsrx {
+			mux {
+				pins = "gpio53", "gpio55";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio53", "gpio55";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+		qupv3_se12_default_tx: qupv3_se12_default_tx {
+			mux {
+				pins = "gpio54";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio54";
+				drive-strength = <2>;
+				bias-pull-up;
+			};
+		};
+
+		qupv3_se12_ctsrx: qupv3_se12_ctsrx {
+			mux {
+				pins = "gpio52", "gpio55";
+				function = "qup1_se5";
+			};
+
+			config {
+				pins = "gpio52", "gpio55";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+
+		qupv3_se12_rts: qupv3_se12_rts {
+			mux {
+				pins = "gpio53";
+				function = "qup1_se5";
+			};
+
+			config {
+				pins = "gpio53";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+		qupv3_se12_tx: qupv3_se12_tx {
+			mux {
+				pins = "gpio54";
+				function = "qup1_se5";
+			};
+
+			config {
+				pins = "gpio54";
+				drive-strength = <2>;
+				bias-pull-up;
 			};
 		};
 	};
@@ -885,7 +965,7 @@
 			config {
 				pins = "gpio80", "gpio81",
 						"gpio82", "gpio83";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -945,7 +1025,7 @@
 			config {
 				pins = "gpio84", "gpio85",
 						"gpio99", "gpio100";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -1005,7 +1085,7 @@
 			config {
 				pins = "gpio86", "gpio87",
 						"gpio88", "gpio89";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -1065,8 +1145,88 @@
 			config {
 				pins = "gpio91", "gpio92",
 						"gpio93", "gpio94";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
+			};
+		};
+	};
+
+	qupv3_se17_4uart_pins: qupv3_se17_4uart_pins {
+		qupv3_se17_default_cts: qupv3_se17_default_cts {
+			mux {
+				pins = "gpio91";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio91";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+
+		qupv3_se17_default_rtsrx: qupv3_se17_default_rtsrx {
+			mux {
+				pins = "gpio92", "gpio94";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio92", "gpio94";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+		qupv3_se17_default_tx: qupv3_se17_default_tx {
+			mux {
+				pins = "gpio93";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio93";
+				drive-strength = <2>;
+				bias-pull-up;
+			};
+		};
+
+		qupv3_se17_ctsrx: qupv3_se17_ctsrx {
+			mux {
+				pins = "gpio91", "gpio94";
+				function = "qup2_se3";
+			};
+
+			config {
+				pins = "gpio91", "gpio94";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+
+		qupv3_se17_rts: qupv3_se17_rts {
+			mux {
+				pins = "gpio92";
+				function = "qup2_se3";
+			};
+
+			config {
+				pins = "gpio92";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+		qupv3_se17_tx: qupv3_se17_tx {
+			mux {
+				pins = "gpio93";
+				function = "qup2_se3";
+			};
+
+			config {
+				pins = "gpio93";
+				drive-strength = <2>;
+				bias-pull-up;
 			};
 		};
 	};
@@ -1125,7 +1285,7 @@
 			config {
 				pins = "gpio95", "gpio96",
 						"gpio97", "gpio98";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -1185,7 +1345,7 @@
 			config {
 				pins = "gpio99", "gpio100",
 						"gpio84", "gpio95";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -1245,7 +1405,7 @@
 			config {
 				pins = "gpio97", "gpio98",
 						"gpio95", "gpio96";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};
@@ -1305,7 +1465,7 @@
 			config {
 				pins = "gpio13", "gpio14",
 						"gpio15", "gpio16";
-				drive-strength = <0>;
+				drive-strength = <2>;
 				bias-disable;
 			};
 		};

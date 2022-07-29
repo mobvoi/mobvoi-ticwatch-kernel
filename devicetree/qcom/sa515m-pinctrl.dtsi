@@ -1520,6 +1520,60 @@
 		};
 
 		/* SDC pin type */
+
+		sdc1_on: sdc1_on {
+			clk {
+				pins = "sdc1_clk";
+				bias-disable;
+				drive-strength = <16>;
+			};
+
+			cmd {
+				pins = "sdc1_cmd";
+				bias-pull-up;
+				drive-strength = <10>;
+			};
+
+			data {
+				pins = "sdc1_data";
+				bias-pull-up;
+				drive-strength = <10>;
+			};
+
+			sd-cd {
+				pins = "gpio99";
+				bias-pull-up;
+				drive-strength = <2>;
+			};
+		};
+
+		sdc1_off: sdc1_off {
+			clk {
+				pins = "sdc1_clk";
+				bias-disable;
+				drive-strength = <2>;
+			};
+
+			cmd {
+				pins = "sdc1_cmd";
+				bias-pull-up;
+				drive-strength = <2>;
+			};
+
+			data {
+				pins = "sdc1_data";
+				bias-pull-up;
+				drive-strength = <2>;
+			};
+
+			sd-cd {
+				pins = "gpio99";
+				bias-disable;
+				drive-strength = <2>;
+			};
+		};
+
+
 		sdc1_clk_on: sdc1_clk_on {
 			config {
 				pins = "sdc1_clk";
