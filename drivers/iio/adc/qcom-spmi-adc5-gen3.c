@@ -863,7 +863,7 @@ static int adc_tm5_gen3_set_trip_temp(void *data,
 					int low_temp, int high_temp)
 {
 	struct adc5_channel_prop *prop = data;
-	struct adc5_chip *adc = prop->chip;
+	struct adc5_chip *adc = NULL;
 	struct adc_tm_config tm_config;
 	int ret;
 
@@ -1214,7 +1214,7 @@ EXPORT_SYMBOL(adc_tm_channel_measure_gen3);
 int32_t adc_tm_disable_chan_meas_gen3(struct adc5_chip *chip,
 					struct adc_tm_param *param)
 {
-	int ret, i;
+	int ret = 0, i = 0;
 	uint32_t dt_index = 0, v_channel;
 	struct adc_tm_client_info *client_info = NULL;
 

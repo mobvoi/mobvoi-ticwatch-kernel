@@ -25,7 +25,7 @@
 #include "ch101_client.h"
 #include "ch101_reg.h"
 
-#define SX1508_DEVICE_ID "sx1508q"
+#define SX1508_DEVICE_NODE "ch_io_expander"
 
 // Device tree RP4
 //
@@ -252,19 +252,19 @@ static int write_sync(void *client, u16 i2c_addr, u16 length, u8 *data)
 	}
 }
 
-static int match_gpio_chip_by_label(struct gpio_chip *chip, void *data)
+static int match_gpio_chip_by_node(struct gpio_chip *chip, void *data)
 {
-	return !strcmp(chip->label, data);
+	return !strcmp(chip->of_node->name, data);
 }
 
 static struct gpio_chip *get_gpio_exp(void)
 {
 	struct gpio_chip *chip;
 
-	chip = gpiochip_find(SX1508_DEVICE_ID,
-				match_gpio_chip_by_label);
+	chip = gpiochip_find(SX1508_DEVICE_NODE,
+				match_gpio_chip_by_node);
 
-//	pr_info(TAG "%s: name: %s gpio: %p\n", __func__,SX1508_DEVICE_ID,chip);
+//	pr_info(TAG "%s: name: %s gpio: %p\n", __func__,SX1508_DEVICE_NODE,chip);
 
 	return chip;
 }
@@ -334,7 +334,8 @@ static int ch101_i2c_probe(struct i2c_client *client,
 	gpio = get_gpio_exp();
 	if (!gpio) {
 		dev_err(dev, "Error initializing expander: %s\n",
-			SX1508_DEVICE_ID);
+			SX1508_DEVICE_NODE);
+		return -ENODEV;
 	}
 
 	cbk->read_reg = read_reg;

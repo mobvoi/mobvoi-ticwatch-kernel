@@ -652,36 +652,26 @@ int chdrv_group_hw_trigger(struct ch_group_t *grp_ptr)
 	int ch_err = !grp_ptr;
 	u8 dev_num;
 	struct ch_dev_t *dev_ptr;
-	unsigned long flags;
 
 	if (ch_err)
 		return ch_err;
 
-	local_irq_save(flags);    /* interrupts are now disabled */
-    /* CH 101 Rx only */
 	for (dev_num = 0; dev_num < ch_get_num_ports(grp_ptr); dev_num++) {
 		dev_ptr = ch_get_dev_ptr(grp_ptr, dev_num);
-		if (ch_sensor_is_connected(dev_ptr) && (dev_num < 3) &&
-			(ch_get_mode(dev_ptr) == CH_MODE_TRIGGERED_RX_ONLY))
-			ch_err |= chdrv_hw_trigger_up(dev_ptr);
-	}
-	/* Ch101 echo mode (since Rx only is already done above or ch201 echo mode */
-	for (dev_num = 0; dev_num < ch_get_num_ports(grp_ptr); dev_num++) {
-		dev_ptr = ch_get_dev_ptr(grp_ptr, dev_num);
-		if (ch_sensor_is_connected(dev_ptr) && ((dev_num >= 3) ||
-			(ch_get_mode(dev_ptr) == CH_MODE_TRIGGERED_TX_RX)))
+		if (ch_sensor_is_connected(dev_ptr))
 			ch_err |= chdrv_hw_trigger_up(dev_ptr);
 	}
 
+	chbsp_delay_us(5); // Pulse needs to be a minimum of 800ns long
+
 	for (dev_num = 0; dev_num < ch_get_num_ports(grp_ptr); dev_num++) {
 		dev_ptr = ch_get_dev_ptr(grp_ptr, dev_num);
-		ch_err |= chdrv_hw_trigger_down(dev_ptr);
+		if (ch_sensor_is_connected(dev_ptr))
+			ch_err |= chdrv_hw_trigger_down(dev_ptr);
 	}
-	local_irq_restore(flags); /* interrupts are restored to their previous state */
-
-	// Delay a bit before re-enabling pin interrupt as input pin to avoid
+	// Delay a bit before re-enabling pin interrupt to avoid
 	// possibly triggering on falling-edge noise
-	chbsp_delay_us(1);
+	chbsp_delay_us(10);
 
 	for (dev_num = 0; dev_num < ch_get_num_ports(grp_ptr); dev_num++) {
 		dev_ptr = ch_get_dev_ptr(grp_ptr, dev_num);
@@ -713,7 +703,7 @@ int chdrv_hw_trigger_up(struct ch_dev_t *dev_ptr)
 
 	if (!ch_err) {
 		// Disable pin interrupt before triggering pulse
-//		chbsp_io_interrupt_disable(dev_ptr);
+		chbsp_io_interrupt_disable(dev_ptr);
 		// Generate pulse
 //		printf("%s: Generate pulse - Start %p", __func__, dev_ptr);
 		chbsp_set_io_dir_out(dev_ptr);

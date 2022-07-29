@@ -32,8 +32,10 @@
 
 #define CRYPTO_ICE_FDE_KEY_INDEX	31
 #define CRYPTO_UD_VOLNAME			"userdata"
-#define CRYPTO_ICE_FDE_LEGACY_UFS	"UFS ICE Full Disk Encryption"
-#define CRYPTO_ICE_FDE_LEGACY_EMMC	"SDCC ICE Full Disk Encryption"
+#define CRYPTO_ICE_FDE_LEGACY_UFS	"UFS ICE Full Disk Encryption    "
+#define CRYPTO_ICE_FDE_LEGACY_EMMC	"SDCC ICE Full Disk Encryption   "
+#define CRYPTO_ICE_UFS_DEV_NAME		"ufshcd-qcom"
+#define CRYPTO_ICE_EMMC_DEV_NAME	"sdhci_msm"
 #define QSEECOM_KEY_ID_EXISTS		-65
 
 
@@ -63,6 +65,9 @@ struct ice_part_cfg {
 	struct kobject kobj;
 	struct kobj_type kobj_type;
 };
+
+static int crypto_qti_ice_init_fde_node(struct device *dev);
+
 #endif //CONFIG_QTI_CRYPTO_FDE
 
 static int ice_check_fuse_setting(struct crypto_vops_qti_entry *ice_entry)
@@ -137,6 +142,12 @@ int crypto_qti_init_crypto(struct device *dev, void __iomem *mmio_base,
 	err = ice_check_fuse_setting(ice_entry);
 	if (err)
 		return err;
+
+#if IS_ENABLED(CONFIG_QTI_CRYPTO_FDE)
+	err = crypto_qti_ice_init_fde_node(dev);
+	if (err)
+		return err;
+#endif
 
 	*priv_data = (void *)ice_entry;
 
@@ -1269,27 +1280,6 @@ static int crypto_qti_ice_probe(struct platform_device *pdev)
 	if (rc)
 		goto err_ice_dev;
 
-	//Create a Kset for the encrypted partitions
-	ice_dev->fde_partitions = kset_create_and_add("fde_partitions", NULL, &ice_dev->pdev->kobj);
-	if (ice_dev->fde_partitions == NULL) {
-		rc = -EINVAL;
-		pr_err("%s: Failed to create partitons KSet\n", __func__);
-		goto err_ice_dev;
-	}
-
-
-	/* Set up platform device attributes in sysfs */
-	rc = sysfs_create_groups(&ice_dev->pdev->kobj, ice_groups);
-	if (rc) {
-		pr_err("%s: Failed to add pdev attributes: %d\n", __func__,
-			rc);
-		goto err_ice_dev;
-	} else {
-		ice_dev->sysfs_groups_created = true;
-	}
-
-	/* Set up partition config folder in sysfs */
-	ice_dev->partitions_kobj_type.release = crypto_qti_ice_release_kobj;
 	/*
 	 * If ICE is enabled here, it would be waste of power.
 	 * We would enable ICE when first request for crypto
@@ -1638,7 +1628,91 @@ static int crypto_qti_ice_init(struct ice_device *ice_dev,
 
 	return crypto_qti_ice_finish_init(ice_dev);
 }
+static int crypto_qti_ice_init_fde_node(struct device *dev)
+{
 
+	struct ice_device *ice_dev = NULL;
+	int rc = 0;
+
+	if (!dev) {
+		pr_err("%s: Invalid platform_device passed\n",
+			__func__);
+		return -EINVAL;
+	}
+
+	//Only one ice device is supported , remove the extra one(DTS has more than one node)
+
+	if (!strcmp(CRYPTO_ICE_UFS_DEV_NAME, dev_driver_string(dev))) {
+		//ufs found , remove eMMC node if exists
+		ice_dev = crypto_qti_get_ice_device_from_storage_type("sdcc");
+		if (ice_dev) {
+			mutex_destroy(&ice_dev->mutex);
+
+			if (ice_dev->mmio)
+				iounmap(ice_dev->mmio);
+
+			list_del(&ice_dev->list);
+			kfree(ice_dev);
+		}
+		//Get UFS instance
+		ice_dev = crypto_qti_get_ice_device_from_storage_type("ufs");
+	}
+
+	if (!strcmp(CRYPTO_ICE_EMMC_DEV_NAME, dev_driver_string(dev))) {
+		ice_dev = crypto_qti_get_ice_device_from_storage_type("ufs");
+		if (ice_dev) {
+			//eMMC found , remove UFS node if exists
+			mutex_destroy(&ice_dev->mutex);
+			if (ice_dev->mmio)
+				iounmap(ice_dev->mmio);
+
+			list_del(&ice_dev->list);
+			kfree(ice_dev);
+		}
+
+		//Get eMMC instance
+		ice_dev = crypto_qti_get_ice_device_from_storage_type("sdcc");
+		if (ice_dev == NULL) {
+			pr_err("Victor ice_dev NULL !\n");
+			return -EINVAL;
+		}
+	}
+
+	if (!ice_dev) {
+		pr_err("%s: No ice device found\n",
+			__func__);
+		return -EINVAL;
+	}
+
+	//Create a Kset for the encrypted partitions
+	ice_dev->fde_partitions = kset_create_and_add("fde_partitions", NULL, &ice_dev->pdev->kobj);
+	if (ice_dev->fde_partitions == NULL) {
+		rc = -EINVAL;
+		pr_err("%s: Failed to create partitons KSet\n", __func__);
+		goto err_ice_dev;
+	}
+
+
+	/* Set up platform device attributes in sysfs */
+	rc = sysfs_create_groups(&ice_dev->pdev->kobj, ice_groups);
+	if (rc) {
+		pr_err("%s: Failed to add pdev attributes: %d\n", __func__,
+			rc);
+		goto err_ice_dev;
+	} else {
+		ice_dev->sysfs_groups_created = true;
+	}
+
+	/* Set up partition config folder in sysfs */
+	ice_dev->partitions_kobj_type.release = crypto_qti_ice_release_kobj;
+
+	goto out;
+
+err_ice_dev:
+	crypto_qti_ice_cleanup_sysfs(ice_dev);
+out:
+	return rc;
+}
 
 int crypto_qti_ice_setup_ice_hw(const char *storage_type, int enable)
 {

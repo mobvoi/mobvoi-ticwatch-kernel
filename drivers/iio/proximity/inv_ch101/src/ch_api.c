@@ -374,6 +374,8 @@ u8 ch_set_thresholds(struct ch_dev_t *dev_ptr,
 
 	if (func_ptr != NULL && thresh_ptr != NULL)
 		ret_val = (*func_ptr)(dev_ptr, thresh_ptr);
+	else
+		ret_val = 0;
 
 	return ret_val;
 }
@@ -386,6 +388,8 @@ u8 ch_get_thresholds(struct ch_dev_t *dev_ptr,
 
 	if (func_ptr != NULL && thresh_ptr != NULL)
 		ret_val = (*func_ptr)(dev_ptr, thresh_ptr);
+	else
+		ret_val = 0;
 
 	return ret_val;
 }

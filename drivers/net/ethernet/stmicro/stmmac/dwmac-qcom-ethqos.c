@@ -134,6 +134,7 @@
 void *ipc_emac_log_ctxt;
 
 static struct emac_emb_smmu_cb_ctx emac_emb_smmu_ctx = {0};
+struct plat_stmmacenet_data *plat_dat;
 static struct qcom_ethqos *pethqos;
 
 static unsigned char dev_addr[ETH_ALEN] = {
@@ -1411,7 +1412,8 @@ static void emac_emb_smmu_exit(void)
 	emac_emb_smmu_ctx.iommu_domain = NULL;
 }
 
-static int emac_emb_smmu_cb_probe(struct platform_device *pdev)
+static int emac_emb_smmu_cb_probe(struct platform_device *pdev,
+				  struct plat_stmmacenet_data *plat_dat)
 {
 	int result = 0;
 	u32 iova_ap_mapping[2];
@@ -1448,6 +1450,7 @@ static int emac_emb_smmu_cb_probe(struct platform_device *pdev)
 		iommu_get_domain_for_dev(&emac_emb_smmu_ctx.smmu_pdev->dev);
 
 	ETHQOSINFO("Successfully attached to IOMMU\n");
+	plat_dat->stmmac_emb_smmu_ctx = emac_emb_smmu_ctx;
 	if (emac_emb_smmu_ctx.pdev_master)
 		goto smmu_probe_done;
 
@@ -2256,7 +2259,6 @@ static int _qcom_ethqos_probe(void *arg)
 	struct platform_device *pdev = (struct platform_device *)arg;
 	struct device_node *np = pdev->dev.of_node;
 	struct device_node *rgmii_io_macro_node = NULL;
-	struct plat_stmmacenet_data *plat_dat = NULL;
 	struct stmmac_resources stmmac_res;
 	struct qcom_ethqos *ethqos = NULL;
 	struct resource *res = NULL;
@@ -2266,7 +2268,7 @@ static int _qcom_ethqos_probe(void *arg)
 
 	if (of_device_is_compatible(pdev->dev.of_node,
 				    "qcom,emac-smmu-embedded"))
-		return emac_emb_smmu_cb_probe(pdev);
+		return emac_emb_smmu_cb_probe(pdev, plat_dat);
 
 #ifdef CONFIG_QGKI_MSM_BOOT_TIME_MARKER
 	place_marker("M - Ethernet probe start");
@@ -2432,8 +2434,6 @@ static int _qcom_ethqos_probe(void *arg)
 			emac_emb_smmu_ctx.ret = 0;
 		}
 	}
-
-	plat_dat->stmmac_emb_smmu_ctx = emac_emb_smmu_ctx;
 
 	ret = stmmac_dvr_probe(&pdev->dev, plat_dat, &stmmac_res);
 	if (ret)

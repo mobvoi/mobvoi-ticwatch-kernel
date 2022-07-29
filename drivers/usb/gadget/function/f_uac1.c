@@ -213,6 +213,13 @@ static struct usb_endpoint_descriptor as_out_ep_desc  = {
 	.bInterval =		4,
 };
 
+static struct usb_ss_ep_comp_descriptor as_out_ep_comp_desc = {
+		.bLength =      sizeof(as_out_ep_comp_desc),
+		.bDescriptorType =  USB_DT_SS_ENDPOINT_COMP,
+
+		.wBytesPerInterval =    cpu_to_le16(1024),
+};
+
 /* Class-specific AS ISO OUT Endpoint Descriptor */
 static struct uac_iso_endpoint_descriptor as_iso_out_desc = {
 	.bLength =		UAC_ISO_ENDPOINT_DESC_SIZE,
@@ -244,6 +251,13 @@ static struct usb_endpoint_descriptor as_in_ep_desc  = {
 	.bInterval =		4,
 };
 
+static struct usb_ss_ep_comp_descriptor as_in_ep_comp_desc = {
+		.bLength =      sizeof(as_in_ep_comp_desc),
+		.bDescriptorType =  USB_DT_SS_ENDPOINT_COMP,
+
+		.wBytesPerInterval =    cpu_to_le16(1024),
+};
+
 /* Class-specific AS ISO OUT Endpoint Descriptor */
 static struct uac_iso_endpoint_descriptor as_iso_in_desc = {
 	.bLength =		UAC_ISO_ENDPOINT_DESC_SIZE,
@@ -270,6 +284,7 @@ static struct usb_descriptor_header *f_audio_desc[] = {
 	(struct usb_descriptor_header *)&as_out_type_i_desc,
 
 	(struct usb_descriptor_header *)&as_out_ep_desc,
+	(struct usb_descriptor_header *)&as_out_ep_comp_desc,
 	(struct usb_descriptor_header *)&as_iso_out_desc,
 
 	(struct usb_descriptor_header *)&as_in_interface_alt_0_desc,
@@ -279,6 +294,7 @@ static struct usb_descriptor_header *f_audio_desc[] = {
 	(struct usb_descriptor_header *)&as_in_type_i_desc,
 
 	(struct usb_descriptor_header *)&as_in_ep_desc,
+	(struct usb_descriptor_header *)&as_in_ep_comp_desc,
 	(struct usb_descriptor_header *)&as_iso_in_desc,
 	NULL,
 };
@@ -629,6 +645,10 @@ static int f_audio_bind(struct usb_configuration *c, struct usb_function *f)
 
 	status = -ENODEV;
 
+	audio_opts->ep_maxp_size = clamp(audio_opts->ep_maxp_size, 1U, 1023U);
+	as_out_ep_desc.wMaxPacketSize = cpu_to_le16(audio_opts->ep_maxp_size);
+	as_in_ep_desc.wMaxPacketSize = cpu_to_le16(audio_opts->ep_maxp_size);
+
 	/* allocate instance-specific endpoints */
 	ep = usb_ep_autoconfig(cdev->gadget, &as_out_ep_desc);
 	if (!ep)
@@ -643,7 +663,7 @@ static int f_audio_bind(struct usb_configuration *c, struct usb_function *f)
 	audio->in_ep->desc = &as_in_ep_desc;
 
 	/* copy descriptors, and track endpoint copies */
-	status = usb_assign_descriptors(f, f_audio_desc, f_audio_desc, NULL,
+	status = usb_assign_descriptors(f, f_audio_desc, f_audio_desc, f_audio_desc,
 					NULL);
 	if (status)
 		goto fail;
@@ -739,6 +759,7 @@ UAC1_ATTRIBUTE(p_chmask);
 UAC1_ATTRIBUTE(p_srate);
 UAC1_ATTRIBUTE(p_ssize);
 UAC1_ATTRIBUTE(req_number);
+UAC1_ATTRIBUTE(ep_maxp_size);
 
 static struct configfs_attribute *f_uac1_attrs[] = {
 	&f_uac1_opts_attr_c_chmask,
@@ -748,6 +769,7 @@ static struct configfs_attribute *f_uac1_attrs[] = {
 	&f_uac1_opts_attr_p_srate,
 	&f_uac1_opts_attr_p_ssize,
 	&f_uac1_opts_attr_req_number,
+	&f_uac1_opts_attr_ep_maxp_size,
 	NULL,
 };
 
@@ -786,6 +808,7 @@ static struct usb_function_instance *f_audio_alloc_inst(void)
 	opts->p_srate = UAC1_DEF_PSRATE;
 	opts->p_ssize = UAC1_DEF_PSSIZE;
 	opts->req_number = UAC1_DEF_REQ_NUM;
+	opts->ep_maxp_size = UAC1_OUT_EP_MAX_PACKET_SIZE;
 	return &opts->func_inst;
 }
 

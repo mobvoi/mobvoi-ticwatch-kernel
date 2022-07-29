@@ -300,10 +300,9 @@ static struct ch_group_t *init_group(void)
 				connected_sensor_array[num_connected_device++] =
 					dev_num;
 
-				/* dev_num == 2 is for floor type detection */
-				if (dev_num < 2)
+				if (dev_num < 3)
 					num_connected_ch101_device++;
-				else if (dev_num > 2)
+				else
 					num_connected_ch201_device++;
 			}
 		}
@@ -392,7 +391,7 @@ void start_driver(int period_ms, int time_ms)
 void stop_driver(void)
 {
 	printf("%s\n", __func__);
-	drv_data.driver_active = 0;
+	drv_data.driver_active = false;
 }
 
 static void ext_int_handler(u32 gpio_pin)
@@ -554,12 +553,12 @@ static void set_ch101_pitch_catch_config(void)
 		do {
 			drv_data.ch101_pitch = (drv_data.ch101_pitch + 1)
 				% num_connected_ch101_device;
-		} while (excluded == true && ++count < CHIRP_MAX_NUM_SENSORS);
+		} while (excluded && ++count < CHIRP_MAX_NUM_SENSORS);
 
 		if (count >= CHIRP_MAX_NUM_SENSORS)
 			return;
 
-		for (dev_num = 0; dev_num < 2; dev_num++) {
+		for (dev_num = 0; dev_num < 3; dev_num++) {
 			// init struct in array
 			enum ch_mode_t mode;
 			struct ch_dev_t *dev_ptr = &chirp_devices[dev_num];
@@ -579,8 +578,8 @@ static void set_ch101_pitch_catch_config(void)
 		}
 	}
 
-	/*if (num_connected_ch201_device) { */
-		for (dev_num = 2; dev_num < num_ports; dev_num++) {
+	if (num_connected_ch201_device) {
+		for (dev_num = 3; dev_num < num_ports; dev_num++) {
 			// init struct in array
 			enum ch_mode_t mode;
 			struct ch_dev_t *dev_ptr = &chirp_devices[dev_num];
@@ -592,7 +591,7 @@ static void set_ch101_pitch_catch_config(void)
 			if (!ret_val)
 				dev_ptr->mode = mode;
 		}
-	/*} */
+	}
 	show_config();
 }
 
@@ -730,7 +729,7 @@ void config_driver(void)
 				CHIRP_SENSOR_SAMPLE_INTERVAL;
 
 			/* Set detection thresholds (CH201 only) */
-			dev_config.thresh_ptr = 0;
+			dev_config.thresh_ptr = NULL;
 
 			/* Apply sensor configuration */
 			chirp_error = ch_set_config(dev_ptr, &dev_config);
@@ -781,7 +780,7 @@ static void trigger_driver(void)
 	printf("%s: start\n", __func__);
 
 	taskflags = 0;
-	drv_data.driver_active = 1;
+	drv_data.driver_active = true;
 	while (drv_data.driver_active) {
 		if (taskflags == 0) {
 			// 1 ms - put processor in low-power sleep mode
@@ -844,7 +843,7 @@ void single_shot_driver(void)
 
 
 	while (--count > 0) {
-		chbsp_proc_sleep(1); // 10 ms - put processor in sleep mode
+		chbsp_proc_sleep(10); // 10 ms - put processor in sleep mode
 		printf("%s: count: %d, taskflags: %02x\n",
 			__func__, count, taskflags);
 		/* Check for sensor data-ready interrupt(s) */
@@ -864,7 +863,6 @@ void single_shot_driver(void)
 			data_ready = true;
 			break;
 		}
-		chbsp_delay_us(5000);
 		//chbsp_proc_sleep(5); // 5 ms - put processor in sleep mode
 		printf("%s: count: %d, taskflags: %02x\n",
 			__func__, count, taskflags);

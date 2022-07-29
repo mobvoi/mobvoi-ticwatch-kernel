@@ -138,7 +138,7 @@
 #include "soniclib.h"
 
 #ifdef __GNUC__
-#define WEAK __weak
+#define WEAK __attribute__((weak))
 #else
 #define WEAK
 #endif

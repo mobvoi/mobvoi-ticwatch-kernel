@@ -48,6 +48,8 @@ enum {
 	LAHAINA_SLAVE_EPSS_L3_CPU6,
 	LAHAINA_SLAVE_EPSS_L3_CPU7,
 	LAHAINA_SLAVE_EPSS_L3_SHARED,
+	LEMANS_MASTER_EPSS_L3_1_APPS,
+	LEMANS_SLAVE_EPSS_L3_1_SHARED,
 };
 
 struct qcom_epss_l3_icc_provider {
@@ -146,6 +148,46 @@ static struct qcom_icc_node *direwolf_epss_l3_nodes[] = {
 static struct qcom_icc_desc direwolf_epss_l3 = {
 	.nodes = direwolf_epss_l3_nodes,
 	.num_nodes = ARRAY_SIZE(direwolf_epss_l3_nodes),
+};
+
+DEFINE_QNODE(mas_epss_l3_0_apps_lemans, LAHAINA_MASTER_EPSS_L3_APPS, 1, 0, 0,
+		LAHAINA_SLAVE_EPSS_L3_CPU0, LAHAINA_SLAVE_EPSS_L3_CPU1,
+		LAHAINA_SLAVE_EPSS_L3_CPU2, LAHAINA_SLAVE_EPSS_L3_CPU3,
+		LAHAINA_SLAVE_EPSS_L3_SHARED);
+DEFINE_QNODE(mas_epss_l3_1_apps_lemans, LEMANS_MASTER_EPSS_L3_1_APPS, 1, 2, 0,
+		LAHAINA_SLAVE_EPSS_L3_CPU4, LAHAINA_SLAVE_EPSS_L3_CPU5,
+		LAHAINA_SLAVE_EPSS_L3_CPU6, LAHAINA_SLAVE_EPSS_L3_CPU7,
+		LEMANS_SLAVE_EPSS_L3_1_SHARED);
+
+DEFINE_QNODE(slv_epss_l3_cpu0_lemans, LAHAINA_SLAVE_EPSS_L3_CPU0, 1, 1, 0);
+DEFINE_QNODE(slv_epss_l3_cpu1_lemans, LAHAINA_SLAVE_EPSS_L3_CPU1, 1, 1, 1);
+DEFINE_QNODE(slv_epss_l3_cpu2_lemans, LAHAINA_SLAVE_EPSS_L3_CPU2, 1, 1, 2);
+DEFINE_QNODE(slv_epss_l3_cpu3_lemans, LAHAINA_SLAVE_EPSS_L3_CPU3, 1, 1, 3);
+DEFINE_QNODE(slv_epss_l3_cpu4_lemans, LAHAINA_SLAVE_EPSS_L3_CPU4, 1, 3, 0);
+DEFINE_QNODE(slv_epss_l3_cpu5_lemans, LAHAINA_SLAVE_EPSS_L3_CPU5, 1, 3, 1);
+DEFINE_QNODE(slv_epss_l3_cpu6_lemans, LAHAINA_SLAVE_EPSS_L3_CPU6, 1, 3, 2);
+DEFINE_QNODE(slv_epss_l3_cpu7_lemans, LAHAINA_SLAVE_EPSS_L3_CPU7, 1, 3, 3);
+DEFINE_QNODE(slv_epss_l3_0_shared_lemans, LAHAINA_SLAVE_EPSS_L3_SHARED, 1, 0, 0);
+DEFINE_QNODE(slv_epss_l3_1_shared_lemans, LEMANS_SLAVE_EPSS_L3_1_SHARED, 1, 2, 0);
+
+static struct qcom_icc_node *lemans_epss_l3_nodes[] = {
+	[MASTER_EPSS_L3_APPS] = &mas_epss_l3_0_apps_lemans,
+	[MASTER_EPSS_L3_1_APPS] = &mas_epss_l3_1_apps_lemans,
+	[SLAVE_EPSS_L3_CPU0] = &slv_epss_l3_cpu0_lemans,
+	[SLAVE_EPSS_L3_CPU1] = &slv_epss_l3_cpu1_lemans,
+	[SLAVE_EPSS_L3_CPU2] = &slv_epss_l3_cpu2_lemans,
+	[SLAVE_EPSS_L3_CPU3] = &slv_epss_l3_cpu3_lemans,
+	[SLAVE_EPSS_L3_CPU4] = &slv_epss_l3_cpu4_lemans,
+	[SLAVE_EPSS_L3_CPU5] = &slv_epss_l3_cpu5_lemans,
+	[SLAVE_EPSS_L3_CPU6] = &slv_epss_l3_cpu6_lemans,
+	[SLAVE_EPSS_L3_CPU7] = &slv_epss_l3_cpu7_lemans,
+	[SLAVE_EPSS_L3_SHARED] = &slv_epss_l3_0_shared_lemans,
+	[SLAVE_EPSS_L3_1_SHARED] = &slv_epss_l3_1_shared_lemans,
+};
+
+static struct qcom_icc_desc lemans_epss_l3 = {
+	.nodes = lemans_epss_l3_nodes,
+	.num_nodes = ARRAY_SIZE(lemans_epss_l3_nodes),
 };
 
 static int qcom_icc_aggregate(struct icc_node *node, u32 tag, u32 avg_bw,
@@ -322,6 +364,7 @@ err:
 static const struct of_device_id epss_l3_of_match[] = {
 	{ .compatible = "qcom,lahaina-epss-l3-cpu", .data = &lahaina_epss_l3 },
 	{ .compatible = "qcom,direwolf-epss-l3-cpu", .data = &direwolf_epss_l3 },
+	{ .compatible = "qcom,lemans-epss-l3-cpu", .data = &lemans_epss_l3 },
 	{ },
 };
 MODULE_DEVICE_TABLE(of, epss_l3_of_match);

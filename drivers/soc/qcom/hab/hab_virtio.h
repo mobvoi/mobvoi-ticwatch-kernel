@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef __HAB_VIRTIO_H
 #define __HAB_VIRTIO_H
@@ -69,6 +70,8 @@ struct virtio_hab {
 
 	spinlock_t mlock; /* master lock for all the pchans */
 	bool ready; /* overall device ready flag */
+
+	struct list_head node; /* list of all probed virtio hab */
 };
 
 /*

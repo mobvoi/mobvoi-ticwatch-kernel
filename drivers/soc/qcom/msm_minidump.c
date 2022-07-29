@@ -519,7 +519,7 @@ static int msm_minidump_add_header(void)
 	strlcpy(banner, linux_banner, strlen(linux_banner) + 1);
 
 	shdr->sh_type = SHT_PROGBITS;
-	shdr->sh_offset = (elf_addr_t)(strtbl_off + MAX_STRTBL_SIZE);
+	shdr->sh_offset = (elf_addr_t)strtbl_off + MAX_STRTBL_SIZE;
 	shdr->sh_size = strlen(linux_banner) + 1;
 	shdr->sh_addr = (elf_addr_t)linux_banner;
 	shdr->sh_entsize = 0;
@@ -527,7 +527,7 @@ static int msm_minidump_add_header(void)
 	shdr->sh_name = set_section_name("linux_banner");
 
 	phdr->p_type = PT_LOAD;
-	phdr->p_offset = (elf_addr_t)(strtbl_off + MAX_STRTBL_SIZE);
+	phdr->p_offset = (elf_addr_t)strtbl_off + MAX_STRTBL_SIZE;
 	phdr->p_vaddr = (elf_addr_t)linux_banner;
 	phdr->p_paddr = virt_to_phys(linux_banner);
 	phdr->p_filesz = phdr->p_memsz = strlen(linux_banner) + 1;

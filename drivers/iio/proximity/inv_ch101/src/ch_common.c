@@ -476,7 +476,7 @@ void ch_common_store_op_freq(struct ch_dev_t *dev_ptr)
 
 	printf("API: %s: dev_num: %d\n", __func__, ch_get_dev_num(dev_ptr));
 
-	if (dev_ptr->part_number != CH201_PART_NUMBER) {
+	if (dev_ptr->part_number == CH101_PART_NUMBER) {
 		tof_sf_reg = CH101_COMMON_REG_TOF_SF;
 		freq_counter_cycles = CH101_FREQCOUNTERCYCLES;
 	} else {

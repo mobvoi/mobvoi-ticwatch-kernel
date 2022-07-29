@@ -1725,6 +1725,7 @@ static struct qcom_icc_bcm bcm_ce0 = {
 static struct qcom_icc_bcm bcm_cn0 = {
 	.name = "CN0",
 	.voter_idx = 0,
+	.keepalive = true,
 	.num_nodes = 2,
 	.nodes = { &qnm_gemnoc_cnoc, &qnm_gemnoc_pcie },
 };
@@ -1805,6 +1806,7 @@ static struct qcom_icc_bcm bcm_gnb0 = {
 static struct qcom_icc_bcm bcm_mc0 = {
 	.name = "MC0",
 	.voter_idx = 0,
+	.keepalive = true,
 	.num_nodes = 1,
 	.nodes = { &ebi },
 };
@@ -1812,6 +1814,7 @@ static struct qcom_icc_bcm bcm_mc0 = {
 static struct qcom_icc_bcm bcm_mm0 = {
 	.name = "MM0",
 	.voter_idx = 0,
+	.keepalive = true,
 	.num_nodes = 5,
 	.nodes = { &qnm_camnoc_hf, &qnm_mdp0_0,
 		   &qnm_mdp0_1, &qnm_mdp1_0,
@@ -1866,6 +1869,7 @@ static struct qcom_icc_bcm bcm_pci0 = {
 static struct qcom_icc_bcm bcm_qup0 = {
 	.name = "QUP0",
 	.voter_idx = 0,
+	.vote_scale = 1,
 	.num_nodes = 1,
 	.nodes = { &qup0_core_slave },
 };
@@ -1873,6 +1877,7 @@ static struct qcom_icc_bcm bcm_qup0 = {
 static struct qcom_icc_bcm bcm_qup1 = {
 	.name = "QUP1",
 	.voter_idx = 0,
+	.vote_scale = 1,
 	.num_nodes = 1,
 	.nodes = { &qup1_core_slave },
 };
@@ -1880,6 +1885,7 @@ static struct qcom_icc_bcm bcm_qup1 = {
 static struct qcom_icc_bcm bcm_qup2 = {
 	.name = "QUP2",
 	.voter_idx = 0,
+	.vote_scale = 1,
 	.num_nodes = 2,
 	.nodes = { &qup2_core_slave, &qup3_core_slave },
 };
@@ -1887,6 +1893,7 @@ static struct qcom_icc_bcm bcm_qup2 = {
 static struct qcom_icc_bcm bcm_sh0 = {
 	.name = "SH0",
 	.voter_idx = 0,
+	.keepalive = true,
 	.num_nodes = 1,
 	.nodes = { &qns_llcc },
 };
@@ -1901,6 +1908,7 @@ static struct qcom_icc_bcm bcm_sh2 = {
 static struct qcom_icc_bcm bcm_sn0 = {
 	.name = "SN0",
 	.voter_idx = 0,
+	.keepalive = true,
 	.num_nodes = 1,
 	.nodes = { &qns_gemnoc_sf },
 };
