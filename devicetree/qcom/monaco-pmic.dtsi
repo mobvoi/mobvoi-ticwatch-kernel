@@ -182,6 +182,7 @@
 	qcom,suspend-input-on-debug-batt;
 	qcom,chg-term-src = <1>;
 	qcom,chg-term-current-ma = <(-20)>;
+	qcom,usb-icl-ua = <900000>;
 	qcom,fcc-stepping-enable;
 	qcom,fcc-step-delay-ms = <1000>;
 	qcom,fcc-step-size-ua = <100000>;
