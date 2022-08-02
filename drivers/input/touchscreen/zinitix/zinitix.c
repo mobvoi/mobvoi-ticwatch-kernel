@@ -53,6 +53,7 @@
 #include <drm/drm_of.h>
 #include <drm/drm_panel.h>
 #include <linux/soc/qcom/slate_mobvoi_rpc_intf.h>
+#include <linux/soc/qcom/slate_events_bridge_intf.h>
 
 
 
@@ -561,6 +562,7 @@ struct bt541_ts_info {
 
 	struct seb_notif_info		*seb_handle;
 	struct notifier_block		seb_nb;
+	bool				is_slate_up;
 };
 typedef struct
 {
@@ -1293,13 +1295,13 @@ power_off:
 
 static bool bt541_power_control(struct bt541_ts_info *info, u8 ctl)
 {
-	pr_info("[TSP] %s, %d\n", __func__, ctl);
+	dev_info(&info->client->dev,"[TSP] %s, %d\n\n", __func__, ctl);
 
 	if (ctl == POWER_OFF) {
 		zinitix_power_control(info, 0);
 		mdelay(CHIP_OFF_DELAY);
 	} else if (ctl == POWER_ON_SEQUENCE) {
-		printk("bt541_power_control: POWER_ON_SEQUENCE\n");
+		dev_info(&info->client->dev,"bt541_power_control: POWER_ON_SEQUENCE!\n");
 		zinitix_power_control(info, 1);
 		zinitix_hw_reset(info,true);
 		mdelay(CHIP_ON_DELAY);
@@ -3928,6 +3930,25 @@ static void zinitix_setup_drm_notifier(struct bt541_ts_info *pdata)
 			zinitix_printk("Error drm_panel_notifier_register!!!!\n");
 }
 
+static int zinitix_seb_notifier_cb(struct notifier_block *nb,
+			unsigned long event, void *data)
+{
+	struct bt541_ts_info *info = container_of(nb,struct bt541_ts_info, seb_nb);
+
+	if (event == GLINK_CHANNEL_STATE_UP) {
+		info->is_slate_up = true;
+		dev_info(&info->client->dev,"Slate-UP, we can do reinit of tp!\n");
+		bt541_power_control(info, POWER_OFF);
+		bt541_power_control(info, POWER_ON_SEQUENCE);
+		if (init_touch(info) == false) {
+			dev_err(&info->client->dev,"re init_touch failed!\n");
+		}
+		dev_info(&info->client->dev,"re power on success!\n");
+
+	}
+
+	return 0;
+}
 static int bt541_ts_probe(struct i2c_client *client,
 		const struct i2c_device_id *i2c_id)
 {
@@ -3936,6 +3957,7 @@ static int bt541_ts_probe(struct i2c_client *client,
 	struct bt541_ts_info *info;
 	struct input_dev *input_dev;
 	struct drm_panel *active_panel = NULL;
+	struct seb_notif_info *seb_handle;
 
 	int ret = 0;
 
@@ -4174,6 +4196,15 @@ static int bt541_ts_probe(struct i2c_client *client,
 #endif
 
 	zinitix_setup_drm_notifier(info);
+	info->seb_nb.notifier_call = zinitix_seb_notifier_cb;
+	seb_handle = seb_register_for_slate_event(GLINK_CHANNEL_STATE_UP, &info->seb_nb);
+	if (IS_ERR_OR_NULL(seb_handle)) {
+		ret = seb_handle ? PTR_ERR(seb_handle) : -EINVAL;
+		dev_err(&client->dev,"Failed to register with Slate event bridge, ret=%d\n", ret);
+		return ret;
+	}
+
+	info->seb_handle = seb_handle;
 
 #if defined(CONFIG_PM_RUNTIME)
 	//pm_runtime_enable(&client->dev);
