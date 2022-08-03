@@ -1971,6 +1971,7 @@ static void clk_pll_restore_context(struct clk_hw *hw)
 
 	switch (type) {
 	case CLK_ALPHA_PLL_TYPE_DEFAULT:
+	case CLK_ALPHA_PLL_TYPE_BRAMMO:
 		clk_alpha_pll_configure(pll, pll->clkr.regmap,
 					pll->config);
 		break;

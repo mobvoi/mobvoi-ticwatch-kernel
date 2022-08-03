@@ -193,7 +193,7 @@ static int smblite_chg_config_init(struct smblite *chip)
 	u8 val, rev4;
 	int rc = 0;
 
-	chg->subtype = (u8)of_device_get_match_data(chg->dev);
+	chg->subtype = (enum pmic_type)(uintptr_t)of_device_get_match_data(chg->dev);
 
 	rc = smblite_lib_read(chg, REVID_REVISION4, &rev4);
 	if (rc < 0) {

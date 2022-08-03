@@ -1164,6 +1164,25 @@ static void adreno_isense_probe(struct kgsl_device *device)
 		dev_warn(device->dev, "isense ioremap failed\n");
 }
 
+static void adreno_fusa_probe(struct kgsl_device *device)
+{
+	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
+	struct resource *res;
+
+	res = platform_get_resource_byname(device->pdev, IORESOURCE_MEM,
+					   "fusa");
+	if (res == NULL)
+		return;
+
+	adreno_dev->fusa_base = res->start - device->reg_phys;
+	adreno_dev->fusa_len = resource_size(res);
+	adreno_dev->fusa_virt = devm_ioremap(&device->pdev->dev, res->start,
+					adreno_dev->fusa_len);
+
+	if (adreno_dev->fusa_virt == NULL)
+		dev_warn(device->dev, "fusa ioremap failed\n");
+}
+
 static bool adreno_is_gpu_disabled(struct platform_device *pdev)
 {
 	unsigned int row0;
@@ -1531,6 +1550,9 @@ int adreno_device_probe(struct platform_device *pdev,
 	adreno_cx_misc_probe(device);
 
 	adreno_isense_probe(device);
+
+	/* Probe for the optional FUSA block */
+	adreno_fusa_probe(device);
 
 	/* Allocate the memstore for storing timestamps and other useful info */
 
@@ -3332,6 +3354,64 @@ void adreno_cx_misc_regrmw(struct adreno_device *adreno_dev,
 	adreno_cx_misc_regwrite(adreno_dev, offsetwords, val | bits);
 }
 
+bool adreno_is_fusa_register(struct adreno_device *adreno_dev,
+		unsigned int offsetwords)
+{
+	return adreno_dev->fusa_virt &&
+		(offsetwords >= (adreno_dev->fusa_base >> 2)) &&
+		(offsetwords < (adreno_dev->fusa_base +
+				adreno_dev->fusa_len) >> 2);
+}
+
+void adreno_fusa_regread(struct adreno_device *adreno_dev,
+	unsigned int offsetwords, unsigned int *value)
+{
+	unsigned int fusa_offset;
+
+	if (!adreno_is_fusa_register(adreno_dev, offsetwords))
+		return;
+
+	fusa_offset = (offsetwords << 2) - adreno_dev->fusa_base;
+	*value = __raw_readl(adreno_dev->fusa_virt + fusa_offset);
+
+	/*
+	 * ensure this read finishes before the next one.
+	 * i.e. act like normal readl()
+	 */
+	rmb();
+}
+
+void adreno_fusa_regwrite(struct adreno_device *adreno_dev,
+	unsigned int offsetwords, unsigned int value)
+{
+	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
+	unsigned int fusa_offset;
+
+	if (!adreno_is_fusa_register(adreno_dev, offsetwords))
+		return;
+
+	fusa_offset = (offsetwords << 2) - adreno_dev->fusa_base;
+	trace_kgsl_regwrite(device, offsetwords, value);
+
+	/*
+	 * ensure previous writes post before this one,
+	 * i.e. act like normal writel()
+	 */
+	wmb();
+	__raw_writel(value, adreno_dev->fusa_virt + fusa_offset);
+}
+
+void adreno_fusa_regrmw(struct adreno_device *adreno_dev,
+		unsigned int offsetwords,
+		unsigned int mask, unsigned int bits)
+{
+	unsigned int val = 0;
+
+	adreno_fusa_regread(adreno_dev, offsetwords, &val);
+	val &= ~mask;
+	adreno_fusa_regwrite(adreno_dev, offsetwords, val | bits);
+}
+
 void adreno_profile_submit_time(struct adreno_submit_time *time)
 {
 	struct kgsl_drawobj *drawobj;
@@ -4046,6 +4126,7 @@ static int adreno_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#if IS_ENABLED(CONFIG_QCOM_SECURE_BUFFER)
 /*
  * Issue hyp_assign call to assign non-used internal/userspace secure
  * buffers to kernel.
@@ -4145,6 +4226,17 @@ static int adreno_secure_pt_restore(struct adreno_device *adreno_dev)
 
 	return 0;
 }
+#else
+static int adreno_secure_pt_hibernate(struct adreno_device *adreno_dev)
+{
+	return -EPERM;
+}
+
+static int adreno_secure_pt_restore(struct adreno_device *adreno_dev)
+{
+	return -EPERM;
+}
+#endif
 
 static int adreno_hibernation_suspend(struct device *dev)
 {

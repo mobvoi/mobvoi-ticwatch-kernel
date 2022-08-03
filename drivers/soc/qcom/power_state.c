@@ -32,7 +32,6 @@
 
 #define POWER_STATE "power_state"
 #define STRING_LEN 32
-#define WAIT_TIME_MS 200
 
 static struct class *ps_class;
 struct device *ps_ret;
@@ -44,6 +43,7 @@ static struct wakeup_source *notify_ws;
 const static char *adsp_subsys = "adsp";
 const static char *mdsp_subsys = "modem";
 static int ignore_ssr;
+static uint32_t WAIT_TIME_MS = 200;
 
 #ifdef CONFIG_DEEPSLEEP
 struct suspend_stats stats;
@@ -169,7 +169,6 @@ static int subsys_resume(const char *subsystem, uint32_t *ui_obj_msg)
 static int powerstate_pm_notifier(struct notifier_block *nb, unsigned long event, void *unused)
 {
 	struct ps_event pse;
-	int ret = 0;
 
 	switch (event) {
 #ifdef CONFIG_DEEPSLEEP
@@ -180,9 +179,8 @@ static int powerstate_pm_notifier(struct notifier_block *nb, unsigned long event
 		if (mem_sleep_current == PM_SUSPEND_MEM) {
 			pr_info("Deep Sleep entry\n");
 			current_state = DEEPSLEEP;
-			stats = suspend_stats;
 		} else {
-			pr_debug("Normal Suspend\n");
+			pr_debug("RBSC Suspend\n");
 		}
 		break;
 
@@ -190,23 +188,11 @@ static int powerstate_pm_notifier(struct notifier_block *nb, unsigned long event
 		pr_debug("PM_POST_SUSPEND\n");
 
 		if (mem_sleep_current == PM_SUSPEND_MEM) {
-
-			if (suspend_stats.failed_freeze > stats.failed_freeze) {
-				pr_info("Deep Sleep Aborted Due to Failed Freeze, Re-trying\n");
-				ret = start_timer();
-				if (ret < 0) {
-					/*Take Wakeup Source*/
-					__pm_stay_awake(notify_ws);
-					pse.event = EXIT_DEEP_SLEEP;
-					send_uevent(&pse);
-				}
-			} else {
 				pr_info("Deep Sleep exit\n");
 				/*Take Wakeup Source*/
 				__pm_stay_awake(notify_ws);
 				pse.event = EXIT_DEEP_SLEEP;
 				send_uevent(&pse);
-			}
 		} else {
 			pr_debug("RBSC Resume\n");
 		}
@@ -320,6 +306,12 @@ static long ps_ioctl(struct file *filp, unsigned int ui_power_state_cmd, unsigne
 
 	case LPM_ACTIVE:
 		pr_debug("Inside LPM_ACTIVE %s\n", __func__);
+		if (copy_from_user(&ui_obj_msg, (void __user *)arg,
+					sizeof(ui_obj_msg))) {
+			pr_err("The copy from user failed - lpm active mode\n");
+			ui_obj_msg = 200;
+		}
+		WAIT_TIME_MS = ui_obj_msg;
 #ifdef CONFIG_DEEPSLEEP
 		if (mem_sleep_current == PM_SUSPEND_MEM) {
 			mem_sleep_current = PM_SUSPEND_TO_IDLE;

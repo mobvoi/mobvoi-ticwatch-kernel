@@ -81,6 +81,7 @@ struct aic3x_priv {
 	struct list_head list;
 	int master;
 	int gpio_reset;
+	bool reset_inverted;
 	int power;
 #define AIC3X_MODEL_3X 0
 #define AIC3X_MODEL_33 1
@@ -1374,7 +1375,7 @@ static int aic3x_regulator_event(struct notifier_block *nb,
 		 * of the supplies was disabled
 		 */
 		if (gpio_is_valid(aic3x->gpio_reset))
-			gpio_set_value(aic3x->gpio_reset, 0);
+			gpio_set_value(aic3x->gpio_reset, aic3x->reset_inverted);
 		regcache_mark_dirty(aic3x->regmap);
 	}
 
@@ -1396,7 +1397,7 @@ static int aic3x_set_power(struct snd_soc_component *component, int power)
 
 		if (gpio_is_valid(aic3x->gpio_reset)) {
 			udelay(1);
-			gpio_set_value(aic3x->gpio_reset, 1);
+			gpio_set_value(aic3x->gpio_reset, !aic3x->reset_inverted);
 		}
 
 		/* Sync reg_cache with the hardware */
@@ -1816,6 +1817,9 @@ static int aic3x_i2c_probe(struct i2c_client *i2c,
 			}
 		}
 
+		aic3x->reset_inverted =
+			of_property_read_bool(np, "reset-inverted");
+
 		if (of_property_read_u32_array(np, "ai3x-gpio-func",
 					ai3x_setup->gpio_func, 2) >= 0) {
 			aic3x->setup = ai3x_setup;
@@ -1852,7 +1856,7 @@ static int aic3x_i2c_probe(struct i2c_client *i2c,
 		ret = gpio_request(aic3x->gpio_reset, "tlv320aic3x reset");
 		if (ret != 0)
 			goto err;
-		gpio_direction_output(aic3x->gpio_reset, 0);
+		gpio_direction_output(aic3x->gpio_reset, aic3x->reset_inverted);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(aic3x->supplies); i++)
@@ -1902,7 +1906,7 @@ static int aic3x_i2c_remove(struct i2c_client *client)
 
 	if (gpio_is_valid(aic3x->gpio_reset) &&
 	    !aic3x_is_shared_reset(aic3x)) {
-		gpio_set_value(aic3x->gpio_reset, 0);
+		gpio_set_value(aic3x->gpio_reset, aic3x->reset_inverted);
 		gpio_free(aic3x->gpio_reset);
 	}
 	return 0;

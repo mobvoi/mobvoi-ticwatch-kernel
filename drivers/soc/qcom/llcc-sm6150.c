@@ -12,7 +12,6 @@
 
 /*
  * SCT entry contains of the following parameters
- * name: Name of the client's use case for which the llcc slice is used
  * uid: Unique id for the client's use case
  * slice_id: llcc slice id for each client
  * max_cap: The maximum capacity of the cache slice provided in KB
@@ -28,6 +27,7 @@
  *                    configured to 1 only bonus and reserved ways are probed.
  *                    when configured to 0 all ways in llcc are probed.
  * dis_cap_alloc: Disable capacity based allocation for a client
+ * write_scid_en: Bit enables write cache support for a given scid.
  * retain_on_pc: If this bit is set and client has maitained active vote
  *               then the ways assigned to this client are not flushed on power
  *               collapse.
@@ -50,10 +50,10 @@
 }
 
 static struct llcc_slice_config sm6150_data[] =  {
-	SCT_ENTRY(LLCC_CPUSS,    1, 1, 128, 1, 0, 0xF, 0x0, 0, 0, 0, 1, 1),
-	SCT_ENTRY(LLCC_MDM,      8, 8, 256, 0, 1, 0xF, 0x0, 0, 0, 0, 1, 0),
-	SCT_ENTRY(LLCC_GPUHTW,   11, 11, 128, 1, 1, 0xF, 0x0, 0, 0, 0, 1, 0),
-	SCT_ENTRY(LLCC_GPU,     12, 12, 128, 1, 0, 0xF, 0x0, 0, 0, 0, 1, 0),
+	SCT_ENTRY(LLCC_CPUSS,    1, 128, 1, 0, 0xF, 0x0, 0, 0, 0, 0, 1, 1),
+	SCT_ENTRY(LLCC_MDM,      8, 256, 0, 1, 0xF, 0x0, 0, 0, 0, 0, 1, 0),
+	SCT_ENTRY(LLCC_GPUHTW,   11, 128, 1, 1, 0xF, 0x0, 0, 0, 0, 0, 1, 0),
+	SCT_ENTRY(LLCC_GPU,      12, 128, 1, 0, 0xF, 0x0, 0, 0, 0, 0, 1, 0),
 };
 
 static int sm6150_qcom_llcc_probe(struct platform_device *pdev)

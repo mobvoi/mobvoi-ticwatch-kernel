@@ -42,3 +42,4 @@ obj-$(CONFIG_PINCTRL_DIREWOLF) += pinctrl-direwolf.o
 obj-$(CONFIG_PINCTRL_BLAIR) += pinctrl-blair.o
 obj-$(CONFIG_PINCTRL_LEMANS) += pinctrl-lemans.o
 obj-$(CONFIG_PINCTRL_SA515M) += pinctrl-sa515m.o
+obj-$(CONFIG_PINCTRL_SA415M)      += pinctrl-sa415m.o

@@ -26,7 +26,8 @@
 #define SPI_NUM_CHIPSELECT	(4)
 #define SPI_XFER_TIMEOUT_MS	(250)
 #define SPI_AUTO_SUSPEND_DELAY	(250)
-#define SPI_XFER_TIMEOUT_OFFSET	(50)
+#define SPI_XFER_TIMEOUT_OFFSET	(250)
+#define SPI_SLAVE_SYNC_XFER_TIMEOUT_OFFSET (50)
 /* SPI SE specific registers */
 #define SE_SPI_CPHA		(0x224)
 #define SE_SPI_LOOPBACK		(0x22C)
@@ -1246,8 +1247,8 @@ static int spi_geni_mas_setup(struct spi_master *spi)
 {
 	struct spi_geni_master *mas = spi_master_get_devdata(spi);
 	int proto = get_se_proto(mas->base);
-	unsigned int major;
-	unsigned int minor;
+	unsigned int major = 0;
+	unsigned int minor = 0;
 	unsigned int step;
 	int hw_ver;
 	int ret = 0;
@@ -1392,7 +1393,7 @@ setup_ipc:
 			__func__, major, minor, step, mas->oversampling);
 		}
 	}
-	if (mas->set_miso_sampling)
+	if (mas->set_miso_sampling && major && minor)
 		spi_geni_set_sampling_rate(mas, major, minor);
 
 	if (mas->dis_autosuspend)
@@ -1745,7 +1746,11 @@ static int spi_geni_transfer_one(struct spi_master *spi,
 		xfer_timeout = msecs_to_jiffies(SPI_XFER_TIMEOUT_MS);
 	else {
 		xfer_timeout = (1000 * xfer->len * BITS_PER_BYTE) / xfer->speed_hz;
-		xfer_timeout += SPI_XFER_TIMEOUT_OFFSET;
+		/* Master <-> slave sync will be valid for smaller time */
+		if (spi->slave)
+			xfer_timeout += SPI_SLAVE_SYNC_XFER_TIMEOUT_OFFSET;
+		else
+			xfer_timeout += SPI_XFER_TIMEOUT_OFFSET;
 		xfer_timeout = msecs_to_jiffies(xfer_timeout);
 	}
 	GENI_SE_DBG(mas->ipc, false, mas->dev,

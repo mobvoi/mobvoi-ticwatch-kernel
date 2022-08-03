@@ -4,6 +4,7 @@
  */
 /*
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"WLED: %s: " fmt, __func__
@@ -2650,6 +2651,67 @@ static int wled_probe(struct platform_device *pdev)
 	return rc;
 }
 
+static void wled_free_irqs(struct wled *wled)
+{
+	if (is_wled4(wled)) {
+		if (wled->sc_irq > 0) {
+			disable_irq(wled->sc_irq);
+			devm_free_irq(&wled->pdev->dev, wled->sc_irq, wled);
+		}
+
+		if (wled->ovp_irq > 0) {
+			if (!wled->ovp_irq_disabled)
+				disable_irq(wled->ovp_irq);
+			devm_free_irq(&wled->pdev->dev, wled->ovp_irq, wled);
+		}
+
+	} else { /* wled5 */
+		if (wled->ovp_irq > 0) {
+			if (!wled->ovp_irq_disabled)
+				disable_irq(wled->ovp_irq);
+			devm_free_irq(&wled->pdev->dev, wled->ovp_irq, wled);
+		}
+		if (wled->flash_irq > 0) {
+			disable_irq(wled->flash_irq);
+			devm_free_irq(&wled->pdev->dev, wled->flash_irq, wled);
+		}
+		if (wled->pre_flash_irq > 0) {
+			disable_irq(wled->pre_flash_irq);
+			devm_free_irq(&wled->pdev->dev, wled->pre_flash_irq, wled);
+		}
+	}
+}
+
+static int wled_freeze(struct device *dev)
+{
+	struct wled *wled = dev_get_drvdata(dev);
+
+	wled_free_irqs(wled);
+
+	return 0;
+}
+
+static int wled_restore(struct device *dev)
+{
+	struct wled *wled = dev_get_drvdata(dev);
+	int rc = 0;
+
+	if (is_wled4(wled))
+		rc = wled4_setup(wled);
+	else
+		rc = wled5_setup(wled);
+
+	if (rc < 0)
+		dev_err(&wled->pdev->dev, "wled setup failed rc:%d\n", rc);
+
+	return rc;
+}
+
+static const struct dev_pm_ops wled_pm_ops = {
+	.freeze = wled_freeze,
+	.restore = wled_restore,
+};
+
 static const struct of_device_id wled_match_table[] = {
 	{ .compatible = "qcom,pmi8998-spmi-wled", .data = &version_table[0] },
 	{ .compatible = "qcom,pm8150l-spmi-wled", .data = &version_table[2] },
@@ -2664,6 +2726,7 @@ static struct platform_driver wled_driver = {
 	.driver	= {
 		.name = "qcom-spmi-wled",
 		.of_match_table	= wled_match_table,
+		.pm = &wled_pm_ops,
 	},
 };
 

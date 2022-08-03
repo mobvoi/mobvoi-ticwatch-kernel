@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/debugfs.h>
@@ -2115,26 +2116,6 @@ static int smb5_init_hw(struct smb5 *chip)
 		return rc;
 	}
 
-	/* vote 0mA on usb_icl for non battery platforms */
-	vote(chg->usb_icl_votable,
-		DEFAULT_VOTER, chip->dt.no_battery, 0);
-	vote(chg->dc_suspend_votable,
-		DEFAULT_VOTER, chip->dt.no_battery, 0);
-	vote(chg->fcc_votable, HW_LIMIT_VOTER,
-		chip->dt.batt_profile_fcc_ua > 0, chip->dt.batt_profile_fcc_ua);
-	vote(chg->fv_votable, HW_LIMIT_VOTER,
-		chip->dt.batt_profile_fv_uv > 0, chip->dt.batt_profile_fv_uv);
-	vote(chg->fcc_votable,
-		BATT_PROFILE_VOTER, chg->batt_profile_fcc_ua > 0,
-		chg->batt_profile_fcc_ua);
-	vote(chg->fv_votable,
-		BATT_PROFILE_VOTER, chg->batt_profile_fv_uv > 0,
-		chg->batt_profile_fv_uv);
-
-	/* Some h/w limit maximum supported ICL */
-	vote(chg->usb_icl_votable, HW_LIMIT_VOTER,
-			chg->hw_max_icl_ua > 0, chg->hw_max_icl_ua);
-
 	/* Initialize DC peripheral configurations */
 	rc = smb5_init_dc_peripheral(chg);
 	if (rc < 0)
@@ -2167,12 +2148,6 @@ static int smb5_init_hw(struct smb5 *chip)
 		return rc;
 	}
 
-	/* enable the charging path */
-	rc = vote(chg->chg_disable_votable, DEFAULT_VOTER, false, 0);
-	if (rc < 0) {
-		dev_err(chg->dev, "Couldn't enable charging rc=%d\n", rc);
-		return rc;
-	}
 
 	/* configure VBUS for software control */
 	rc = smblib_masked_write(chg, DCDC_OTG_CFG_REG, OTG_EN_SRC_CFG_BIT, 0);
@@ -2722,9 +2697,10 @@ static void smb5_free_interrupts(struct smb_charger *chg)
 
 	for (i = 0; i < ARRAY_SIZE(smb5_irqs); i++) {
 		if (smb5_irqs[i].irq > 0)
-			if (smb5_irqs[i].wake)
-				disable_irq_wake(smb5_irqs[i].irq);
+			devm_free_irq(chg->dev, smb5_irqs[i].irq,
+						smb5_irqs[i].irq_data);
 	}
+
 }
 
 static void smb5_disable_interrupts(struct smb_charger *chg)
@@ -2732,8 +2708,11 @@ static void smb5_disable_interrupts(struct smb_charger *chg)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(smb5_irqs); i++) {
-		if (smb5_irqs[i].irq > 0)
+		if (smb5_irqs[i].irq > 0) {
+			if (smb5_irqs[i].wake)
+				disable_irq_wake(smb5_irqs[i].irq);
 			disable_irq(smb5_irqs[i].irq);
+		}
 	}
 }
 
@@ -3011,6 +2990,40 @@ int smb5_extcon_init(struct smb_charger *chg)
 	return rc;
 }
 
+static int smb5_init_votes(struct smb5 *chip)
+{
+
+	int rc = 0;
+	struct smb_charger *chg = &chip->chg;
+
+	/* vote 0mA on usb_icl for non battery platforms */
+	vote(chg->usb_icl_votable,
+		DEFAULT_VOTER, chip->dt.no_battery, 0);
+	vote(chg->dc_suspend_votable,
+		DEFAULT_VOTER, chip->dt.no_battery, 0);
+	vote(chg->fcc_votable, HW_LIMIT_VOTER,
+		chip->dt.batt_profile_fcc_ua > 0, chip->dt.batt_profile_fcc_ua);
+	vote(chg->fv_votable, HW_LIMIT_VOTER,
+		chip->dt.batt_profile_fv_uv > 0, chip->dt.batt_profile_fv_uv);
+	vote(chg->fcc_votable,
+		BATT_PROFILE_VOTER, chg->batt_profile_fcc_ua > 0,
+		chg->batt_profile_fcc_ua);
+	vote(chg->fv_votable,
+		BATT_PROFILE_VOTER, chg->batt_profile_fv_uv > 0,
+		chg->batt_profile_fv_uv);
+
+	/* Some h/w limit maximum supported ICL */
+	vote(chg->usb_icl_votable, HW_LIMIT_VOTER,
+			chg->hw_max_icl_ua > 0, chg->hw_max_icl_ua);
+
+	/* enable the charging path */
+	rc = vote(chg->chg_disable_votable, DEFAULT_VOTER, false, 0);
+	if (rc < 0)
+		dev_err(chg->dev, "Couldn't enable charging rc=%d\n", rc);
+
+	return rc;
+}
+
 static int smb5_probe(struct platform_device *pdev)
 {
 	struct smb5 *chip;
@@ -3099,6 +3112,12 @@ static int smb5_probe(struct platform_device *pdev)
 	rc = smb5_init_hw(chip);
 	if (rc < 0) {
 		pr_err("Couldn't initialize hardware rc=%d\n", rc);
+		goto cleanup;
+	}
+
+	rc = smb5_init_votes(chip);
+	if (rc < 0) {
+		pr_err("smb5_init_votes failed  rc=%d\n", rc);
 		goto cleanup;
 	}
 
@@ -3250,6 +3269,70 @@ static void smb5_shutdown(struct platform_device *pdev)
 	smblib_hvdcp_exit_config(chg);
 }
 
+static int smb5_freeze(struct device *dev)
+{
+	struct smb5 *chip = dev_get_drvdata(dev);
+	struct smb_charger *chg = &chip->chg;
+
+	smb5_disable_interrupts(chg);
+	smb5_free_interrupts(chg);
+
+	return 0;
+}
+
+static int smb5_restore(struct device *dev)
+{
+	int rc = 0;
+	struct smb5 *chip = dev_get_drvdata(dev);
+	struct smb_charger *chg = &chip->chg;
+
+	rc = smb5_init_hw(chip);
+	if (rc < 0) {
+		pr_err("Couldn't initialize hardware rc=%d\n", rc);
+		return rc;
+	}
+
+	rc = smb5_determine_initial_status(chip);
+	if (rc < 0) {
+		pr_err("Couldn't determine initial status rc=%d\n",
+			rc);
+		return rc;
+	}
+
+	rc = smb5_request_interrupts(chip);
+	if (rc < 0) {
+		pr_err("Couldn't request interrupts rc=%d\n", rc);
+		return rc;
+	}
+
+	/* running re-election*/
+	rerun_election(chg->usb_icl_votable);
+	rerun_election(chg->dc_suspend_votable);
+	rerun_election(chg->fcc_votable);
+	rerun_election(chg->fv_votable);
+	rerun_election(chg->limited_irq_disable_votable);
+	rerun_election(chg->hdc_irq_disable_votable);
+	rerun_election(chg->temp_change_irq_disable_votable);
+
+	rc = smb5_show_charger_status(chip);
+	if (rc < 0) {
+		pr_err("Failed in getting charger status rc=%d\n", rc);
+		goto free_irqs;
+	}
+
+	return rc;
+
+free_irqs:
+	smb5_free_interrupts(chg);
+
+	return rc;
+}
+
+static const struct dev_pm_ops smb5_pm_ops = {
+	.freeze = smb5_freeze,
+	.restore = smb5_restore,
+};
+
 static const struct of_device_id match_table[] = {
 	{
 		.compatible = "qcom,pm8150-smb5",
@@ -3274,6 +3357,7 @@ static struct platform_driver smb5_driver = {
 	.driver		= {
 		.name		= "qcom,qpnp-smb5",
 		.of_match_table	= match_table,
+		.pm = &smb5_pm_ops,
 	},
 	.probe		= smb5_probe,
 	.remove		= smb5_remove,

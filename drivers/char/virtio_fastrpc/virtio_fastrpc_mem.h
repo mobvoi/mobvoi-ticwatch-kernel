@@ -14,6 +14,7 @@ struct fastrpc_mmap {
 	struct fastrpc_file *fl;
 	int fd;
 	uint32_t flags;
+	unsigned long dma_flags;
 	struct dma_buf *buf;
 	struct sg_table *table;
 	struct dma_buf_attachment *attach;

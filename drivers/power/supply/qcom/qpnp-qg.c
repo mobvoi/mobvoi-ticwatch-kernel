@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"QG-K: %s: " fmt, __func__
@@ -4684,11 +4685,69 @@ static int qpnp_qg_resume(struct device *dev)
 	return 0;
 }
 
+static int qpnp_qg_freeze(struct device *dev)
+{
+	struct qpnp_qg *chip = dev_get_drvdata(dev);
+	int i = 0;
+
+	for (i = 0; i < ARRAY_SIZE(qg_irqs); i++) {
+		if (qg_irqs[i].irq > 0) {
+			if (qg_irqs[i].wake)
+				disable_irq_wake(qg_irqs[i].irq);
+			devm_free_irq(dev, qg_irqs[i].irq, chip);
+		}
+	}
+
+	return 0;
+}
+
+static int qpnp_qg_restore(struct device *dev)
+{
+	struct qpnp_qg *chip = dev_get_drvdata(dev);
+	int rc = 0;
+
+	rc = qg_hw_init(chip);
+	if (rc < 0) {
+		pr_err("Failed to hw_init, rc=%d\n", rc);
+		return rc;
+	}
+
+	rc = qg_sanitize_sdam(chip);
+	if (rc < 0) {
+		pr_err("Failed to sanitize SDAM, rc=%d\n", rc);
+		return rc;
+	}
+
+	rc = qg_determine_pon_soc(chip);
+	if (rc < 0) {
+		pr_err("Failed to determine initial state, rc=%d\n", rc);
+		return rc;
+	}
+
+	rc = qg_request_irqs(chip);
+	if (rc < 0) {
+		pr_err("Failed to register QG interrupts, rc=%d\n", rc);
+		return rc;
+	}
+
+	/*
+	 * QG algorithm needs to be reseted on Hibernate exit to restart
+	 * fresh SOC calculation. Set QG_HIBERNATE_PON to true which
+	 * algorithm reads and resets the QG state variables.
+	 */
+	chip->kdata.param[QG_HIBERNATE_PON].data = chip->kdata.param[QG_PON_OCV_UV].data;
+	chip->kdata.param[QG_HIBERNATE_PON].valid = true;
+
+	return 0;
+}
+
 static const struct dev_pm_ops qpnp_qg_pm_ops = {
 	.suspend_noirq	= qpnp_qg_suspend_noirq,
 	.resume_noirq	= qpnp_qg_resume_noirq,
 	.suspend	= qpnp_qg_suspend,
 	.resume		= qpnp_qg_resume,
+	.freeze		= qpnp_qg_freeze,
+	.restore	= qpnp_qg_restore,
 };
 
 static int qpnp_qg_probe(struct platform_device *pdev)
