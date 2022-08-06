@@ -531,6 +531,19 @@ dtb-$(CONFIG_ARCH_SA515M) += sa515m-ccard.dtb \
 	sa515m-v2-ttp-usb-ep.dtb \
 	sa515m-v2-ttp.dtb
 
+dtb-$(CONFIG_ARCH_SA415M) += sa415m-ccard.dtb \
+	sa415m-ccard-usb-ep.dtb \
+	sa415m-ccard-ga.dtb \
+	sa415m-ccard-pcie-ep.dtb \
+	sa415m-ccard-usb-ep-ga.dtb \
+	sa415m-cdp.dtb \
+	sa415m-mtp-256.dtb \
+	sa415m-ttp-pcie-ep.dtb \
+	sa415m-ttp-usb-ep.dtb \
+	sa415m-ttp.dtb \
+	sa415m-v2-cdp.dtb \
+	sa415m-v2-mtp.dtb
+
 ifeq ($(CONFIG_ARCH_SHIMA), y)
 ifeq ($(CONFIG_ARCH_QTI_VM), y)
 dtb-$(CONFIG_ARCH_QTI_VM) += shima-vm-rumi.dtb \
@@ -641,16 +654,22 @@ endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 	dtbo-$(CONFIG_ARCH_LEMANS) += lemans-rumi-overlay.dtbo \
-		lemans-adp-air-overlay.dtbo \
-		lemans-adp-star-overlay.dtbo
+		lemans-adas-high-adp-air-overlay.dtbo \
+		lemans-adas-high-adp-star-overlay.dtbo \
+		lemans-ivi-adp-air-overlay.dtbo \
+		lemans-ivi-adp-star-overlay.dtbo
 
-lemans-rumi-overlay.dtbo-base	:= lemans.dtb
-lemans-adp-air-overlay.dtbo-base	:= lemans.dtb
-lemans-adp-star-overlay.dtbo-base	:= lemans.dtb
+lemans-rumi-overlay.dtbo-base	:= lemans-adas-high.dtb
+lemans-adas-high-adp-air-overlay.dtbo-base	:= lemans-adas-high.dtb
+lemans-adas-high-adp-star-overlay.dtbo-base	:= lemans-adas-high.dtb
+lemans-ivi-adp-air-overlay.dtbo-base	:= lemans-ivi.dtb
+lemans-ivi-adp-star-overlay.dtbo-base	:= lemans-ivi.dtb
 else
 dtb-$(CONFIG_ARCH_LEMANS) += lemans-rumi.dtb \
-	lemans-adp-air.dtb \
-	lemans-adp-star.dtb
+	lemans-adas-high-adp-air.dtb \
+	lemans-adas-high-adp-star.dtb \
+	lemans-ivi-adp-air.dtb \
+	lemans-ivi-adp-star.dtb
 endif
 
 always		:= $(dtb-y)

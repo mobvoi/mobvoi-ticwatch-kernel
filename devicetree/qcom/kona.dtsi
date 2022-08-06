@@ -54,6 +54,7 @@
 		pci-domain2 = &pcie2; /* PCIe2 domain */
 		serial0 = &qupv3_se2_2uart; /* RUMI */
 		mhi-netdev0 = &mhi_netdev_0;
+		hsuart0 = &qupv3_se6_4uart;
 	};
 
 	cpus {
@@ -878,7 +879,7 @@
 	};
 
 	snoc_cnoc_keepalive: qcom,snoc_cnoc_keepalive {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc";
 		governor = "powersave";
 		interconnects = <&gem_noc MASTER_APPSS_PROC &config_noc SLAVE_IMEM_CFG>;
 		qcom,active-only;
@@ -949,7 +950,7 @@
 	};
 
 	cpu_cpu_llcc_bw: qcom,cpu-cpu-llcc-bw {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc";
 		governor = "performance";
 		interconnects = <&gem_noc MASTER_APPSS_PROC &gem_noc SLAVE_LLCC>;
 		qcom,active-only;
@@ -968,7 +969,7 @@
 	};
 
 	cpu_llcc_ddr_bw: qcom,cpu-llcc-ddr-bw {
-		compatible = "qcom,devbw-ddr";
+		compatible = "qcom,devfreq-icc-ddr";
 		governor = "performance";
 		interconnects = <&mc_virt MASTER_LLCC &mc_virt SLAVE_EBI1>;
 		qcom,active-only;
@@ -986,7 +987,7 @@
 	};
 
 	npu_npu_llcc_bw: qcom,npu-npu-llcc-bw {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc";
 		governor = "performance";
 		interconnects = <&compute_noc MASTER_NPU &gem_noc SLAVE_LLCC>;
 		operating-points-v2 = <&suspendable_llcc_bw_opp_table>;
@@ -1008,7 +1009,7 @@
 	};
 
 	npu_llcc_ddr_bw: qcom,npu-llcc-ddr-bw {
-		compatible = "qcom,devbw-ddr";
+		compatible = "qcom,devfreq-icc-ddr";
 		governor = "performance";
 		interconnects = <&gem_noc SLAVE_LLCC &mc_virt SLAVE_EBI1>;
 		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
@@ -1025,7 +1026,7 @@
 	};
 
 	npudsp_npu_ddr_bw: qcom,npudsp-npu-ddr-bw {
-		compatible = "qcom,devbw-ddr";
+		compatible = "qcom,devfreq-icc-ddr";
 		governor = "performance";
 		interconnects = <&compute_noc MASTER_NPU &mc_virt SLAVE_EBI1>;
 		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
@@ -1047,7 +1048,7 @@
 	};
 
 	npu_npu_ddr_latfloor: qcom,npu-npu-ddr-latfloor {
-		compatible = "qcom,devbw-ddr";
+		compatible = "qcom,devfreq-icc-ddr";
 		governor = "powersave";
 		interconnects = <&compute_noc MASTER_NPU &mc_virt SLAVE_EBI1>;
 		operating-points-v2 = <&suspendable_ddr_bw_opp_table>;
@@ -1070,7 +1071,7 @@
 	};
 
 	cpu0_cpu_llcc_lat: qcom,cpu0-cpu-llcc-lat {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc";
 		governor = "performance";
 		interconnects = <&gem_noc MASTER_APPSS_PROC &gem_noc SLAVE_LLCC>;
 		qcom,active-only;
@@ -1078,7 +1079,7 @@
 	};
 
 	cpu4_cpu_llcc_lat: qcom,cpu4-cpu-llcc-lat {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc";
 		governor = "performance";
 		interconnects = <&gem_noc MASTER_APPSS_PROC &gem_noc SLAVE_LLCC>;
 		qcom,active-only;
@@ -1086,7 +1087,7 @@
 	};
 
 	cpu0_llcc_ddr_lat: qcom,cpu0-llcc-ddr-lat {
-		compatible = "qcom,devbw-ddr";
+		compatible = "qcom,devfreq-icc-ddr";
 		governor = "performance";
 		interconnects = <&mc_virt MASTER_LLCC &mc_virt SLAVE_EBI1>;
 		qcom,active-only;
@@ -1094,7 +1095,7 @@
 	};
 
 	cpu4_llcc_ddr_lat: qcom,cpu4-llcc-ddr-lat {
-		compatible = "qcom,devbw-ddr";
+		compatible = "qcom,devfreq-icc-ddr";
 		governor = "performance";
 		interconnects = <&mc_virt MASTER_LLCC &mc_virt SLAVE_EBI1>;
 		qcom,active-only;
@@ -1102,7 +1103,7 @@
 	};
 
 	cpu4_cpu_ddr_latfloor: qcom,cpu4-cpu-ddr-latfloor {
-		compatible = "qcom,devbw-ddr";
+		compatible = "qcom,devfreq-icc-ddr";
 		governor = "performance";
 		interconnects = <&mc_virt MASTER_LLCC &mc_virt SLAVE_EBI1>;
 		qcom,active-only;
@@ -1309,7 +1310,7 @@
 	};
 
 	snoc_cnoc_keepalive: qcom,snoc_cnoc_keepalive {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc";
 		governor = "powersave";
 		interconnects = <&gem_noc MASTER_APPSS_PROC &config_noc SLAVE_IMEM_CFG>;
 		qcom,active-only;
@@ -2920,8 +2921,19 @@
 		};
 	};
 
+	aggre1_noc: interconnect@16E0000 {
+		reg = <0x16E0000 0x1F180>;
+		compatible = "qcom,kona-aggre1_noc";
+		#interconnect-cells = <1>;
+		qcom,bcm-voter-names = "hlos";
+		qcom,bcm-voters = <&apps_bcm_voter>;
+		clocks = <&clock_gcc GCC_AGGRE_UFS_PHY_AXI_CLK>,
+			<&clock_gcc GCC_AGGRE_USB3_PRIM_AXI_CLK>,
+			<&clock_gcc GCC_AGGRE_USB3_SEC_AXI_CLK>;
+	};
+
 	aggre2_noc: interconnect@1700000 {
-		reg = <0x1700000 0x3B100>;
+		reg = <0x1700000 0x3D180>;
 		compatible = "qcom,kona-aggre2_noc";
 		#interconnect-cells = <1>;
 		qcom,bcm-voter-names = "hlos";
@@ -2959,7 +2971,7 @@
 	};
 
 	gem_noc: interconnect@9100000 {
-		reg = <0x9100000 0xAE200>;
+		reg = <0x9100000 0xB4000>;
 		compatible = "qcom,kona-gem_noc";
 		#interconnect-cells = <1>;
 		qcom,bcm-voter-names = "hlos", "disp";
@@ -2995,17 +3007,6 @@
 		#interconnect-cells = <1>;
 		qcom,bcm-voter-names = "hlos";
 		qcom,bcm-voters = <&apps_bcm_voter>;
-	};
-
-	aggre1_noc: interconnect@16E0000 {
-		reg = <0x16E0000 0xD080>;
-		compatible = "qcom,kona-aggre1_noc";
-		#interconnect-cells = <1>;
-		qcom,bcm-voter-names = "hlos";
-		qcom,bcm-voters = <&apps_bcm_voter>;
-		clocks = <&clock_gcc GCC_AGGRE_UFS_PHY_AXI_CLK>,
-			<&clock_gcc GCC_AGGRE_USB3_PRIM_AXI_CLK>,
-			<&clock_gcc GCC_AGGRE_USB3_SEC_AXI_CLK>;
 	};
 
 	ufsphy_mem: ufsphy_mem@1d87000 {
@@ -3153,8 +3154,7 @@
 				<GIC_SPI 222 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "hc_irq", "pwr_irq";
 
-		qcom,bus-width = <4>;
-		qcom,large-address-bus;
+		bus-width = <4>;
 
 		interconnects = <&aggre2_noc MASTER_SDCC_2 &mc_virt SLAVE_EBI1>,
 			<&gem_noc MASTER_APPSS_PROC &config_noc SLAVE_SDCC_2>;
@@ -3190,28 +3190,26 @@
 			100750000 200000000 4294967295>;
 
 		qcom,restore-after-cx-collapse;
-
-		qcom,clk-rates = <400000 20000000 25000000
-					50000000 100000000 201500000>;
-		qcom,bus-speed-mode = "SDR12", "SDR25", "SDR50", "DDR50",
-				      "SDR104";
-
 		qcom,devfreq,freq-table = <50000000 201500000>;
 		clocks = <&clock_gcc GCC_SDCC2_AHB_CLK>,
 			<&clock_gcc GCC_SDCC2_APPS_CLK>;
-		clock-names = "iface_clk", "core_clk";
-
-		/* PM QoS */
-		qcom,pm-qos-irq-type = "affine_irq";
-		qcom,pm-qos-irq-latency = <44 44>;
-		qcom,pm-qos-cpu-groups = <0x3f 0xc0>;
-		qcom,pm-qos-legacy-latency-us = <44 44>, <44 44>;
+		clock-names = "iface", "core";
 
 		/* DLL HSR settings. Refer go/hsr - <Target> DLL settings */
 		qcom,dll-hsr-list = <0x0007642C 0xA800 0x10
 					0x2C010800 0x80040868>;
 
 		status = "disabled";
+
+		qos0 {
+			mask = <0x0f>;
+			vote = <44>;
+		};
+
+		qos1 {
+			mask = <0xf0>;
+			vote = <44>;
+		};
 	};
 
 	ipcc_mproc: qcom,ipcc@408000 {
@@ -3931,7 +3929,7 @@
 		clock-names = "xo";
 		qcom,proxy-clock-names = "xo";
 		qcom,pil-generic-irq-handler;
-		status = "disabled";
+		status = "ok";
 
 		qcom,signal-aop;
 		qcom,complete-ramdump;
@@ -4150,7 +4148,7 @@
 		qcom,ce-hw-shared;
 		qcom,bam-ee = <0>;
 		interconnect-names = "data_path";
-		interconnects = <&system_noc MASTER_CRYPTO &mc_virt SLAVE_EBI1>;
+		interconnects = <&aggre2_noc MASTER_CRYPTO &mc_virt SLAVE_EBI1>;
 		qcom,smmu-s1-enable;
 		qcom,no-clock-support;
 		iommus = <&apps_smmu 0x0586 0x0011>,
@@ -4191,7 +4189,7 @@
 		qcom,ce-hw-shared;
 		qcom,clk-mgmt-sus-res;
 		interconnect-names = "data_path";
-		interconnects = <&system_noc MASTER_CRYPTO &mc_virt SLAVE_EBI1>;
+		interconnects = <&aggre2_noc MASTER_CRYPTO &mc_virt SLAVE_EBI1>;
 		qcom,use-sw-aes-cbc-ecb-ctr-algo;
 		qcom,use-sw-aes-xts-algo;
 		qcom,use-sw-aes-ccm-algo;
@@ -4764,7 +4762,6 @@
 		qcom,wlan-rc-num = <0>;
 		qcom,wlan-ramdump-dynamic = <0x420000>;
 		qcom,smmu-s1-enable;
-		qcom,converged-dt;
 		cnss-daemon-support;
 		qcom,cmd_db_name = "smpf2";
 		qcom,set-wlaon-pwr-ctrl;
@@ -4968,15 +4965,6 @@
 		thermal_speed_bin: thermal-speed-bin@1a2 {
 			reg = <0x1a2 0x1>;
 			bits = <7 1>;
-		};
-	};
-
-	clocks {
-		usb3_phy_wrapper_gcc_usb30_pipe_clk: usb3_phy_wrapper_gcc_usb30_pipe_clk {
-			compatible = "fixed-clock";
-			clock-frequency = <1000>;
-			clock-output-names = "usb3_phy_wrapper_gcc_usb30_pipe_clk";
-			#clock-cells = <0>;
 		};
 	};
 };

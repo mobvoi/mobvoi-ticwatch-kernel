@@ -1,4 +1,5 @@
 #include "sdx55-pmic-overlay.dtsi"
+#include "sa515m-mtp-audio-overlay.dtsi"
 
 &pmx55_vadc {
 	vph_pwr {

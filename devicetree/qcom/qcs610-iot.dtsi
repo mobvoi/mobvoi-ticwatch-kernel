@@ -8,12 +8,10 @@
 #include <dt-bindings/clock/qcom,dispcc-sm6150.h>
 #include <dt-bindings/clock/qcom,gpucc-sm6150.h>
 #include <dt-bindings/iio/qti_power_supply_iio.h>
-
 #include "camera/qcs610-camera-sensor-idp.dtsi"
 
 #include "sm6150-audio.dtsi"
-#include "sm6150-ext-codec-audio-overlay.dtsi"
-#include "sm6150-external-codec.dtsi"
+#include "sm6150-audio-overlay.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. QCS610 IOT";

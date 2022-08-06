@@ -180,10 +180,6 @@
 		qcom,iommu-dma = "bypass";
 		dma-coherent;
 
-		qcom,disable-lpm;
-		rpm-level = <0>;
-		spm-level = <0>;
-
 		status = "disabled";
 	};
 };

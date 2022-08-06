@@ -7,8 +7,8 @@
 		      <0x0C263000 0x1ff>;
 		reg-names = "tsens_srot_physical",
 			"tsens_tm_physical";
-		interrupts-extended = <GIC_SPI 538 IRQ_TYPE_LEVEL_HIGH>,
-			<GIC_SPI 540 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 506 IRQ_TYPE_LEVEL_HIGH>,
+			<GIC_SPI 508 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "tsens-upper-lower", "tsens-critical";
 		#thermal-sensor-cells = <1>;
 	};
@@ -19,8 +19,8 @@
 			<0x0C265000 0x1ff>;
 		reg-names = "tsens_srot_physical",
 			"tsens_tm_physical";
-		interrupts-extended = <GIC_SPI 539 IRQ_TYPE_LEVEL_HIGH>,
-			<GIC_SPI 541 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 507 IRQ_TYPE_LEVEL_HIGH>,
+			<GIC_SPI 509 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "tsens-upper-lower", "tsens-critical";
 		#thermal-sensor-cells = <1>;
 	};
@@ -31,20 +31,20 @@
 			<0x0C251000 0x1ff>;
 		reg-names = "tsens_srot_physical",
 			"tsens_tm_physical";
-		interrupts-extended = <GIC_SPI 604 IRQ_TYPE_LEVEL_HIGH>,
-			<GIC_SPI 641 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 572 IRQ_TYPE_LEVEL_HIGH>,
+			<GIC_SPI 609 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "tsens-upper-lower", "tsens-critical";
 		#thermal-sensor-cells = <1>;
 	};
 
 	tsens3:tsens@c225000 {
 		compatible = "qcom,tsens26xx";
-		reg = <0x0C223000 0x8>,
+		reg = <0x0C225000 0x8>,
 			<0x0C252000 0x1ff>;
 		reg-names = "tsens_srot_physical",
 			"tsens_tm_physical";
-		interrupts-extended = <GIC_SPI 605 IRQ_TYPE_LEVEL_HIGH>,
-			<GIC_SPI 642 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 573 IRQ_TYPE_LEVEL_HIGH>,
+			<GIC_SPI 610 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "tsens-upper-lower", "tsens-critical";
 		#thermal-sensor-cells = <1>;
 	};
@@ -121,6 +121,49 @@
 		};
 
 		cpu7_isolate: cpu7-isolate {
+			qcom,cpu = <&CPU7>;
+			#cooling-cells = <2>;
+		};
+	};
+
+	qcom,cpu-hotplug {
+		compatible = "qcom,cpu-hotplug";
+		cpu0_hotplug: cpu0-hotplug {
+			qcom,cpu = <&CPU0>;
+			#cooling-cells = <2>;
+		};
+
+		cpu1_hotplug: cpu1-hotplug {
+			qcom,cpu = <&CPU1>;
+			#cooling-cells = <2>;
+		};
+
+		cpu2_hotplug: cpu2-hotplug {
+			qcom,cpu = <&CPU2>;
+			#cooling-cells = <2>;
+		};
+
+		cpu3_hotplug: cpu3-hotplug {
+			qcom,cpu = <&CPU3>;
+			#cooling-cells = <2>;
+		};
+
+		cpu4_hotplug: cpu4-hotplug {
+			qcom,cpu = <&CPU4>;
+			#cooling-cells = <2>;
+		};
+
+		cpu5_hotplug: cpu5-hotplug {
+			qcom,cpu = <&CPU5>;
+			#cooling-cells = <2>;
+		};
+
+		cpu6_hotplug: cpu6-hotplug {
+			qcom,cpu = <&CPU6>;
+			#cooling-cells = <2>;
+		};
+
+		cpu7_hotplug: cpu7-hotplug {
 			qcom,cpu = <&CPU7>;
 			#cooling-cells = <2>;
 		};

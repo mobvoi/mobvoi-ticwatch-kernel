@@ -30,13 +30,23 @@
 		resets = <&clock_gcc GCC_VIDEO_AXI1_CLK_ARES>,
 			<&clock_videocc VIDEO_CC_MVS1C_CLK_ARES>;
 		reset-names = "cvp_axi_reset", "cvp_core_reset";
+		reset-power-status = <0x2 0x1>;
 
 		qcom,reg-presets = <0xB0088 0x0>;
+		qcom,ipcc-reg = <0x400000 0x100000>;
+
+		pas-id = <26>;
+		memory-region = <&pil_cvp_mem>;
+
+		/* CVP Firmware ELF image name */
+		cvp,firmware-name = "cvpss";
 
 		/* Buses */
 		cvp_cnoc {
 			compatible = "qcom,msm-cvp,bus";
 			label = "cvp-cnoc";
+			qcom,bus-master = <MASTER_APPSS_PROC>;
+			qcom,bus-slave = <SLAVE_VENUS_CFG>;
 			qcom,bus-governor = "performance";
 			qcom,bus-range-kbps = <1000 1000>;
 		};
@@ -44,6 +54,8 @@
 		cvp_bus_ddr {
 			compatible = "qcom,msm-cvp,bus";
 			label = "cvp-ddr";
+			qcom,bus-master = <MASTER_VIDEO_PROC>;
+			qcom,bus-slave = <SLAVE_EBI1>;
 			qcom,bus-governor = "performance";
 			qcom,bus-range-kbps = <1000 6533000>;
 		};
@@ -55,7 +67,9 @@
 			iommus =
 				<&apps_smmu 0x2120 0x400>;
 			buffer-types = <0xfff>;
+			dma-coherent-hint-cached;
 			qcom,iommu-dma-addr-pool = <0x4b000000 0x90000000>;
+			qcom,iommu-faults = "non-fatal";
 		};
 
 
@@ -67,6 +81,7 @@
 			buffer-types = <0x741>;
 			qcom,iommu-dma-addr-pool = <0x01000000 0x25800000>;
 			qcom,iommu-vmid = <0xB>;
+			qcom,iommu-faults = "non-fatal";
 		};
 
 		cvp_secure_pixel_cb {
@@ -77,6 +92,7 @@
 			buffer-types = <0x106>;
 			qcom,iommu-dma-addr-pool = <0x26800000 0x24800000>;
 			qcom,iommu-vmid = <0xA>;
+			qcom,iommu-faults = "non-fatal";
 		};
 
 		/* Memory Heaps */

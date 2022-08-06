@@ -494,7 +494,7 @@
 			snps,usb2-gadget-lpm-disable;
 			tx-fifo-resize;
 			maximum-speed = "high-speed";
-			dr_mode = "otg";
+			dr_mode = "host";
 		};
 	};
 

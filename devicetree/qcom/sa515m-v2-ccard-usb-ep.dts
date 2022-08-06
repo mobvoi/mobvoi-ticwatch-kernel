@@ -1,6 +1,7 @@
 /dts-v1/;
 
 #include "sa515m-v2.dtsi"
+#include "sa515m-ccard.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. SA515M CCARD USB-EP V2";

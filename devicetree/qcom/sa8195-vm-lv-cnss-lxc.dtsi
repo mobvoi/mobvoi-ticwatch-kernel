@@ -41,7 +41,6 @@
 		qcom,wlan-rc-num = <0>;
 		qcom,pld_bus_ops_name = "pld_pcie_cnss0";
 		qcom,bus-type=<0>;
-		qcom,qrtr_node_id = <0x10>;
 		qcom,notify-modem-status;
 
 		#address-cells=<1>;
@@ -80,7 +79,7 @@
 		chip_cfg@1 {
 			reg = <0xb0000000 0x10000>;
 			reg-names = "smmu_iova_ipa";
-
+			qcom,qrtr_node_id = <0x10>;
 			supported-ids = <0x1101>;
 			wlan_vregs = "vdd-wlan-vl", "vdd-wlan-vm",
 				   "vdd-wlan-s5c", "vdd-wlan-vh";
@@ -308,7 +307,6 @@
 		qcom,wlan-rc-num = <2>;
 		qcom,pld_bus_ops_name = "pld_pcie_cnss2";
 		qcom,bus-type=<0>;
-		qcom,qrtr_node_id = <0x20>;
 		qcom,notify-modem-status;
 
 		#address-cells=<1>;
@@ -345,7 +343,7 @@
 		chip_cfg@1 {
 			reg = <0xd0000000 0x10000>;
 			reg-names = "smmu_iova_ipa";
-
+			qcom,qrtr_node_id = <0x20>;
 			supported-ids = <0x1101>;
 			wlan_vregs = "vdd-wlan-vl", "vdd-wlan-vm",
 				   "vdd-wlan-s5c", "vdd-wlan-vh";

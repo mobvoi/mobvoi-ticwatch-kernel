@@ -11,7 +11,7 @@
 		qcom,iommu-dma-addr-pool = <0x40000000 0x10000000>;
 		qcom,iommu-geometry = <0x40000000 0x10000000>;
 		qcom,iommu-dma = "fastmap";
-		status = "disabled";
+		status = "ok";
 	};
 
 	/* QUPv3_1 wrapper instance */
@@ -41,7 +41,7 @@
 		qcom,iommu-dma-addr-pool = <0x40000000 0x10000000>;
 		qcom,iommu-geometry = <0x40000000 0x10000000>;
 		qcom,iommu-dma = "fastmap";
-		status = "disabled";
+		status = "ok";
 	};
 
 	/* QUPv3_3  wrapper  instance */
@@ -541,6 +541,27 @@
 		status = "disabled";
 	};
 
+	/* GNSS with 4W UART instance */
+	qupv3_se12_4uart: qcom,qup_uart@a94000 {
+		compatible = "qcom,msm-geni-serial-hs";
+		reg = <0xa94000 0x4000>;
+		reg-names = "se_phys";
+		interrupts = <GIC_SPI 358 IRQ_TYPE_LEVEL_HIGH>;
+		clock-names = "se-clk", "m-ahb", "s-ahb";
+		clocks = <&gcc GCC_QUPV3_WRAP1_S5_CLK>,
+			<&gcc GCC_QUPV3_WRAP_1_M_AHB_CLK>,
+			<&gcc GCC_QUPV3_WRAP_1_S_AHB_CLK>;
+		pinctrl-names = "default", "active", "sleep";
+		pinctrl-0 = <&qupv3_se12_default_cts>,
+			<&qupv3_se12_default_rtsrx>, <&qupv3_se12_default_tx>;
+		pinctrl-1 = <&qupv3_se12_ctsrx>, <&qupv3_se12_rts>,
+						<&qupv3_se12_tx>;
+		pinctrl-2 = <&qupv3_se12_ctsrx>, <&qupv3_se12_rts>,
+						<&qupv3_se12_tx>;
+		qcom,wrapper-core = <&qupv3_1>;
+		status = "disabled";
+	};
+
 	qupv3_se13_i2c: i2c@a98000 {
 		compatible = "qcom,i2c-geni";
 		reg = <0xa98000 0x4000>;
@@ -698,6 +719,29 @@
 		pinctrl-0 = <&qupv3_se17_spi_active>;
 		pinctrl-1 = <&qupv3_se17_spi_sleep>;
 		spi-max-frequency = <50000000>;
+		qcom,wrapper-core = <&qupv3_2>;
+		status = "disabled";
+	};
+
+	/* 4W BT UART instance */
+	qupv3_se17_4uart: qcom,qup_uart@88c000 {
+		compatible = "qcom,msm-geni-serial-hs";
+		reg = <0x88c000 0x4000>;
+		reg-names = "se_phys";
+		interrupts-extended = <&intc GIC_SPI 585 IRQ_TYPE_LEVEL_HIGH>,
+				<&tlmm 94 IRQ_TYPE_LEVEL_HIGH>;
+		clock-names = "se-clk", "m-ahb", "s-ahb";
+		clocks = <&gcc GCC_QUPV3_WRAP2_S3_CLK>,
+			<&gcc GCC_QUPV3_WRAP_2_M_AHB_CLK>,
+			<&gcc GCC_QUPV3_WRAP_2_S_AHB_CLK>;
+		pinctrl-names = "default", "active", "sleep";
+		pinctrl-0 = <&qupv3_se17_default_cts>,
+			<&qupv3_se17_default_rtsrx>, <&qupv3_se17_default_tx>;
+		pinctrl-1 = <&qupv3_se17_ctsrx>, <&qupv3_se17_rts>,
+						<&qupv3_se17_tx>;
+		pinctrl-2 = <&qupv3_se17_ctsrx>, <&qupv3_se17_rts>,
+						<&qupv3_se17_tx>;
+		qcom,wakeup-byte = <0xFD>;
 		qcom,wrapper-core = <&qupv3_2>;
 		status = "disabled";
 	};

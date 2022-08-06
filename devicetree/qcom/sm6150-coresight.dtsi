@@ -422,7 +422,7 @@
 
 	tpdm_wcss: tpdm@699c000 {
 		compatible = "qcom,coresight-dummy";
-
+		arm,primecell-periphid = <0x0003b968>;
 		coresight-name = "coresight-tpdm-wcss";
 		qcom,dummy-source;
 

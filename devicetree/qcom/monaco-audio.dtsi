@@ -383,6 +383,10 @@
 	};
 
 	bolero: bolero-cdc {
+		bolero-clk-rsc-mngr {
+			compatible = "qcom,bolero-clk-rsc-mngr";
+		};
+
 		va_macro: va-macro@0a730000 {
 			swr0: va_swr_master {
 			};

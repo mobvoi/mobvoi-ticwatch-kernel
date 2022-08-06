@@ -750,21 +750,21 @@
 };
 
 &sdhc_2 {
-	vdd-supply = <&pm8150a_l9>;
+	vdd-supply = <&L9C>;
 	qcom,vdd-voltage-level = <2950000 2960000>;
 	qcom,vdd-current-level = <200 800000>;
 
-	vdd-io-supply = <&pm8150a_l6>;
+	vdd-io-supply = <&L6C>;
 	qcom,vdd-io-voltage-level = <1808000 2960000>;
 	qcom,vdd-io-current-level = <200 22000>;
 
-	pinctrl-names = "active", "sleep";
-	pinctrl-0 = <&sdc2_clk_on  &sdc2_cmd_on &sdc2_data_on &storage_cd>;
-	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &storage_cd>;
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdc2_on>;
+	pinctrl-1 = <&sdc2_off>;
 
 	cd-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
 
-	status = "disabled";
+	status = "ok";
 };
 
 &vendor {
@@ -772,21 +772,20 @@
 		compatible = "qcom,qca6390";
 		pinctrl-names = "default";
 		pinctrl-0 = <&bt_en_sleep>;
-		qca,bt-reset-gpio = <&tlmm 21 0>; /* BT_EN */
-		qca,bt-sw-ctrl-gpio = <&tlmm 124 0>; /* SW_CTRL */
-		qca,bt-vdd-aon-supply = <&pm8150_s6>;
-		qca,bt-vdd-dig-supply = <&pm8009_s2>;
-		qca,bt-vdd-rfa1-supply = <&pm8150_s5>;
-		qca,bt-vdd-rfa2-supply = <&pm8150a_s8>;
-		qca,bt-vdd-asd-supply = <&pm8150_l16>;
+		qcom,bt-reset-gpio = <&tlmm 21 0>; /* BT_EN */
+		qcom,bt-sw-ctrl-gpio = <&tlmm 124 0>; /* SW_CTRL */
+		qcom,bt-vdd-aon-supply = <&pm8150_s6>;
+		qcom,bt-vdd-dig-supply = <&pm8009_s2>;
+		qcom,bt-vdd-rfa1-supply = <&pm8150_s5>;
+		qcom,bt-vdd-rfa2-supply = <&pm8150a_s8>;
+		qcom,bt-vdd-asd-supply = <&pm8150_l16>;
 
-		qca,bt-vdd-aon-voltage-level = <950000 950000>;
-		qca,bt-vdd-dig-voltage-level = <950000 952000>;
-		qca,bt-vdd-rfa1-voltage-level = <1900000 1900000>;
-		qca,bt-vdd-rfa2-voltage-level = <1350000 1350000>;
-		qca,bt-vdd-asd-voltage-level = <3024000 3304000>;
+		qcom,bt-vdd-aon-config = <950000 950000 0 1>;
+		qcom,bt-vdd-dig-config = <950000 952000 0 1>;
+		qcom,bt-vdd-rfa1-config = <1900000 1900000 0 1>;
+		qcom,bt-vdd-rfa2-config = <1350000 1350000 0 1>;
+		qcom,bt-vdd-asd-config = <3024000 3304000 10000 1>;
 
-		qca,bt-vdd-asd-current-level = <10000>;
 	};
 };
 
