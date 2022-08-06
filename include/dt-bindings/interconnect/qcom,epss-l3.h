@@ -16,5 +16,7 @@
 #define SLAVE_EPSS_L3_CPU6			7
 #define SLAVE_EPSS_L3_CPU7			8
 #define SLAVE_EPSS_L3_SHARED			9
+#define MASTER_EPSS_L3_1_APPS			10
+#define SLAVE_EPSS_L3_1_SHARED			11
 
 #endif

@@ -104,6 +104,12 @@ struct uio_info {
 	long			irq;
 	unsigned long		irq_flags;
 	void			*priv;
+#ifdef CONFIG_HIBERNATION
+	/*client_id: qcom,client-id DT property value*/
+	u32			client_id;
+	/*vm_nav_path: qcom,vm-nav-path DT property value*/
+	bool			vm_nav_path;
+#endif
 	irqreturn_t (*handler)(int irq, struct uio_info *dev_info);
 	int (*mmap)(struct uio_info *info, struct vm_area_struct *vma);
 	int (*open)(struct uio_info *info, struct inode *inode);

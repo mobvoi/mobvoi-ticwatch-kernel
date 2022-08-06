@@ -81,6 +81,8 @@
 #define QMI_QFE_WTR_PA6_FR1	67
 #define QMI_QFE_RET_PA_1	68
 #define QMI_QFE_RET_PA1_FR1	69
+#define QMI_SDR0_PA		70
+#define QMI_SDR1_PA		71
 
 #define QMI_MODEM_INST_ID	0x0
 #define QMI_ADSP_INST_ID	0x1

@@ -24,7 +24,12 @@
 /* maximum possible number of sensor devices */
 #define CHIRP_MAX_NUM_SENSORS		6
 /* number of I2C buses used by sensors */
+
+#ifdef TDK_RB2
+#define CHIRP_NUM_I2C_BUSES		1
+#else
 #define CHIRP_NUM_I2C_BUSES		2
+#endif
 
 #define CH101_MAX_PORTS			CHIRP_MAX_NUM_SENSORS
 #define CH101_I2C_BUSES			CHIRP_NUM_I2C_BUSES

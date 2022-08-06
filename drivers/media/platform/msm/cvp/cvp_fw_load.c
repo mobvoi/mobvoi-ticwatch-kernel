@@ -128,6 +128,7 @@ exit:
 int load_cvp_fw_impl(struct iris_hfi_device *device)
 {
 	int rc = 0;
+	const char *fw_name = device->res->fw_name;
 
 	if (!device->resources.fw.cookie) {
 #ifdef CVP_MDT_ENABLED
@@ -141,7 +142,7 @@ int load_cvp_fw_impl(struct iris_hfi_device *device)
 		}
 #else
 		device->resources.fw.cookie =
-			subsystem_get_with_fwname("evass",
+			subsystem_get_with_fwname(fw_name,
 					device->res->fw_name);
 		if (IS_ERR_OR_NULL(device->resources.fw.cookie)) {
 			dprintk(CVP_ERR, "Failed to download firmware\n");

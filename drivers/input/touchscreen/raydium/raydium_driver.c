@@ -2353,10 +2353,12 @@ exit_irq_request_failed:
 
 	cancel_work_sync(&g_raydium_ts->work);
 	input_unregister_device(input_dev);
+	g_raydium_ts->input_dev = NULL;
 
 exit_input_register_device_failed:
-	input_free_device(input_dev);
-
+	if (g_raydium_ts->input_dev)
+		input_free_device(input_dev);
+	g_raydium_ts->input_dev = NULL;
 exit_input_dev_alloc_failed:
 exit_check_i2c:
 #ifdef MSM_NEW_VER

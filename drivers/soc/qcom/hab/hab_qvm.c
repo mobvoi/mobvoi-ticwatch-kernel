@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include "hab.h"
 #include "hab_qvm.h"
@@ -36,6 +37,8 @@ static struct shmem_irq_config pchan_factory_settings[] = {
 	{0x1b017000, 30},
 	{0x1b018000, 31},
 	{0x1b019000, 32},
+	{0x1b01a000, 33},
+	{0x1b01b000, 34},
 };
 
 struct qvm_plugin_info qvm_priv_info = {

@@ -711,8 +711,10 @@ static const struct soc_id soc_id[] = {
 	{ 417, "BENGAL" },
 	{ 444, "BENGAL" },
 	{ 532, "LEMANSAU_IVI" },
+	{ 533, "LEMANSAU_ADAS_H" },
 	{ 534, "LEMANSAU_IVI_ADAS" },
-	{ 418, "SA515" },
+	{ 535, "LEMANSAU_ADAS" },
+	{ 418, "SA515M" },
 };
 
 static struct qcom_socinfo *qsocinfo;

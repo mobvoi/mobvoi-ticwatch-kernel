@@ -190,7 +190,10 @@ static int msm_sharedmem_probe(struct platform_device *pdev)
 	info->mem[0].addr = shared_mem_pyhsical;
 	info->mem[0].size = shared_mem_size;
 	info->mem[0].memtype = UIO_MEM_PHYS;
-
+#ifdef CONFIG_HIBERNATION
+	info->client_id = client_id;
+	info->vm_nav_path = vm_nav_path;
+#endif
 	ret = uio_register_device(&pdev->dev, info);
 	if (ret) {
 		pr_err("uio register failed ret=%d\n", ret);
@@ -212,11 +215,28 @@ static int msm_sharedmem_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_HIBERNATION
+static int msm_sharedmem_restore(struct device *dev)
+{
+	struct uio_info *info = dev_get_drvdata(dev);
+
+	setup_shared_ram_perms(info->client_id, info->mem[0].addr,
+			info->mem[0].size, info->vm_nav_path);
+	return 0;
+}
+#endif
+
 static const struct of_device_id msm_sharedmem_of_match[] = {
 	{.compatible = "qcom,sharedmem-uio",},
 	{},
 };
 MODULE_DEVICE_TABLE(of, msm_sharedmem_of_match);
+
+#ifdef CONFIG_HIBERNATION
+static const struct dev_pm_ops msm_sharedmem_pm_ops = {
+	.restore = msm_sharedmem_restore,
+};
+#endif
 
 static struct platform_driver msm_sharedmem_driver = {
 	.probe          = msm_sharedmem_probe,
@@ -224,6 +244,9 @@ static struct platform_driver msm_sharedmem_driver = {
 	.driver         = {
 		.name   = DRIVER_NAME,
 		.of_match_table = msm_sharedmem_of_match,
+#ifdef CONFIG_HIBERNATION
+		.pm = &msm_sharedmem_pm_ops,
+#endif
 	},
 };
 

@@ -39,11 +39,11 @@ static struct pll_vco lucid_evo_vco[] = {
 	{ 249600000, 2000000000, 0 },
 };
 
-/* 796MHz configuration */
+/* 810MHz configuration */
 static struct alpha_pll_config gpu_cc_pll0_config = {
-	.l = 0x29,
+	.l = 0x2A,
 	.cal_l = 0x44,
-	.alpha = 0x7555,
+	.alpha = 0x3000,
 	.config_ctl_val = 0x20485699,
 	.config_ctl_hi_val = 0x00182261,
 	.config_ctl_hi1_val = 0x32AA299C,
@@ -74,7 +74,7 @@ static struct clk_alpha_pll gpu_cc_pll0 = {
 				[VDD_LOWER] = 615000000,
 				[VDD_LOW] = 1066000000,
 				[VDD_LOW_L1] = 1500000000,
-				[VDD_NOMINAL] = 1750000000,
+				[VDD_NOMINAL] = 1800000000,
 				[VDD_HIGH] = 2000000000},
 		},
 	},
@@ -115,7 +115,7 @@ static struct clk_alpha_pll gpu_cc_pll1 = {
 				[VDD_LOWER] = 615000000,
 				[VDD_LOW] = 1066000000,
 				[VDD_LOW_L1] = 1500000000,
-				[VDD_NOMINAL] = 1750000000,
+				[VDD_NOMINAL] = 1800000000,
 				[VDD_HIGH] = 2000000000},
 		},
 	},
@@ -276,6 +276,21 @@ static struct clk_rcg2 gpu_cc_xo_clk_src = {
 	},
 };
 
+static struct clk_regmap_div gpu_cc_demet_div_clk_src = {
+	.reg = 0x9054,
+	.shift = 0,
+	.width = 4,
+	.clkr.hw.init = &(struct clk_init_data) {
+		.name = "gpu_cc_demet_div_clk_src",
+		.parent_hws = (const struct clk_hw*[]){
+			&gpu_cc_xo_clk_src.clkr.hw,
+		},
+		.num_parents = 1,
+		.flags = CLK_SET_RATE_PARENT,
+		.ops = &clk_regmap_div_ro_ops,
+	},
+};
+
 static struct clk_regmap_div gpu_cc_hub_ahb_div_clk_src = {
 	.reg = 0x9430,
 	.shift = 0,
@@ -427,6 +442,24 @@ static struct clk_branch gpu_cc_cxo_clk = {
 	},
 };
 
+static struct clk_branch gpu_cc_demet_clk = {
+	.halt_reg = 0x900c,
+	.halt_check = BRANCH_HALT,
+	.clkr = {
+		.enable_reg = 0x900c,
+		.enable_mask = BIT(0),
+		.hw.init = &(struct clk_init_data){
+			.name = "gpu_cc_demet_clk",
+			.parent_hws = (const struct clk_hw*[]){
+				&gpu_cc_demet_div_clk_src.clkr.hw,
+			},
+			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT,
+			.ops = &clk_branch2_aon_ops,
+		},
+	},
+};
+
 static struct clk_branch gpu_cc_hlos1_vote_gpu_smmu_clk = {
 	.halt_reg = 0x7000,
 	.halt_check = BRANCH_HALT_VOTED,
@@ -510,6 +543,8 @@ static struct clk_regmap *gpu_cc_lemans_clocks[] = {
 	[GPU_CC_CX_SNOC_DVM_CLK] = &gpu_cc_cx_snoc_dvm_clk.clkr,
 	[GPU_CC_CXO_AON_CLK] = &gpu_cc_cxo_aon_clk.clkr,
 	[GPU_CC_CXO_CLK] = &gpu_cc_cxo_clk.clkr,
+	[GPU_CC_DEMET_CLK] = &gpu_cc_demet_clk.clkr,
+	[GPU_CC_DEMET_DIV_CLK_SRC] = &gpu_cc_demet_div_clk_src.clkr,
 	[GPU_CC_FF_CLK_SRC] = &gpu_cc_ff_clk_src.clkr,
 	[GPU_CC_GMU_CLK_SRC] = &gpu_cc_gmu_clk_src.clkr,
 	[GPU_CC_HLOS1_VOTE_GPU_SMMU_CLK] = &gpu_cc_hlos1_vote_gpu_smmu_clk.clkr,

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _DT_BINDINGS_CLK_QCOM_GCC_LEMANS_H
@@ -249,6 +250,12 @@
 #define GCC_UFS_PHY_ICE_CORE_HW_CTL_CLK			239
 #define GCC_UFS_PHY_PHY_AUX_HW_CTL_CLK			240
 #define GCC_UFS_PHY_UNIPRO_CORE_HW_CTL_CLK		241
+#define GCC_TSCSS_AHB_CLK				242
+#define GCC_TSCSS_CNTR_CLK_SRC				243
+#define GCC_TSCSS_ETU_CLK				244
+#define GCC_TSCSS_GLOBAL_CNTR_CLK			245
+#define GCC_SGMI_CLKREF_EN				246
+#define GCC_EDP_REF_CLKREF_EN				247
 
 /* GCC resets */
 #define GCC_EMAC0_BCR					0

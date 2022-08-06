@@ -4462,6 +4462,8 @@ static const struct qcom_cc_desc gcc_kona_desc = {
 	.num_clks = ARRAY_SIZE(gcc_kona_clocks),
 	.resets = gcc_kona_resets,
 	.num_resets = ARRAY_SIZE(gcc_kona_resets),
+	.clk_hws = gcc_kona_hws,
+	.num_clk_hws = ARRAY_SIZE(gcc_kona_hws),
 	.clk_regulators = gcc_kona_regulators,
 	.num_clk_regulators = ARRAY_SIZE(gcc_kona_regulators),
 };

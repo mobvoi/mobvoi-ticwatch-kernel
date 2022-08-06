@@ -15,14 +15,11 @@
 #include "soniclib.h"
 #include "ch101_gpr.h"
 #include "ch_common.h"
-#include "ch101_floor.h"
 
 u8 ch101_gpr_init(struct ch_dev_t *dev_ptr, struct ch_group_t *grp_ptr,
 	u8 i2c_addr, u8 io_index, u8 i2c_bus_index)
 {
-	if (io_index == 2)
-		dev_ptr->part_number = CH101_PART_FLOOR_NUMBER;
-	else if (io_index < 3)
+	if (io_index < 3)
 		dev_ptr->part_number = CH101_PART_NUMBER;
 	else
 		dev_ptr->part_number = CH201_PART_NUMBER;
@@ -32,18 +29,7 @@ u8 ch101_gpr_init(struct ch_dev_t *dev_ptr, struct ch_group_t *grp_ptr,
 	dev_ptr->i2c_bus_index = i2c_bus_index;
 
 	/* Init firmware-specific function pointers */
-	if (dev_ptr->part_number == CH101_PART_FLOOR_NUMBER) {
-		dev_ptr->freqCounterCycles = CH101_FREQCOUNTERCYCLES;
-		dev_ptr->freqLockValue     = CH101_COMMON_READY_FREQ_LOCKED;
-		/* Init firmware-specific function pointers */
-		dev_ptr->firmware = ch101_floor_fw;
-		dev_ptr->fw_version_string = ch101_floor_version;
-		dev_ptr->ram_init = get_ram_ch101_floor_init_ptr();
-		dev_ptr->get_fw_ram_init_size =
-				get_ch101_floor_fw_ram_init_size;
-		dev_ptr->get_fw_ram_init_addr =
-				get_ch101_floor_fw_ram_init_addr;
-	} else if (dev_ptr->part_number == CH101_PART_NUMBER) {
+	if (dev_ptr->part_number == CH101_PART_NUMBER) {
 		dev_ptr->firmware = ch101_gpr_fw;
 		dev_ptr->fw_version_string = ch101_gpr_version;
 		dev_ptr->ram_init = get_ram_ch101_gpr_init_ptr();

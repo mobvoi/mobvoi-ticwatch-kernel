@@ -803,6 +803,7 @@ static int subsys_s2d_exit(struct subsys_device *subsys)
 		return ret;
 	}
 	track->p_state = SUBSYS_NORMAL;
+	subsys_set_state(subsys, SUBSYS_ONLINE);
 	notify_each_subsys_device(&subsys, 1, SUBSYS_AFTER_POWERUP,
 								NULL);
 	return ret;

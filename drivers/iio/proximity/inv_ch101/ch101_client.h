@@ -22,8 +22,15 @@
 #define TAG "ch101: "
 
 #define MAX_SAMPLES     450
+
+#ifdef TDK_RB2
+#define MAX_DEVICES     6
+#define MAX_BUSES	1
+#else
 #define MAX_DEVICES     3
 #define MAX_BUSES	2
+#endif
+
 #define MAX_DEV_BUSES	(MAX_DEVICES * MAX_BUSES)
 
 typedef u32 ioport_pin_t;
