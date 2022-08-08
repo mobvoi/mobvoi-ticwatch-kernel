@@ -563,6 +563,7 @@ struct bt541_ts_info {
 	struct seb_notif_info		*seb_handle;
 	struct notifier_block		seb_nb;
 	bool				is_slate_up;
+	int allow_tn_enable_flag;
 };
 typedef struct
 {
@@ -3410,15 +3411,44 @@ static ssize_t show_cmd_result(struct device *dev, struct device_attribute
 
 	return snprintf(buf, sizeof(finfo->cmd_result),"%s\n", finfo->cmd_result);
 }
+static ssize_t store_tn_flag(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct bt541_ts_info *info = dev_get_drvdata(dev);
+	struct i2c_client *client = info->client;
+	int rc;
+	int data;
+
+	rc = kstrtoint(buf, 10, &data);
+	if (rc) {
+		dev_info(&client->dev,"kstrtoint failed, rc = %d\n", rc);
+		return -EINVAL;
+	}
+	info->allow_tn_enable_flag = data;
+	dev_info(&client->dev,"allow_tn_enable_flag: %d\n", info->allow_tn_enable_flag);
+	return count;
+}
+static ssize_t show_tn_flag(struct device *dev, struct device_attribute *devattr, char *buf)
+{
+	struct bt541_ts_info *info = dev_get_drvdata(dev);
+	struct i2c_client *client = info->client;
+
+	dev_info(&client->dev, "tsp tn flag: result: %d\n", info->allow_tn_enable_flag);
+
+	return snprintf(buf, sizeof(info->allow_tn_enable_flag),"%d\n", info->allow_tn_enable_flag);
+}
 
 static DEVICE_ATTR(cmd, S_IWUSR | S_IWGRP, NULL, store_cmd);
 static DEVICE_ATTR(cmd_status, S_IRUGO, show_cmd_status, NULL);
 static DEVICE_ATTR(cmd_result, S_IRUGO, show_cmd_result, NULL);
+static DEVICE_ATTR(allow_tn_enable_flag, 0644, show_tn_flag, store_tn_flag);
+
 
 static struct attribute *touchscreen_attributes[] = {
 	&dev_attr_cmd.attr,
 	&dev_attr_cmd_status.attr,
 	&dev_attr_cmd_result.attr,
+	&dev_attr_allow_tn_enable_flag.attr,
 	NULL,
 };
 
@@ -3896,21 +3926,21 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 	memset(tx_buf,0,sizeof(tx_buf));
 	memcpy(tx_buf, &req_header, sizeof(req_header));
 	memcpy(tx_buf+sizeof(req_header), &panel_power_state, sizeof(panel_power_state));
-	for(i=0; i< req_header.payload_size + sizeof(req_header);i++)
-	{
-		//zinitix_printk("tx_buf[%d]=%d\n",i, tx_buf[i]);
-	}
 
 	if (*blank == DRM_PANEL_BLANK_UNBLANK) {
-		zinitix_printk("DRM_PANEL_BLANK_UNBLANK,pannel power on!\n");
-		slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+		zinitix_printk("DRM_PANEL_BLANK_UNBLANK,pannel power on,allow_tn_enable_flag=%d!\n",misc_touch_dev->allow_tn_enable_flag);
+		if(misc_touch_dev->allow_tn_enable_flag){
+			slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+		}
 		if (event == DRM_PANEL_EVENT_BLANK) {
 			bt541_ts_resume(&misc_touch_dev->client->dev);
 		}
 
 	} else if (*blank == DRM_PANEL_BLANK_POWERDOWN || *blank == DRM_PANEL_BLANK_LP ) {
-		zinitix_printk("DRM_PANEL_BLANK_POWERDOWN,pannel power off!\n");
-		slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+		zinitix_printk("DRM_PANEL_BLANK_POWERDOWN,pannel power off,allow_tn_enable_flag=%d!\n",misc_touch_dev->allow_tn_enable_flag);
+		if(misc_touch_dev->allow_tn_enable_flag){
+			slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+		}
 		if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
 			bt541_ts_suspend(&misc_touch_dev->client->dev);
 		}
@@ -4008,7 +4038,7 @@ static int bt541_ts_probe(struct i2c_client *client,
 	info->pdata = pdata;
 	info->device_enabled = 1;
 	misc_touch_dev = info;
-
+    info->allow_tn_enable_flag = 0;
 	ret = zinitix_check_dsi_panel_dt(np, &active_panel);
 	if (ret) {
 		if (ret == -EPROBE_DEFER) {
