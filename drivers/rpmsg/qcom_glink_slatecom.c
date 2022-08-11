@@ -39,7 +39,7 @@
 #include "rpmsg_internal.h"
 #include "qcom_glink_native.h"
 
-#define GLINK_LOG_PAGE_CNT	2
+#define GLINK_LOG_PAGE_CNT	5
 #define GLINK_INFO(ctxt, x, ...)					       \
 	ipc_log_string(ctxt->ilc, "[%s]: "x, __func__, ##__VA_ARGS__)
 
@@ -1615,6 +1615,8 @@ static void glink_slatecom_free_intent(struct glink_slatecom_channel *channel,
 
 static int glink_slatecom_rx_data(struct glink_slatecom *glink,
 			     unsigned int rcid, unsigned int liid,
+				 unsigned int p3,
+				 unsigned int p4,
 			     void *rx_data, size_t avail)
 {
 	struct glink_slatecom_rx_intent *intent;
@@ -1637,6 +1639,7 @@ static int glink_slatecom_rx_data(struct glink_slatecom *glink,
 		dev_dbg(glink->dev, "Not enough data in fifo\n");
 		return avail;
 	}
+	//CH_INFO(channel, "[param34]chunk_size:%d left_size:%d\n", p3, p4);
 	hdr = (struct data_desc *)rx_data;
 
 	chunk_size = le32_to_cpu(hdr->chunk_size);
@@ -1645,13 +1648,14 @@ static int glink_slatecom_rx_data(struct glink_slatecom *glink,
 
 	mutex_lock(&glink->idr_lock);
 	channel = idr_find(&glink->rcids, rcid);
+	
 	mutex_unlock(&glink->idr_lock);
 	if (!channel) {
 		dev_dbg(glink->dev, "Data on non-existing channel\n");
 		return msglen;
 	}
 	CH_INFO(channel, "chunk_size:%d left_size:%d\n", chunk_size, left_size);
-
+    CH_INFO(channel, "[param34]chunk_size:%d left_size:%d\n", p3, p4);
 	mutex_lock(&channel->intent_lock);
 	intent = idr_find(&channel->liids, liid);
 
@@ -1922,7 +1926,7 @@ static void glink_slatecom_process_cmd(struct glink_slatecom *glink, void *rx_da
 			break;
 		case SLATECOM_CMD_TX_DATA:
 		case SLATECOM_CMD_TX_DATA_CONT:
-			ret = glink_slatecom_rx_data(glink, param1, param2,
+			ret = glink_slatecom_rx_data(glink, param1, param2,param3, param4,
 						rx_data + offset,
 						rx_size - offset);
 			offset += ALIGN(ret, SLATECOM_ALIGNMENT);
