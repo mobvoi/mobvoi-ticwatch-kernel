@@ -20,7 +20,7 @@
 #include <linux/termios.h>
 
 /* Define IPC Logging Macros */
-#define GLINK_PKT_IPC_LOG_PAGE_CNT 2
+#define GLINK_PKT_IPC_LOG_PAGE_CNT 5
 static void *glink_pkt_ilctxt;
 
 #define GLINK_PKT_INFO(x, ...)						     \
