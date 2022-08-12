@@ -231,7 +231,7 @@ static long slate_mobvoi_rpc_ioctl(struct file *filp,
 			if(p_rpc_data->header.payload_size>128){
 				return -1;
 			}
-			rs=slate_mobvoi_rpc_tx_msg_ext(p_rpc_data,p_rpc_data->header.payload_size+sizeof(wear_header_t));
+			//rs=slate_mobvoi_rpc_tx_msg_ext(p_rpc_data,p_rpc_data->header.payload_size+sizeof(wear_header_t));
 			pr_info("slate_mobvoi_rpc_ioctl rs=%d\n",rs);
 			ret=rs;
 			break;
