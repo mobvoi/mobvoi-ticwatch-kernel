@@ -113,6 +113,7 @@ static int bms_get_buffered_data(int channel, int *val, int src)
 int remote_bms_get_prop(int channel, int *val, int src)
 {
 	int rc = 0;
+	static int capacity_error_count  = 0;
 
 	if (!the_bms)
 		return -EINVAL;
@@ -133,8 +134,21 @@ int remote_bms_get_prop(int channel, int *val, int src)
 			printk("Wait for remote GLINK to be up,battery capacity fake 50%\n");
 			*val=50;
 			//return -EAGAIN;
-		} else
+		} else{
 			rc = bms_get_buffered_data(channel, val, src);
+			if(*val == 0)
+			{
+				*val = 50;
+				capacity_error_count++;
+				pr_err("slate is up,but received battery capacity is 0,set default 50%,capacity_error_count=%d\n",capacity_error_count);
+				if(capacity_error_count > 6){
+					*val = 0;
+					 break;
+			    }
+			}else{
+				capacity_error_count = 0;
+			}
+		}
 		break;
 	case SMB5_QG_VOLTAGE_NOW:
 		rc = iio_read_channel_processed(the_bms->batt_volt_chan, val);
