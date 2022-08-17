@@ -82,8 +82,8 @@
 
 		qcom,glinkpkt-slate-ssc-hal {
 			qcom,glink-channels = "ssc_hal";
-			qcom,intents = <0x2710 1
-					0x3E8  200>;
+			qcom,intents = <0x2710 2
+					0x3E8  2>;
 		};
 
 		qcom,glinkpkt-slate-sso-hal {
