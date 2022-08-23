@@ -270,8 +270,7 @@ struct rx_pkt {
 			struct glink_slatecom_channel, ept)
 
 static const struct rpmsg_endpoint_ops glink_endpoint_ops;
-static unsigned int glink_slatecom_wakeup_ms =
-			CONFIG_RPMSG_GLINK_SLATECOM_WAKEUP_MS;
+static unsigned int glink_slatecom_wakeup_ms =CONFIG_RPMSG_GLINK_SLATECOM_WAKEUP_MS;
 
 #define SLATECOM_CMD_VERSION			0
 #define SLATECOM_CMD_VERSION_ACK			1
@@ -447,18 +446,12 @@ static int glink_slatecom_tx_write_one(struct glink_slatecom *glink, void *src,
 		GLINK_ERR(glink, "%s: No Space in Fifo\n", __func__);
 		return -ENOSPC;
 	}
-
-	do {
-		ret = slatecom_fifo_write(glink->slatecom_handle, size_in_words, src);
-		if (ret < 0) {
-			GLINK_ERR(glink, "%s: Error %d writing data\n",
-								__func__, ret);
-			if (ret == -ECANCELED)
-				usleep_range(TX_WAIT_US, TX_WAIT_US + 1000);
-		}
-
-	} while (ret == -ECANCELED);
-
+	ret = slatecom_fifo_write(glink->slatecom_handle, size_in_words, src);
+	if (ret < 0) {
+		GLINK_ERR(glink, "%s: Error %d writing data\n",
+							__func__, ret);
+		return ret;
+	}
 	glink_slatecom_update_tx_avail(glink, size_in_words);
 	return ret;
 }
@@ -1671,24 +1664,17 @@ static int glink_slatecom_rx_data(struct glink_slatecom *glink,
 		/* The packet header lied, drop payload */
 		return msglen;
 	}
-
-	do {
-		rc = slatecom_ahb_read(glink->slatecom_handle, (uint32_t)(size_t)addr,
+	rc = slatecom_ahb_read(glink->slatecom_handle, (uint32_t)(size_t)addr,
 			ALIGN(chunk_size, WORD_SIZE)/WORD_SIZE,
 			intent->data + intent->offset);
-		if (rc < 0) {
-			GLINK_ERR(glink, "%s: Error %d receiving data\n",
+	if (rc < 0) {
+		GLINK_ERR(glink, "%s: Error %d receiving data\n",
 							__func__, rc);
-			if (rc == -ECANCELED)
-				usleep_range(TX_WAIT_US, TX_WAIT_US + 1000);
-		}
-
-	} while (rc == -ECANCELED);
-
-intent->offset += chunk_size;
-
+	}
+	intent->offset += chunk_size;
 	/* Handle message when no fragments remain to be received */
 	if (!left_size) {
+		glink_slatecom_send_rx_done(glink, channel, intent);
 		spin_lock_irqsave(&channel->recv_lock, flags);
 		if (channel->ept.cb) {
 			channel->ept.cb(channel->ept.rpdev,
@@ -1699,7 +1685,7 @@ intent->offset += chunk_size;
 		}
 		spin_unlock_irqrestore(&channel->recv_lock, flags);
 
-		glink_slatecom_send_rx_done(glink, channel, intent);
+		//glink_slatecom_send_rx_done(glink, channel, intent);
 		glink_slatecom_free_intent(channel, intent);
 	}
 	mutex_unlock(&channel->intent_lock);
@@ -1996,9 +1982,11 @@ static void __rx_worker(struct rx_pkt *rx_pkt_info)
 static void rx_worker(struct kthread_work *work)
 {
 	struct rx_pkt *rx_pkt_info;
-
+	struct glink_slatecom *glink;
 	rx_pkt_info = container_of(work, struct rx_pkt, kwork);
+	glink = rx_pkt_info->glink;
 	__rx_worker(rx_pkt_info);
+	__pm_relax(glink->ws);
 };
 
 static void glink_slatecom_linkup(struct glink_slatecom *glink)
@@ -2111,7 +2099,8 @@ static void glink_slatecom_event_handler(void *handle,
 		rx_pkt_info->rx_len = data->fifo_data.to_master_fifo_used;
 		rx_pkt_info->glink = glink;
 		kthread_init_work(&rx_pkt_info->kwork, rx_worker);
-		pm_wakeup_ws_event(glink->ws, glink_slatecom_wakeup_ms, true);
+		//pm_wakeup_ws_event(glink->ws, glink_slatecom_wakeup_ms, true);
+		__pm_stay_awake(glink->ws);
 		kthread_queue_work(&glink->kworker, &rx_pkt_info->kwork);
 		break;
 	case SLATECOM_EVENT_TO_SLAVE_FIFO_FREE:
