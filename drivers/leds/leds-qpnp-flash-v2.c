@@ -2953,6 +2953,25 @@ static int qpnp_flash_led_register_interrupts(struct qpnp_flash_led *led)
 	return 0;
 }
 
+static void qpnp_flash_led_free_interrupts(struct qpnp_flash_led *led)
+{
+	/* free irqs */
+	if (led->pdata->all_ramp_up_done_irq >= 0)
+		devm_free_irq(&led->pdev->dev,
+			led->pdata->all_ramp_up_done_irq,
+			led);
+
+	if (led->pdata->all_ramp_down_done_irq >= 0)
+		devm_free_irq(&led->pdev->dev,
+			led->pdata->all_ramp_down_done_irq,
+			led);
+
+	if (led->pdata->led_fault_irq >= 0)
+		devm_free_irq(&led->pdev->dev,
+			led->pdata->led_fault_irq,
+			led);
+}
+
 static int qpnp_flash_led_probe(struct platform_device *pdev)
 {
 	struct qpnp_flash_led *led;
@@ -3144,6 +3163,38 @@ static int qpnp_flash_led_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int qpnp_flash_led_freeze(struct device *dev)
+{
+	struct qpnp_flash_led *led = dev_get_drvdata(dev);
+
+	qpnp_flash_led_free_interrupts(led);
+
+	return 0;
+}
+
+static int qpnp_flash_led_restore(struct device *dev)
+{
+	struct qpnp_flash_led *led = dev_get_drvdata(dev);
+	int rc = 0;
+
+	rc = qpnp_flash_led_init_settings(led);
+	if (rc < 0) {
+		pr_err("Flash setting re-init failed in Restore rc= %d\n", rc);
+		return rc;
+	}
+
+	rc = qpnp_flash_led_register_interrupts(led);
+	if (rc < 0)
+		pr_err("Interrupt re-registration failed in Restore rc= %d\n", rc);
+
+	return rc;
+}
+
+static const struct dev_pm_ops qpnp_flash_led_pm_ops = {
+	.freeze = qpnp_flash_led_freeze,
+	.restore = qpnp_flash_led_restore,
+};
+
 const struct of_device_id qpnp_flash_led_match_table[] = {
 	{ .compatible = "qcom,pm6150l-flash-led-v2", .data = (void *)PM6150L},
 	{ .compatible = "qcom,pmi632-flash-led-v2", .data = (void *)PMI632},
@@ -3154,6 +3205,7 @@ static struct platform_driver qpnp_flash_led_driver = {
 	.driver		= {
 		.name = "qcom,qpnp-flash-led-v2",
 		.of_match_table = qpnp_flash_led_match_table,
+		.pm = &qpnp_flash_led_pm_ops,
 	},
 	.probe		= qpnp_flash_led_probe,
 	.remove		= qpnp_flash_led_remove,

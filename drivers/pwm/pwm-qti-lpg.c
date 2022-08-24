@@ -2,6 +2,9 @@
 /*
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
+/*
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ */
 
 #define pr_fmt(fmt) "%s: " fmt, __func__
 
@@ -1733,6 +1736,32 @@ static int qpnp_lpg_remove(struct platform_device *pdev)
 	return rc;
 }
 
+static int qpnp_lpg_freeze(struct device *dev)
+{
+	/* nothing to do */
+	return 0;
+}
+
+static int qpnp_lpg_restore(struct device *dev)
+{
+	int rc = 0;
+	struct qpnp_lpg_chip *chip = dev_get_drvdata(dev);
+
+	/* clear SDAM again, and clear flag to allow writes in the next config */
+	rc = qpnp_lpg_sdam_hw_init(chip);
+	if (rc < 0)
+		dev_err(chip->dev, "sdam hw init failed rc = %d\n", rc);
+
+	chip->lpgs->lut_written = false;
+
+	return 0;
+}
+
+static const struct dev_pm_ops qpnp_lpg_pm_ops = {
+	.freeze = qpnp_lpg_freeze,
+	.restore = qpnp_lpg_restore,
+};
+
 static const struct of_device_id qpnp_lpg_of_match[] = {
 	{ .compatible = "qcom,pwm-lpg",},
 	{ },
@@ -1742,6 +1771,7 @@ static struct platform_driver qpnp_lpg_driver = {
 	.driver		= {
 		.name		= "qcom,pwm-lpg",
 		.of_match_table	= qpnp_lpg_of_match,
+		.pm = &qpnp_lpg_pm_ops,
 	},
 	.probe		= qpnp_lpg_probe,
 	.remove		= qpnp_lpg_remove,

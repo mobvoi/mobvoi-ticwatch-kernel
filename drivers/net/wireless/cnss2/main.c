@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/delay.h>
@@ -29,12 +29,11 @@
 #define CNSS_DUMP_NAME			"CNSS_WLAN"
 #define CNSS_DUMP_DESC_SIZE		0x1000
 #define CNSS_DUMP_SEG_VER		0x1
-#define RECOVERY_DELAY_MS		100
 #define FILE_SYSTEM_READY		1
 #define FW_READY_TIMEOUT		20000
 #define FW_ASSERT_TIMEOUT		5000
 #define CNSS_EVENT_PENDING		2989
-#define COLD_BOOT_CAL_SHUTDOWN_DELAY_MS	50
+#define POWER_RESET_MIN_DELAY_MS	100
 #define MAX_NAME_LEN			12
 
 #define CNSS_QUIRKS_DEFAULT		0
@@ -156,27 +155,15 @@ struct cnss_plat_data *cnss_get_plat_priv_by_rc_num(int rc_num)
 }
 
 static inline int
-cnss_get_rc_num(struct cnss_plat_data *plat_priv)
-{
-	return of_property_read_u32(plat_priv->plat_dev->dev.of_node,
-		"qcom,wlan-rc-num", &plat_priv->rc_num);
-}
-
-static inline int
 cnss_get_qrtr_node_id(struct cnss_plat_data *plat_priv)
 {
-	return of_property_read_u32(plat_priv->plat_dev->dev.of_node,
+	return of_property_read_u32(plat_priv->dev_node,
 		"qcom,qrtr_node_id", &plat_priv->qrtr_node_id);
 }
 
-static void cnss_get_rc_qrtr(struct cnss_plat_data *plat_priv)
+void cnss_get_qrtr_info(struct cnss_plat_data *plat_priv)
 {
-	int ret = cnss_get_rc_num(plat_priv);
-
-	if (ret)
-		cnss_pr_err("Failed to find PCIe RC number, err = %d\n", ret);
-
-	cnss_pr_dbg("rc_num=%d\n", plat_priv->rc_num);
+	int ret = 0;
 
 	ret = cnss_get_qrtr_node_id(plat_priv);
 	if (ret) {
@@ -232,7 +219,7 @@ struct cnss_plat_data *cnss_get_plat_priv_by_rc_num(int rc_num)
 	return cnss_bus_dev_to_plat_priv(NULL);
 }
 
-static void cnss_get_rc_qrtr(struct cnss_plat_data *plat_priv)
+void cnss_get_qrtr_info(struct cnss_plat_data *plat_priv)
 {
 }
 
@@ -242,6 +229,13 @@ cnss_get_pld_bus_ops_name(struct cnss_plat_data *plat_priv)
 	return 0;
 }
 #endif
+
+static inline int
+cnss_get_rc_num(struct cnss_plat_data *plat_priv)
+{
+	return of_property_read_u32(plat_priv->plat_dev->dev.of_node,
+		"qcom,wlan-rc-num", &plat_priv->rc_num);
+}
 
 bool cnss_is_dual_wlan_enabled(void)
 {
@@ -1392,7 +1386,7 @@ static void cnss_recovery_work_handler(struct work_struct *work)
 
 	cnss_bus_dev_shutdown(plat_priv);
 	cnss_bus_dev_ramdump(plat_priv);
-	msleep(RECOVERY_DELAY_MS);
+	msleep(POWER_RESET_MIN_DELAY_MS);
 
 	ret = cnss_bus_dev_powerup(plat_priv);
 	if (ret)
@@ -1819,7 +1813,7 @@ static int cnss_cold_boot_cal_done_hdlr(struct cnss_plat_data *plat_priv,
 		goto skip_shutdown;
 
 	cnss_bus_dev_shutdown(plat_priv);
-	msleep(COLD_BOOT_CAL_SHUTDOWN_DELAY_MS);
+	msleep(POWER_RESET_MIN_DELAY_MS);
 
 skip_shutdown:
 	complete(&plat_priv->cal_complete);
@@ -3386,7 +3380,12 @@ static int cnss_probe(struct platform_device *plat_dev)
 		cnss_pr_err("Failed to find bus ops name, err = %d\n",
 			    ret);
 
-	cnss_get_rc_qrtr(plat_priv);
+	ret = cnss_get_rc_num(plat_priv);
+
+	if (ret)
+		cnss_pr_err("Failed to find PCIe RC number, err = %d\n", ret);
+
+	cnss_pr_dbg("rc_num=%d\n", plat_priv->rc_num);
 
 	plat_priv->is_converged_dt = cnss_is_converged_dt(plat_priv);
 	plat_priv->dev_node = plat_priv->plat_dev->dev.of_node;
@@ -3426,13 +3425,9 @@ static int cnss_probe(struct platform_device *plat_dev)
 	if (ret)
 		goto remove_sysfs;
 
-	ret = cnss_qmi_init(plat_priv);
-	if (ret)
-		goto deinit_event_work;
-
 	ret = cnss_debugfs_create(plat_priv);
 	if (ret)
-		goto deinit_qmi;
+		goto deinit_event_work;
 
 	ret = cnss_misc_init(plat_priv);
 	if (ret)
@@ -3481,8 +3476,6 @@ deinit_misc:
 	cnss_misc_deinit(plat_priv);
 destroy_debugfs:
 	cnss_debugfs_destroy(plat_priv);
-deinit_qmi:
-	cnss_qmi_deinit(plat_priv);
 deinit_event_work:
 	cnss_event_work_deinit(plat_priv);
 remove_sysfs:

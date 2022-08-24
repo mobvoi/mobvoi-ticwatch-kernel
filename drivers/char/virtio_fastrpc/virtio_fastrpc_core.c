@@ -4,6 +4,7 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/ion.h>
 #include <linux/sched.h>
 #include <linux/debugfs.h>
 #include <linux/crc32.h>
@@ -765,6 +766,8 @@ static int get_args(struct fastrpc_invoke_ctx *ctx)
 		if (maps[i]) {
 			table = maps[i]->table;
 			rpra[i].attrs |= FASTRPC_BUF_ATTR_ION;
+			if (maps[i]->dma_flags & ION_FLAG_CACHED)
+				rpra[i].attrs |= FASTRPC_BUF_ATTR_CACHED;
 			rpra[i].crc = 0;
 			rpra[i].pv = buf;
 			rpra[i].buf_len = len;
@@ -854,6 +857,8 @@ static int get_args(struct fastrpc_invoke_ctx *ctx)
 			/* copy dma handle sglist to data area */
 			table = maps[i]->table;
 			rpra[i].attrs = FASTRPC_BUF_ATTR_ION;
+			if (maps[i]->dma_flags & ION_FLAG_CACHED)
+				rpra[i].attrs |= FASTRPC_BUF_ATTR_CACHED;
 			rpra[i].buf_len = lpra[i].buf.len;
 			rpra[i].payload_len = table->nents *
 				sizeof(struct virt_fastrpc_sgl);

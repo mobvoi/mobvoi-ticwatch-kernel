@@ -94,4 +94,13 @@ config QRTR_BPF_FILTER
 	  functionality in ipc router. It prevents unauthorized users of a
 	  QMI service from accessing it. It also prevents broadcasting local QMI
 	  services to connected SoCs. Say Y here to enable this for auto targets.
+
+config QRTR_USB_DEV
+	tristate "USB Device IPC Router channels"
+	depends on USB_CONFIGFS_F_IPC || (COMPILE_TEST && USB_CONFIGFS_F_IPC=n)
+	help
+	  Say Y here to support USB based ipcrouter channels for device
+	  endpoint mode. USB device is the transport used for external modem
+	  connections. This driver enables QRTR to run on the modem device
+	  side.
 endif # QRTR

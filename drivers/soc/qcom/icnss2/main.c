@@ -1895,9 +1895,6 @@ static int icnss_modem_notifier_nb(struct notifier_block *nb,
 			icnss_msa0_ramdump(priv);
 		}
 
-		if (test_bit(ICNSS_LOW_POWER, &priv->state) &&
-			     priv->low_power_support)
-			clear_bit(ICNSS_LOW_POWER, &priv->state);
 		goto out;
 	case SUBSYS_BEFORE_DS_ENTRY:
 		if (test_bit(ICNSS_MODE_ON, &priv->state))

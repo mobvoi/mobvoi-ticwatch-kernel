@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved. */
-
+/* Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
 #ifndef _CNSS_MAIN_H
 #define _CNSS_MAIN_H
 
@@ -43,8 +44,8 @@
 #define CNSS_RAMDUMP_VERSION		0
 #define MAX_FIRMWARE_NAME_LEN		40
 #define FW_V2_NUMBER                    2
-#define POWER_ON_RETRY_MAX_TIMES        3
-#define POWER_ON_RETRY_DELAY_MS         200
+#define POWER_ON_RETRY_MAX_TIMES        4
+#define POWER_ON_RETRY_DELAY_MS         500
 #define CNSS_FS_NAME			"cnss"
 #define CNSS_FS_NAME_SIZE		15
 #define CNSS_DEVICE_NAME_SIZE		16
@@ -546,6 +547,7 @@ void cnss_pm_relax(struct cnss_plat_data *plat_priv);
 struct cnss_plat_data *cnss_get_plat_priv_by_rc_num(int rc_num);
 int cnss_get_plat_env_count(void);
 struct cnss_plat_data *cnss_get_plat_env(int index);
+void cnss_get_qrtr_info(struct cnss_plat_data *plat_priv);
 bool cnss_is_dual_wlan_enabled(void);
 int cnss_driver_event_post(struct cnss_plat_data *plat_priv,
 			   enum cnss_driver_event_type type,

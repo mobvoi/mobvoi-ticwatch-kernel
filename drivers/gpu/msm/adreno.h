@@ -209,6 +209,7 @@ enum adreno_gpurev {
 	ADRENO_REV_A643 = 643,
 	ADRENO_REV_A650 = 650,
 	ADRENO_REV_A660 = 660,
+	ADRENO_REV_A663 = 663,
 	ADRENO_REV_A680 = 680,
 	ADRENO_REV_A690 = 690,
 	ADRENO_REV_A702 = 702,
@@ -503,6 +504,9 @@ struct adreno_device {
 	void __iomem *isense_virt;
 	unsigned long gmu_wrapper_base;
 	void __iomem *gmu_wrapper_virt;
+	unsigned long fusa_base;
+	unsigned int fusa_len;
+	void __iomem *fusa_virt;
 	const struct adreno_gpu_core *gpucore;
 	struct adreno_firmware fw[2];
 	size_t gpmu_cmds_size;
@@ -983,6 +987,16 @@ void adreno_cx_misc_regrmw(struct adreno_device *adreno_dev,
 		unsigned int mask, unsigned int bits);
 void adreno_isense_regread(struct adreno_device *adreno_dev,
 		unsigned int offsetwords, unsigned int *value);
+bool adreno_is_fusa_register(struct adreno_device *adreno_dev,
+		unsigned int offset);
+void adreno_fusa_regread(struct adreno_device *adreno_dev,
+		unsigned int offsetwords, unsigned int *value);
+void adreno_fusa_regwrite(struct adreno_device *adreno_dev,
+		unsigned int offsetwords, unsigned int value);
+void adreno_fusa_regrmw(struct adreno_device *adreno_dev,
+		unsigned int offsetwords,
+		unsigned int mask, unsigned int bits);
+
 bool adreno_gx_is_on(struct adreno_device *adreno_dev);
 
 /**
@@ -1100,6 +1114,7 @@ ADRENO_TARGET(a630, ADRENO_REV_A630)
 ADRENO_TARGET(a640, ADRENO_REV_A640)
 ADRENO_TARGET(a643, ADRENO_REV_A643)
 ADRENO_TARGET(a650, ADRENO_REV_A650)
+ADRENO_TARGET(a663, ADRENO_REV_A663)
 ADRENO_TARGET(a680, ADRENO_REV_A680)
 ADRENO_TARGET(a690, ADRENO_REV_A690)
 ADRENO_TARGET(a702, ADRENO_REV_A702)
@@ -1140,7 +1155,7 @@ static inline int adreno_is_a640_family(struct adreno_device *adreno_dev)
  * Derived GPUs from A650 needs to be added to this list.
  * A650 is derived from A640 but register specs has been
  * changed hence do not belongs to A640 family. A620, A642,
- * A642L, A660, A690 follows the register specs of A650.
+ * A642L, A660, A663, A690 follows the register specs of A650.
  *
  */
 static inline int adreno_is_a650_family(struct adreno_device *adreno_dev)
@@ -1150,7 +1165,7 @@ static inline int adreno_is_a650_family(struct adreno_device *adreno_dev)
 	return (rev == ADRENO_REV_A650 || rev == ADRENO_REV_A620 ||
 		rev == ADRENO_REV_A660 || adreno_is_a642(adreno_dev) ||
 		adreno_is_a642l(adreno_dev) || rev == ADRENO_REV_A643 ||
-		rev == ADRENO_REV_A690);
+		rev == ADRENO_REV_A690 || rev == ADRENO_REV_A663);
 }
 
 static inline int adreno_is_a619_holi(struct adreno_device *adreno_dev)
