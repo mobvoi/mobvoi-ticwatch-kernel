@@ -173,7 +173,6 @@ static int slate_mobvoi_rpc_tx_msg(struct slatemobrpc_priv *dev, void  *msg, siz
 err_ret:
 	mutex_unlock(&dev->glink_mutex);
 	__pm_relax(dev->slatemobrpc_ws);
-	pr_info("rpc tx msg,wakelock release\n");
 	return rc;
 }
 extern int slatecom_is_spi_active_ext(void);

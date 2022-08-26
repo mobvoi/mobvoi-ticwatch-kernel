@@ -460,7 +460,7 @@ void handle_rx_event(struct seb_priv *dev, void *rx_event_buf, int len)
 	unsigned long flags;
 
 	event_header = (struct gmi_header *)rx_event_buf;
-	printk("handle_rx_event:opcode=%d\n",event_header->opcode);
+
 	if (event_header->opcode == GMI_SLATE_EVENT_RSB ||
 		event_header->opcode == GMI_SLATE_EVENT_BUTTON) {
 
