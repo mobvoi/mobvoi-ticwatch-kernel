@@ -915,3 +915,9 @@
 	qcom,iommu-dma = "bypass";
 	status = "disabled";
 };
+
+&hab {
+	/delete-node/ mmidgrp1400;
+	/delete-node/ mmidgrp1500;
+};
+

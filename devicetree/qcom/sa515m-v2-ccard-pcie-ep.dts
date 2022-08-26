@@ -33,3 +33,14 @@
 		qcom,iommu-dma = "bypass";
 	};
 };
+
+&mhi_device {
+	reg = <0x1c03000 0x1000>,
+		<0x1e15000 0x4>,
+		<0x1e15138 0x4>;
+	status = "ok";
+};
+
+&mhi_net_device {
+	status = "ok";
+};

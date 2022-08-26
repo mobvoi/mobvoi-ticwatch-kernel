@@ -209,12 +209,6 @@
 			remote-vmids = <0>;
 		};
 
-		mmidgrp800: mmidgrp800 {
-			grp-start-id = <800>;
-			role = "fe";
-			remote-vmids = <0>;
-		};
-
 		mmidgrp900: mmidgrp900 {
 			grp-start-id = <900>;
 			role = "fe";
@@ -235,6 +229,18 @@
 
 		mmidgrp1200: mmidgrp1200 {
 			grp-start-id = <1200>;
+			role = "fe";
+			remote-vmids = <0>;
+		};
+
+		mmidgrp1400: mmidgrp1400 {
+			grp-start-id = <1400>;
+			role = "fe";
+			remote-vmids = <0>;
+		};
+
+		mmidgrp1500: mmidgrp1500 {
+			grp-start-id = <1500>;
 			role = "fe";
 			remote-vmids = <0>;
 		};

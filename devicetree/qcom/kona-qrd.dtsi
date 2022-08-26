@@ -3,6 +3,8 @@
 #include "kona-thermal-overlay.dtsi"
 #include "kona-audio-overlay.dtsi"
 #include <dt-bindings/iio/qti_power_supply_iio.h>
+#include "display/kona-sde.dtsi"
+#include "display/kona-sde-display.dtsi"
 
 &vendor {
 	kona_qrd_batterydata: qcom,battery-data {

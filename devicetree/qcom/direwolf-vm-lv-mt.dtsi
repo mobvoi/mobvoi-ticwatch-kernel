@@ -26,3 +26,15 @@
 &pcie2a_msi_snps {
 	status = "okay";
 };
+
+&qupv3_0 {
+	status = "disabled";
+};
+
+&qupv3_1 {
+	status = "disabled";
+};
+
+&qupv3_2 {
+	status = "disabled";
+};

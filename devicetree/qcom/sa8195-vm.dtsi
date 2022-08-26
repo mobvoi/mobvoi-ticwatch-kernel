@@ -960,3 +960,9 @@
 	qcom,iommu-dma = "atomic";
 	status = "disabled";
 };
+
+&hab {
+	/delete-node/ mmidgrp1400;
+	/delete-node/ mmidgrp1500;
+};
+

@@ -1,4 +1,6 @@
 #include <dt-bindings/clock/qcom,rpmh.h>
+#include <dt-bindings/soc/qcom,ipcc.h>
+#include <dt-bindings/clock/qcom,aop-qmp.h>
 #include <dt-bindings/clock/qcom,camcc-lemans.h>
 #include <dt-bindings/clock/qcom,dispcc-lemans.h>
 #include <dt-bindings/clock/qcom,gcc-lemans.h>
@@ -414,6 +416,28 @@
 	};
 
 	adsp_mem: adsp_region {
+		compatible = "shared-dma-pool";
+		alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+		reusable;
+		alignment = <0x0 0x400000>;
+		size = <0x0 0x1000000>;
+	};
+
+	qseecom_mem: qseecom_region {
+		compatible = "shared-dma-pool";
+		no-map;
+		reg = <0x0 0xadc00000 0x0 0x1400000>;
+	};
+
+	user_contig_mem: user_contig_region {
+		compatible = "shared-dma-pool";
+		alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+		reusable;
+		alignment = <0x0 0x400000>;
+		size = <0x0 0x1000000>;
+	};
+
+	qseecom_ta_mem: qseecom_ta_region {
 		compatible = "shared-dma-pool";
 		alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
 		reusable;
@@ -874,6 +898,17 @@
 		clocks = <&rpmhcc RPMH_CXO_CLK>;
 		clock-names = "xo_clk_src";
 		#clock-cells = <1>;
+	};
+
+	qoslat_opp_table: qoslat-opp-table {
+		compatible = "operating-points-v2";
+		opp-1 {
+			opp-hz = /bits/ 64 < 1 >;
+		};
+
+		opp-2 {
+			opp-hz = /bits/ 64 < 2 >;
+		};
 	};
 
 	tlmm: pinctrl@f000000 {
@@ -1394,6 +1429,27 @@
 		priority = <0>;
 		mbox-desc-offset = <0x0>;
 		#mbox-cells = <1>;
+	};
+
+	qtee_shmbridge {
+		compatible = "qcom,tee-shared-memory-bridge";
+	};
+
+	qcom_qseecom: qseecom@0xd1800000 {
+		compatible = "qcom,qseecom";
+		reg = <0xd1800000 0x3900000>;
+		reg-names = "secapp-region";
+		memory-region = <&qseecom_mem>;
+		qcom,hlos-num-ce-hw-instances = <1>;
+		qcom,hlos-ce-hw-instance = <0>;
+		qcom,qsee-ce-hw-instance = <0>;
+		qcom,disk-encrypt-pipe-pair = <2>;
+		qcom,support-fde;
+		qcom,no-clock-support;
+		qcom,fde-key-size;
+		qcom,appsbl-qseecom-support;
+		qcom,commonlib64-loaded-by-uefi;
+		qcom,qsee-reentrancy-support = <2>;
 	};
 
 	qcom,glink {
@@ -2168,6 +2224,20 @@
 	qcom-secure-buffer {
 		compatible = "qcom,secure-buffer";
 	};
+
+	qfprom: qfprom@784000 {
+		compatible = "qcom,qfprom";
+		reg = <0x784000 0x3000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		read-only;
+		ranges;
+
+		gpu_speed_bin: gpu_speed_bin@18b {
+				reg = <0x18b 0x1>;
+				bits = <5 3>;
+		};
+	};
 };
 
 #include "lemans-4pmic-regulators.dtsi"
@@ -2419,3 +2489,4 @@
 
 #include "lemans-thermal.dtsi"
 #include "lemans-pcie.dtsi"
+#include "lemans-gpu.dtsi"

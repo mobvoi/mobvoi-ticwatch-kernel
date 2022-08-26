@@ -1,4 +1,5 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/soc/qcom,rpmh-rsc.h>
 
 / {
 	#address-cells = <1>;
@@ -23,8 +24,19 @@
 
 		peripheral2_mem: peripheral2_region@8fe00000 {
 			 no-map;
-			 reg = <0x8fe00000 0xe00000>;
+			 reg = <0x8fe40000 0xdc0000>;
 			 label = "peripheral2_mem";
+		};
+
+		cmd_db: reserved-memory@8fe20000 {
+			compatible = "qcom,cmd-db";
+			no-map;
+			reg = <0x8fe20000 0x20000>;
+		};
+
+		aop_image_mem: aop_image_region@8fe00000 {
+			no-map;
+			reg = <0x8fe00000 0x20000>;
 		};
 
 		sbl_region: sbl_region@8fd00000 {
@@ -108,6 +120,27 @@
 	#size-cells = <1>;
 	ranges;
 
+	psci {
+		compatible = "arm,psci-1.0";
+		method = "smc";
+	};
+
+	apps_rsc: rsc@17830000 {
+		label = "apps_rsc";
+		compatible = "qcom,rpmh-rsc";
+		reg = <0x17830000 0x10000>,
+		      <0x17840000 0x10000>;
+		reg-names = "drv-0", "drv-1";
+		interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
+		qcom,tcs-offset = <0xd00>;
+		qcom,drv-id = <1>;
+		qcom,tcs-config = <ACTIVE_TCS  2>,
+				  <SLEEP_TCS   2>,
+				  <WAKE_TCS    2>,
+				  <CONTROL_TCS 1>;
+	};
+
 	intc: interrupt-controller@17800000 {
 		compatible = "qcom,msm-qgic2";
 		interrupt-controller;
@@ -115,6 +148,20 @@
 		#interrupt-cells = <3>;
 		reg = <0x17800000 0x1000>,
 		      <0x17802000 0x1000>;
+	};
+
+	pdc: interrupt-controller@b210000 {
+		compatible = "qcom,sa415m-pdc";
+		reg = <0xb210000 0x30000>,
+		      <0xb204900 0x700>;
+		reg-names = "base", "mux-base";
+		qcom,pdc-ranges = <0 147 52>;
+		qcom,pdc-mux-ranges = <20 20 0>, <21 27 1>, <22 30 2>,
+				      <23 31 3>, <24 40 4>, <25 45 5>,
+				      <26 54 6>;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&intc>;
+		interrupt-controller;
 	};
 
 	timer {

@@ -1,5 +1,6 @@
 #include "kona-qrd.dtsi"
 #include "kona-iot-rb5-audio.dtsi"
+#include "camera/kona-camera-sensor-rb5.dtsi"
 
 &qupv3_se12_2uart {
 	status = "okay";
@@ -246,7 +247,7 @@
 		reg = <0x45>;
 		rst-gpios = <&tlmm 140 GPIO_ACTIVE_HIGH>;
 		rtc_rst-gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
-		//prg-gpios = <3 4 5>;
+		prg-gpios = <3 4 5>;
 		int-gpios = <&tlmm 122 GPIO_ACTIVE_HIGH>,
 			<&tlmm 123 GPIO_ACTIVE_HIGH>,
 			<&tlmm 66 GPIO_ACTIVE_HIGH>;
@@ -267,7 +268,7 @@
 		reg = <0x45>;
 		rst-gpios = <&tlmm 140 GPIO_ACTIVE_HIGH>;
 		rtc_rst-gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
-		//prg-gpios = <0 1 2>;
+		prg-gpios = <0 1 2>;
 		int-gpios = <&tlmm 129 GPIO_ACTIVE_HIGH>,
 				<&tlmm 141 GPIO_ACTIVE_HIGH>,
 				<&tlmm 113 GPIO_ACTIVE_HIGH>;
@@ -283,5 +284,89 @@
 		spi-cpol;
 		spi-cpha;
 		status = "okay";
+	};
+};
+
+&sde_dsi {
+	qcom,dsi-default-panel = <&dsi_ext_bridge_1080p>;
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ext_dsi_out: endpoint {
+				remote-endpoint = <&lt9611_in>;
+			};
+		};
+	};
+};
+
+&mdss_mdp {
+	connectors = <&smmu_sde_unsec &sde_wb &sde_dsi &sde_dsi1 &sde_rscc>;
+};
+
+&qupv3_se5_i2c {
+	status = "ok";
+	lt9611: lt,lt9611@2b {
+		compatible = "lt,lt9611uxc";
+		reg = <0x2b>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <63 0>;
+		interrupt-names = "lt_irq";
+		lt,irq-gpio = <&tlmm 63 0>;
+		lt,reset-gpio = <&pm8150l_gpios 5 0x0>;
+		instance_id = <0>;
+		lt,non-pluggable;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&lt9611_pins &lt9611_rst_pin_out_default>;
+
+		lt,preferred-mode = "1920x1080";
+
+		totalVoltage-supply = <&pm8150a_l11>;
+		lt,supply-entries {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			lt,supply-entry@0 {
+				reg = <0>;
+				lt,supply-name = "totalVoltage";
+				lt,supply-min-voltage = <3300000>;
+				lt,supply-max-voltage = <3300000>;
+				lt,supply-enable-load = <200000>;
+				lt,supply-post-on-sleep = <50>;
+			};
+		};
+
+		lt,customize-modes {
+			lt,customize-mode-id@0 {
+				lt,mode-h-active = <1920>;
+				lt,mode-h-front-porch = <88>;
+				lt,mode-h-pulse-width = <44>;
+				lt,mode-h-back-porch = <148>;
+				lt,mode-h-active-high;
+				lt,mode-v-active = <1080>;
+				lt,mode-v-front-porch = <4>;
+				lt,mode-v-pulse-width = <5>;
+				lt,mode-v-back-porch = <36>;
+				lt,mode-v-active-high;
+				lt,mode-refresh-rate = <60>;
+				lt,mode-clock-in-khz = <148500>;
+			};
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				lt9611_in: endpoint {
+					remote-endpoint = <&ext_dsi_out>;
+				};
+			};
+		};
 	};
 };

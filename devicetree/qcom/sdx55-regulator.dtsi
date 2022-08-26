@@ -85,6 +85,15 @@
 			qcom,init-voltage-level =
 				<RPMH_REGULATOR_LEVEL_RETENTION>;
 		};
+
+		mx_cdev: mx-cdev-lvl {
+			compatible = "qcom,regulator-cooling-device";
+			regulator-cdev-supply = <&VDD_MX_LEVEL>;
+			regulator-levels =
+				<RPMH_REGULATOR_LEVEL_RETENTION
+				 RPMH_REGULATOR_LEVEL_NOM>;
+			#cooling-cells = <2>;
+		};
 	};
 
 	/* PMX55 S5 = VDD_CX supply */
@@ -118,6 +127,13 @@
 			qcom,init-voltage-level =
 				<RPMH_REGULATOR_LEVEL_RETENTION>;
 			qcom,min-dropout-voltage-level = <(-1)>;
+		};
+
+		cx_cdev: regulator-cdev {
+			compatible = "qcom,rpmh-reg-cdev";
+			mboxes = <&qmp_aop 0>;
+			qcom,reg-resource-name = "cx";
+			#cooling-cells = <2>;
 		};
 	};
 
