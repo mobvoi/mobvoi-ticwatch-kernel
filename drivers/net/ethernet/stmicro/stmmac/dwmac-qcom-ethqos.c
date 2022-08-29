@@ -2604,6 +2604,17 @@ static int qcom_ethqos_suspend(struct device *dev)
 	ret = stmmac_suspend(dev);
 	qcom_ethqos_phy_suspend_clks(ethqos);
 
+	/* Suspend the PHY TXC clock. */
+	if (ethqos->rgmii_txc_suspend_state) {
+		/* Remove TXC clock source from Phy.*/
+		ret = pinctrl_select_state(ethqos->pinctrl,
+					   ethqos->rgmii_txc_suspend_state);
+	if (ret)
+		ETHQOSERR("Unable to set rgmii_txc_suspend_state state, err = %d\n", ret);
+	else
+		ETHQOSINFO("Set rgmii_txc_suspend_state succeed\n");
+	}
+
 	priv->boot_kpi = false;
 	ETHQOSDBG(" ret = %d\n", ret);
 	return ret;
@@ -2629,6 +2640,17 @@ static int qcom_ethqos_resume(struct device *dev)
 	if (!ndev || !netif_running(ndev)) {
 		ETHQOSERR(" Resume not possible\n");
 		return -EINVAL;
+	}
+
+	/* Resume the PhY TXC clock. */
+	if (ethqos->rgmii_txc_resume_state) {
+		/* Enable TXC clock source from Phy.*/
+		ret = pinctrl_select_state(ethqos->pinctrl,
+					   ethqos->rgmii_txc_resume_state);
+		if (ret)
+			ETHQOSERR("Unable to set rgmii_rxc_resume_state state, err = %d\n", ret);
+		else
+			ETHQOSINFO("Set rgmii_rxc_resume_state succeed\n");
 	}
 
 	qcom_ethqos_phy_resume_clks(ethqos);

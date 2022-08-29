@@ -253,6 +253,9 @@ struct qcom_ethqos {
 	bool is_gpio_phy_reset;
 	u32 phyvoltage_min;
 	u32 phyvoltage_max;
+	struct pinctrl *pinctrl;
+	struct pinctrl_state *rgmii_txc_suspend_state;
+	struct pinctrl_state *rgmii_txc_resume_state;
 };
 
 struct pps_cfg {

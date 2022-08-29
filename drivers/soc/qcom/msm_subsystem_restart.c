@@ -171,6 +171,7 @@ struct restart_log {
  * @count: reference count of subsystem_get()/subsystem_put()
  * @id: ida
  * @restart_level: restart level (0 - panic, 1 - related, 2 - independent, etc.)
+ * @keep_alive: whether keep alive during AP's panic
  * @restart_order: order of other devices this devices restarts with
  * @crash_count: number of times the device has crashed
  * @do_ramdump_on_put: ramdump on subsystem_put() if true
@@ -192,6 +193,7 @@ struct subsys_device {
 	int count;
 	int id;
 	int restart_level;
+	bool keep_alive;
 	int crash_count;
 	struct subsys_soc_restart_order *restart_order;
 	bool do_ramdump_on_put;
@@ -330,6 +332,32 @@ static ssize_t system_debug_store(struct device *dev,
 }
 static DEVICE_ATTR_RW(system_debug);
 
+static ssize_t keep_alive_show(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	struct subsys_device *subsys = to_subsys(dev);
+
+	return scnprintf(buf, PAGE_SIZE, "%d\n", subsys->keep_alive);
+}
+
+static ssize_t keep_alive_store(struct device *dev,
+				struct device_attribute *attr, const char *buf,
+				size_t count)
+{
+	struct subsys_device *subsys = to_subsys(dev);
+	unsigned long value;
+
+	if (kstrtoul(buf, 0, &value) != 0)
+		return -EINVAL;
+	if (value > 1)
+		return -EINVAL;
+
+	subsys->keep_alive = (bool)value;
+
+	return count;
+}
+static DEVICE_ATTR_RW(keep_alive);
+
 int subsys_get_restart_level(struct subsys_device *dev)
 {
 	return dev->restart_level;
@@ -358,6 +386,7 @@ static struct attribute *subsys_attrs[] = {
 	&dev_attr_restart_level.attr,
 	&dev_attr_firmware_name.attr,
 	&dev_attr_system_debug.attr,
+	&dev_attr_keep_alive.attr,
 	NULL,
 };
 
@@ -1937,6 +1966,12 @@ EXPORT_SYMBOL(subsys_unregister);
 static int subsys_panic(struct device *dev, void *data)
 {
 	struct subsys_device *subsys = to_subsys(dev);
+
+	/* Keeping the subsys alive during panic */
+	if (!panic_timeout && subsys->keep_alive) {
+		dev_warn(dev, "keeping %s alive\n", subsys->desc->name);
+		return 0;
+	}
 
 	if (subsys->desc->crash_shutdown)
 		subsys->desc->crash_shutdown(subsys->desc);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"LCDB: %s: " fmt, __func__
@@ -2142,10 +2143,6 @@ static int qpnp_lcdb_init_ldo(struct qpnp_lcdb *lcdb)
 	}
 	lcdb->ldo.soft_start_us = soft_start_us[val & SOFT_START_MASK];
 
-	rc = qpnp_lcdb_regulator_register(lcdb, LDO);
-	if (rc < 0)
-		pr_err("Failed to register ldo rc=%d\n", rc);
-
 	return rc;
 }
 
@@ -2265,10 +2262,6 @@ static int qpnp_lcdb_init_ncp(struct qpnp_lcdb *lcdb)
 		return rc;
 	}
 	lcdb->ncp.soft_start_us = soft_start_us[val & SOFT_START_MASK];
-
-	rc = qpnp_lcdb_regulator_register(lcdb, NCP);
-	if (rc < 0)
-		pr_err("Failed to register NCP rc=%d\n", rc);
 
 	return rc;
 }
@@ -2510,7 +2503,7 @@ static int qpnp_lcdb_hw_init(struct qpnp_lcdb *lcdb)
 		return rc;
 	}
 
-	if (lcdb->sc_irq >= 0 && lcdb->subtype != PM660L) {
+	if (lcdb->sc_irq >= 0) {
 		lcdb->sc_count = 0;
 		rc = devm_request_threaded_irq(lcdb->dev, lcdb->sc_irq,
 				NULL, qpnp_lcdb_sc_irq_handler, IRQF_ONESHOT,
@@ -2641,9 +2634,12 @@ static int qpnp_lcdb_parse_dt(struct qpnp_lcdb *lcdb)
 		lcdb->ttw_enable = true;
 	}
 
-	lcdb->sc_irq = platform_get_irq_byname(lcdb->pdev, "sc-irq");
-	if (lcdb->sc_irq < 0)
-		pr_debug("sc irq is not defined\n");
+	lcdb->sc_irq = -EINVAL;
+	if (lcdb->subtype != PM660L) {
+		lcdb->sc_irq = platform_get_irq_byname(lcdb->pdev, "sc-irq");
+		if (lcdb->sc_irq < 0)
+			pr_debug("sc irq is not defined\n");
+	}
 
 	lcdb->voltage_step_ramp =
 			of_property_read_bool(node, "qcom,voltage-step-ramp");
@@ -2751,12 +2747,28 @@ static int qpnp_lcdb_regulator_probe(struct platform_device *pdev)
 	}
 
 	rc = qpnp_lcdb_hw_init(lcdb);
-	if (rc < 0)
+	if (rc < 0) {
 		pr_err("Failed to initialize LCDB module rc=%d\n", rc);
-	else
-		pr_info("LCDB module: %s successfully registered! lcdb_en=%d ldo_voltage=%dmV ncp_voltage=%dmV bst_voltage=%dmV\n",
-			dev_id->compatible, lcdb->lcdb_enabled, lcdb->ldo.voltage_mv,
-			lcdb->ncp.voltage_mv, lcdb->bst.voltage_mv);
+		return rc;
+	}
+
+	rc = qpnp_lcdb_regulator_register(lcdb, LDO);
+	if (rc < 0) {
+		pr_err("Failed to register LDO rc=%d\n", rc);
+		return rc;
+	}
+
+	rc = qpnp_lcdb_regulator_register(lcdb, NCP);
+	if (rc < 0) {
+		pr_err("Failed to register NCP rc=%d\n", rc);
+		return rc;
+	}
+
+	dev_set_drvdata(&pdev->dev, lcdb);
+
+	pr_info("LCDB module: %s successfully registered! lcdb_en=%d ldo_voltage=%dmV ncp_voltage=%dmV bst_voltage=%dmV\n",
+		dev_id->compatible, lcdb->lcdb_enabled, lcdb->ldo.voltage_mv,
+		lcdb->ncp.voltage_mv, lcdb->bst.voltage_mv);
 
 	return rc;
 }
@@ -2785,10 +2797,35 @@ static const struct of_device_id lcdb_match_table[] = {
 	{ },
 };
 
+static int qpnp_lcdb_regulator_freeze(struct device *dev)
+{
+	struct qpnp_lcdb *lcdb = dev_get_drvdata(dev);
+
+	/* free sc irq */
+	if (lcdb->sc_irq >= 0)
+		devm_free_irq(lcdb->dev, lcdb->sc_irq, lcdb);
+
+	return 0;
+}
+
+static int qpnp_lcdb_regulator_restore(struct device *dev)
+{
+	struct qpnp_lcdb *lcdb = dev_get_drvdata(dev);
+
+	/* do hw init & request sc irq again */
+	return qpnp_lcdb_hw_init(lcdb);
+}
+
+static const struct dev_pm_ops qpnp_lcdb_regulator_pm_ops = {
+	.freeze = qpnp_lcdb_regulator_freeze,
+	.restore = qpnp_lcdb_regulator_restore,
+};
+
 static struct platform_driver qpnp_lcdb_regulator_driver = {
 	.driver		= {
 		.name		= QPNP_LCDB_REGULATOR_DRIVER_NAME,
 		.of_match_table	= lcdb_match_table,
+		.pm		= &qpnp_lcdb_regulator_pm_ops,
 	},
 	.probe		= qpnp_lcdb_regulator_probe,
 	.remove		= qpnp_lcdb_regulator_remove,

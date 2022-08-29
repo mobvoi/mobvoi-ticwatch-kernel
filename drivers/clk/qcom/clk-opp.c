@@ -96,7 +96,7 @@ void clk_hw_populate_clock_opp_table(struct device_node *np, struct clk_hw *hw)
 	struct clk_regmap *rclk = to_clk_regmap(hw);
 	struct clk_vdd_class_data *vdd_data;
 	char clk_handle_name[MAX_LEN_OPP_HANDLE];
-	int n, len, count, uv, ret;
+	int n, len, count, uv = 0, ret;
 	unsigned long rate = 0, rrate;
 
 	if (!rclk->vdd_data.vdd_class || !rclk->vdd_data.num_rate_max)

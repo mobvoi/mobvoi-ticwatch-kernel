@@ -5720,13 +5720,18 @@ static int cnss_pci_register_mhi(struct cnss_pci_data *pci_priv)
 	struct pci_dev *pci_dev = pci_priv->pci_dev;
 	struct mhi_controller *mhi_ctrl;
 
+	ret = cnss_qmi_init(plat_priv);
+	if (ret)
+		return -EINVAL;
+
 	if (pci_priv->device_id == QCA6174_DEVICE_ID)
 		return 0;
 
 	mhi_ctrl = mhi_alloc_controller(0);
 	if (!mhi_ctrl) {
 		cnss_pr_err("Invalid MHI controller context\n");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto deinit_qmi;
 	}
 
 	pci_priv->mhi_ctrl = mhi_ctrl;
@@ -5803,7 +5808,8 @@ destroy_ipc:
 	kfree(mhi_ctrl->irq);
 free_mhi_ctrl:
 	mhi_free_controller(mhi_ctrl);
-
+deinit_qmi:
+	cnss_qmi_deinit(plat_priv);
 	return ret;
 }
 
@@ -5818,6 +5824,7 @@ static void cnss_pci_unregister_mhi(struct cnss_pci_data *pci_priv)
 	cnss_pci_mhi_ipc_logging_deinit(pci_priv);
 	kfree(mhi_ctrl->irq);
 	mhi_free_controller(mhi_ctrl);
+	cnss_qmi_deinit(pci_priv->plat_priv);
 }
 
 static void cnss_pci_config_regs(struct cnss_pci_data *pci_priv)

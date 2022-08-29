@@ -715,11 +715,11 @@ static int qbg_set_therm_trace_resistance(struct qti_qbg *chip, int vref_adc,
 static int qbg_process_fifo(struct qti_qbg *chip, u32 fifo_count)
 {
 	struct fifo_data *fifo;
-	int rc, i, ibat, ibat_esr;
+	int rc = 0, i = 0, ibat = 0, ibat_esr = 0;
 	unsigned char data_tag;
-	unsigned int vbat1, vbat2, tbat, ibat_t, esr;
-	unsigned int vbat1_esr, vbat2_esr, tbat_esr, ibat_t_esr;
-	unsigned long timestamp;
+	unsigned int vbat1 = 0, vbat2 = 0, tbat = 0, ibat_t = 0, esr = 0;
+	unsigned int vbat1_esr = 0, vbat2_esr = 0, tbat_esr = 0, ibat_t_esr = 0;
+	unsigned long timestamp = 0;
 
 	if (!fifo_count) {
 		qbg_dbg(chip, QBG_DEBUG_SDAM, "No FIFO data\n");

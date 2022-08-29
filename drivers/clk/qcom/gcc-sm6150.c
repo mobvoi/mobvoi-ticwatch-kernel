@@ -2578,7 +2578,7 @@ static struct clk_branch gcc_sdcc2_apps_clk = {
 
 static struct clk_branch gcc_sdr_core_clk = {
 	.halt_reg = 0x46004,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP,
 	.clkr = {
 		.enable_reg = 0x46004,
 		.enable_mask = BIT(0),
@@ -2591,7 +2591,7 @@ static struct clk_branch gcc_sdr_core_clk = {
 
 static struct clk_branch gcc_sdr_csr_hclk = {
 	.halt_reg = 0x46020,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP,
 	.clkr = {
 		.enable_reg = 0x46020,
 		.enable_mask = BIT(0),
@@ -2604,7 +2604,7 @@ static struct clk_branch gcc_sdr_csr_hclk = {
 
 static struct clk_branch gcc_sdr_pri_mi2s_clk = {
 	.halt_reg = 0x46024,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP,
 	.clkr = {
 		.enable_reg = 0x46024,
 		.enable_mask = BIT(0),
@@ -2617,7 +2617,7 @@ static struct clk_branch gcc_sdr_pri_mi2s_clk = {
 
 static struct clk_branch gcc_sdr_sec_mi2s_clk = {
 	.halt_reg = 0x46028,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP,
 	.clkr = {
 		.enable_reg = 0x46028,
 		.enable_mask = BIT(0),
@@ -2630,7 +2630,7 @@ static struct clk_branch gcc_sdr_sec_mi2s_clk = {
 
 static struct clk_branch gcc_sdr_wr0_mem_clk = {
 	.halt_reg = 0x46008,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP,
 	.clkr = {
 		.enable_reg = 0x46008,
 		.enable_mask = BIT(0),
@@ -2643,7 +2643,7 @@ static struct clk_branch gcc_sdr_wr0_mem_clk = {
 
 static struct clk_branch gcc_sdr_wr1_mem_clk = {
 	.halt_reg = 0x46010,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP,
 	.clkr = {
 		.enable_reg = 0x46010,
 		.enable_mask = BIT(0),
@@ -2656,7 +2656,7 @@ static struct clk_branch gcc_sdr_wr1_mem_clk = {
 
 static struct clk_branch gcc_sdr_wr2_mem_clk = {
 	.halt_reg = 0x46018,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP,
 	.clkr = {
 		.enable_reg = 0x46018,
 		.enable_mask = BIT(0),

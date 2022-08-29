@@ -49,7 +49,7 @@
  */
 #define FE_MAJOR_VER 0x4
 /* Increase for new features. */
-#define FE_MINOR_VER 0x0
+#define FE_MINOR_VER 0x1
 #define FE_VERSION (FE_MAJOR_VER << 16 | FE_MINOR_VER)
 #define BE_MAJOR_VER(ver) (((ver) >> 16) & 0xffff)
 

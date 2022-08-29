@@ -272,3 +272,11 @@ config INTERCONNECT_QCOM_RPM
 
 config INTERCONNECT_QCOM_QOS
 	tristate
+
+config VIRTIO_INTERCONNECT
+	tristate "Virtio ICC"
+	depends on INTERCONNECT_QCOM
+	help
+	  This is a driver for the Qualcomm Technologies, Inc. Virtualized
+	  interconnect provider to faciliate bandwidth requests on a
+	  virtual platform.

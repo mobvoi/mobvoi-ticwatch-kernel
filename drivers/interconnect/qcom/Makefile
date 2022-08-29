@@ -52,3 +52,4 @@ obj-$(CONFIG_INTERCONNECT_QCOM_RPMH) += icc-rpmh.o
 obj-$(CONFIG_INTERCONNECT_QCOM_QOS) += qnoc-qos.o
 obj-$(CONFIG_INTERCONNECT_QCOM_EPSS_L3) += epss-l3.o
 obj-$(CONFIG_INTERCONNECT_QCOM_CPUCP_L3) += cpucp-l3.o
+obj-$(CONFIG_VIRTIO_INTERCONNECT) += virtio-icc.o
