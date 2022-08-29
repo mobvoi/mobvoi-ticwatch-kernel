@@ -134,10 +134,10 @@ static int slate_mobvoi_rpc_tx_msg(struct slatemobrpc_priv *dev, void  *msg, siz
 	int rc = 0;
 	uint8_t resp = 0;
 
+	mutex_lock(&dev->glink_mutex);
 	__pm_stay_awake(dev->slatemobrpc_ws);
 	pr_info("rpc tx msg,wakeup hold");
-	mutex_lock(&dev->glink_mutex);
-
+	
 	if (!dev->slate_mobvoi_rpc_rpmsg) {
 		pr_err("slatemobrpc-rpmsg is not probed yet, waiting for it to be probed\n");
 		goto err_ret;
@@ -171,12 +171,13 @@ static int slate_mobvoi_rpc_tx_msg(struct slatemobrpc_priv *dev, void  *msg, siz
 	rc = 0;
 
 err_ret:
-	mutex_unlock(&dev->glink_mutex);
 	__pm_relax(dev->slatemobrpc_ws);
+	pr_info("rpc tx msg,wakeup release");
+	mutex_unlock(&dev->glink_mutex);
 	return rc;
 }
 extern int slatecom_is_spi_active_ext(void);
-static int rpc_tx_flag=0;
+
 int slate_mobvoi_rpc_tx_msg_ext(void  *msg, size_t len)
 {
     int ret=0;
@@ -185,11 +186,7 @@ int slate_mobvoi_rpc_tx_msg_ext(void  *msg, size_t len)
 		pr_err("spi is inactive,slate_mobvoi_rpc_tx_msg_ext return\n");
 		return -1;
 	}
-	if(rpc_tx_flag!=0)
-	{
-		pr_err("slate_mobvoi_rpc_tx busy\n");
-		return -1;
-	}
+
 	struct slatemobrpc_priv *dev =
         container_of(slate_mobvoi_rpc_drv, struct slatemobrpc_priv, lhndl);
 
@@ -197,9 +194,7 @@ int slate_mobvoi_rpc_tx_msg_ext(void  *msg, size_t len)
 	{
 		return -1;
 	}	
-	rpc_tx_flag=1;
     ret=slate_mobvoi_rpc_tx_msg(dev,msg,len);
-    rpc_tx_flag=0;
 	return ret;
 }
 EXPORT_SYMBOL(slate_mobvoi_rpc_tx_msg_ext);
