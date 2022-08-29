@@ -646,7 +646,7 @@
 	};
 
 	llcc_pmu: llcc-pmu@90cc000 {
-		compatible = "qcom,llcc-pmu-ver2";
+		compatible = "qcom,llcc-pmu-ver1";
 		reg = <0x090cc000 0x300>;
 		reg-names = "lagg-base";
 	};
@@ -2565,7 +2565,7 @@
 		qcom,wakeup-enable;
 	};
 
-	qcom,chd_sliver {
+	qcom,chd_silver {
 		compatible = "qcom,core-hang-detect";
 		label = "silver";
 		qcom,threshold-arr = <0x18000058 0x18010058 0x18020058
@@ -2603,6 +2603,10 @@
 				"l1-l2-errirq",
 				"l3-scu-errirq",
 				"l3-scu-faultirq";
+	};
+
+	qcom,power-state {
+		compatible = "qcom,power-state";
 	};
 };
 

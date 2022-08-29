@@ -45,7 +45,7 @@
 		};
 
 		pm8150l_gpios: pinctrl@c000 {
-			compatible = "qcom,spmi-gpio";
+			compatible = "qcom,pm8150l-gpio";
 			reg = <0xc000 0xc00>;
 			interrupts = <0x4 0xc0 0x0 IRQ_TYPE_NONE>,
 					<0x4 0xc2 0x0 IRQ_TYPE_NONE>,

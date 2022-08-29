@@ -3,6 +3,7 @@
 #include "sm6150-pmic-overlay.dtsi"
 
 #include "sm6150-pm.dtsi"
+#include "sm6150-thermal-overlay.dtsi"
 #include "sm6150-thermal.dtsi"
 #include "sm6150-coresight.dtsi"
 
@@ -12,10 +13,10 @@
 	qcom,msm-id = <406 0>;
 
 	cpus {
-		/delete-node/ CPU2;
-		/delete-node/ CPU3;
-		/delete-node/ CPU4;
-		/delete-node/ CPU5;
+		/delete-node/ cpu@200;
+		/delete-node/ cpu@300;
+		/delete-node/ cpu@400;
+		/delete-node/ cpu@500;
 
 		cpu-map {
 			cluster0 {
@@ -25,16 +26,6 @@
 				/delete-node/ core5;
 			};
 		};
-	};
-};
-
-&reserved_memory {
-	memshare_mem: memshare_region {
-		compatible = "shared-dma-pool";
-		no-map;
-		alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
-		alignment = <0x0 0x100000>;
-		size = <0x0 0x800000>;
 	};
 };
 
@@ -60,7 +51,6 @@
 		qcom,client_3 {
 			compatible = "qcom,memshare-peripheral";
 			qcom,peripheral-size = <0x500000>;
-			memory-region = <&memshare_mem>;
 			qcom,client-id = <1>;
 			qcom,allocate-on-request;
 			label = "modem";
@@ -194,7 +184,7 @@
 		reg = <0x1de0000 0x20000>,
 			<0x1dc4000 0x24000>;
 		reg-names = "crypto-base","crypto-bam-base";
-		interrupts = <0 272 0>;
+		interrupts = <GIC_SPI 272 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,bam-pipe-pair = <3>;
 		qcom,ce-hw-instance = <0>;
 		qcom,ce-device = <0>;
@@ -214,7 +204,7 @@
 		reg = <0x1de0000 0x20000>,
 			<0x1dc4000 0x24000>;
 		reg-names = "crypto-base","crypto-bam-base";
-		interrupts = <0 272 0>;
+		interrupts = <GIC_SPI 272 IRQ_TYPE_LEVEL_HIGH>;
 		qcom,bam-pipe-pair = <2>;
 		qcom,ce-hw-instance = <0>;
 		qcom,ce-device = <0>;
@@ -248,6 +238,13 @@
 		cpus = <&CPU0>, <&CPU1>, <&CPU6>, <&CPU7>;
 	};
 
+	qcom,chd_silver {
+		compatible = "qcom,core-hang-detect";
+		label = "silver";
+		qcom,threshold-arr = <0x18000058 0x18010058>;
+		qcom,config-arr = <0x18000060 0x18010060>;
+	};
+
 	/delete-node/ cti@7220000;
 	/delete-node/ cti@7320000;
 	/delete-node/ cti@7420000;
@@ -257,20 +254,24 @@
 	/delete-node/ etm@7440000;
 	/delete-node/ etm@7540000;
 
-	qcom,cpu0-cpu-l3-latmon {
+	cpu0_memlat_cpugrp: qcom,cpu0-cpugrp {
 		qcom,cpulist = <&CPU0 &CPU1>;
-	};
 
-	qcom,cpu0-cpu-llcc-latmon {
-		qcom,cpulist = <&CPU0 &CPU1>;
-	};
+		cpu0_cpu_l3_latmon: qcom,cpu0-cpu-l3-latmon {
+			qcom,cpulist = <&CPU0 &CPU1>;
+		};
 
-	qcom,cpu0-llcc-ddr-latmon {
-		qcom,cpulist = <&CPU0 &CPU1>;
-	};
+		cpu0_cpu_llcc_latmon: qcom,cpu0-cpu-llcc-latmon {
+			qcom,cpulist = <&CPU0 &CPU1>;
+		};
 
-	qcom,cpu0-computemon {
-		qcom,cpulist = <&CPU0 &CPU1>;
+		cpu0_llcc_ddr_latmon: qcom,cpu0-llcc-ddr-latmon {
+			qcom,cpulist = <&CPU0 &CPU1>;
+		};
+
+		cpu0_computemon: qcom,cpu0-computemon {
+			qcom,cpulist = <&CPU0 &CPU1>;
+		};
 	};
 
 	funnel_apss: funnel@7800000 {
@@ -334,7 +335,29 @@
 	status = "ok";
 };
 
+&cpufreq_hw {
+	qcom,cpu-isolation {
+		/delete-node/ cpu2-isolate;
+		/delete-node/ cpu3-isolate;
+		/delete-node/ cpu4-isolate;
+		/delete-node/ cpu5-isolate;
+	};
+};
+
 &thermal_zones {
+	pm6150l_tz {
+		cooling-maps {
+			/delete-node/ trip0_cpu2;
+			/delete-node/ trip0_cpu3;
+			/delete-node/ trip0_cpu4;
+			/delete-node/ trip0_cpu5;
+			/delete-node/ trip1_cpu2;
+			/delete-node/ trip1_cpu3;
+			/delete-node/ trip1_cpu4;
+			/delete-node/ trip1_cpu5;
+		};
+	};
+
 	cpuss-0-step {
 		/delete-node/ cooling-maps;
 	};

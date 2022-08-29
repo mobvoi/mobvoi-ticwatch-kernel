@@ -1,4 +1,5 @@
 #include <dt-bindings/clock/qcom,gcc-direwolf.h>
+#include <dt-bindings/interconnect/qcom,direwolf.h>
 #include "quin-vm-common.dtsi"
 
 / {
@@ -440,6 +441,78 @@
 			interrupt-names = "state-irq";
 			type = "virtual";
 			offset = <0>;
+		};
+	};
+
+	virtio_icc: virtio_icc@0x1cc00000 {
+		compatible = "virtio,mmio";
+		reg = <0x1cc00000 0x1000>;
+		interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
+		#interconnect-cells = <1>;
+
+		xm_usb3_0 {
+			node-name = "usb3_0";
+			node-id = /bits/ 16 <MASTER_USB3_0>;
+			node-num-links = /bits/ 16 <1>;
+			node-links = /bits/ 16 <SLAVE_EBI1>;
+		};
+
+		xm_usb3_1 {
+			node-name = "usb3_1";
+			node-id = /bits/ 16 <MASTER_USB3_1>;
+			node-num-links = /bits/ 16 <1>;
+			node-links = /bits/ 16 <SLAVE_EBI1>;
+		};
+
+		xm_usb3_mp {
+			node-name = "usb3_mp";
+			node-id = /bits/ 16 <MASTER_USB3_MP>;
+			node-num-links = /bits/ 16 <1>;
+			node-links = /bits/ 16 <SLAVE_EBI1>;
+		};
+
+		qhm_pcie_2a {
+			node-name = "pcie_2a";
+			node-id = /bits/ 16 <MASTER_PCIE_2A>;
+			node-num-links = /bits/ 16 <1>;
+			node-links = /bits/ 16 <SLAVE_EBI1>;
+		};
+
+		ebi {
+			node-name = "ebi1";
+			node-id = /bits/ 16 <SLAVE_EBI1>;
+			node-num-links = /bits/ 16 <0>;
+		};
+
+		chm_apps {
+			node-name = "appss_proc";
+			node-id = /bits/ 16 <MASTER_APPSS_PROC>;
+			node-num-links = /bits/ 16 <4>;
+			node-links = /bits/ 16 <SLAVE_USB3_0 SLAVE_USB3_1 SLAVE_USB3_MP SLAVE_UFS_MEM_CFG>;
+		};
+
+		qhs_usb3_0 {
+			node-name = "usb3_0";
+			node-id = /bits/ 16 <SLAVE_USB3_0>;
+			node-num-links = /bits/ 16 <0>;
+		};
+
+		qhs_usb3_1 {
+			node-name = "usb3_1";
+			node-id = /bits/ 16 <SLAVE_USB3_1>;
+			node-num-links = /bits/ 16 <0>;
+		};
+
+		qhs_usb3_mp {
+			node-name = "usb3_mp";
+			node-id = /bits/ 16 <SLAVE_USB3_MP>;
+			node-num-links = /bits/ 16 <0>;
+		};
+
+		qhs_ufs_mem_cfg {
+			node-name = "ufs_mem_1_cfg";
+			node-id = /bits/ 16 <SLAVE_UFS_MEM_CFG>;
+			node-num-links = /bits/ 16 <0>;
 		};
 	};
 

@@ -142,6 +142,7 @@
 		vdd-1.3-rfa-supply = <&pm6150l_l2>;
 		vdd-3.3-ch0-supply = <&pm6150l_l10>;
 		qcom,vdd-cx-mx-config = <640000 640000>;
+		qcom,is_low_power = <1>;
 		qcom,smp2p_map_wlan_1_in {
 			interrupts-extended = <&smp2p_wlan_1_in 0 0>,
 					      <&smp2p_wlan_1_in 1 0>;

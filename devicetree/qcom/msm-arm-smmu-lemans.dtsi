@@ -3,8 +3,8 @@
 &soc {
 	kgsl_smmu: kgsl-smmu@3da0000 {
 		compatible = "qcom,qsmmu-v500";
-		reg = <0x3DA0000 0x20000>,
-			<0x3DCA000 0x28>;
+		reg = <0x3da0000 0x20000>,
+			<0x3dca000 0x28>;
 		reg-names = "base", "tcu-base";
 		#iommu-cells = <2>;
 		qcom,skip-init;
@@ -13,6 +13,7 @@
 		#global-interrupts = <2>;
 		#size-cells = <1>;
 		#address-cells = <1>;
+		#tcu-testbus-version = <1>;
 		ranges;
 		dma-coherent;
 		qcom,regulator-names = "vdd";
@@ -94,6 +95,7 @@
 		#global-interrupts = <2>;
 		#size-cells = <1>;
 		#address-cells = <1>;
+		#tcu-testbus-version = <1>;
 		ranges;
 		dma-coherent;
 
@@ -166,6 +168,22 @@
 
 		interconnects = <&pcie_anoc MASTER_PCIE_0 &mc_virt SLAVE_EBI1>,
 				<&pcie_anoc MASTER_PCIE_1 &mc_virt SLAVE_EBI1>;
+
+		pcie_0_tbu: pcie_0_tbu@152f9000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x152F9000 0x1000>,
+				<0x152F2200 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x0 0x400>;
+		};
+
+		pcie_1_tbu: pcie_1_tbu@152fb000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x152FB000 0x1000>,
+				<0x152F3200 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x400 0x400>;
+		};
 	};
 
 	apps_smmu: apps-smmu@15000000 {
@@ -179,6 +197,7 @@
 		#global-interrupts = <2>;
 		#size-cells = <1>;
 		#address-cells = <1>;
+		#tcu-testbus-version = <1>;
 		ranges;
 		interrupts =	<GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
 				<GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
@@ -313,6 +332,141 @@
 
 		interconnects = <&gem_noc MASTER_APPSS_PROC
 				&config_noc SLAVE_IMEM_CFG>;
+
+		anoc_1_tbu: anoc_1_tbu@15189000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x15189000 0x1000>,
+				<0x15182200 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x0 0x400>;
+			qcom,active-only;
+		};
+
+		anoc_2_tbu: anoc_2_tbu@15191000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x15191000 0x1000>,
+				<0x15182208 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x400 0x400>;
+			qcom,active-only;
+		};
+
+		mnoc_sf_0_tbu: mnoc_sf_0_tbu@15199000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x15199000 0x1000>,
+				<0x15182210 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x800 0x400>;
+			qcom,active-only;
+		};
+
+		mnoc_sf_1_tbu: mnoc_sf_1_tbu@0x151a1000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151A1000 0x1000>,
+				<0x15182218 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0xC00 0x400>;
+			qcom,active-only;
+		};
+
+		mdp_0_tbu: mdp_0_tbu@0x151a9000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151A9000 0x1000>,
+				<0x15182220 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x1000 0x400>;
+			qcom,active-only;
+		};
+
+		mdp_1_tbu: mdp_1_tbu@0x151b1000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151B1000 0x1000>,
+				<0x15182228 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x1400 0x400>;
+			qcom,active-only;
+		};
+
+		mdp_2_tbu: mdp_2_tbu@0x151b9000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151B9000 0x1000>,
+				<0x15182230 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x1800 0x400>;
+			qcom,active-only;
+		};
+
+		mdp_3_tbu: mdp_3_tbu@151c1000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151C1000 0x1000>,
+				< 0x15182238 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x1C00 0x400>;
+			qcom,active-only;
+		};
+
+		nsp_0_tbu: nsp_0_tbu@151c9000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151C9000 0x1000>,
+				< 0x15182240 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x2000 0x400>;
+			qcom,active-only;
+		};
+
+		nsp_1_tbu: nsp_1_tbu@151d1000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151D1000 0x1000>,
+				< 0x15182248 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x2400 0x400>;
+			qcom,active-only;
+		};
+
+		nsp_2_tbu: nsp_2_tbu@151d9000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151D9000 0x1000>,
+				< 0x15182250 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x2800 0x400>;
+			qcom,active-only;
+		};
+
+		nsp_3_tbu: nsp_3_tbu@151e1000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151E1000 0x1000>,
+				< 0x15182258 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x2C00 0x400>;
+			qcom,active-only;
+		};
+
+		lpass_0_tbu: lpass_0_tbu@151e9000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151E9000 0x1000>,
+				< 0x15182260 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x3000 0x400>;
+			qcom,active-only;
+		};
+
+		cam_0_tbu: cam_0_tbu@151f1000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151F1000 0x1000>,
+				< 0x15182268 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x3400 0x400>;
+			qcom,active-only;
+		};
+
+		gpdsp_sail_ss_0_tbu: gpdsp_sail_ss_0_tbu@151f9000 {
+			compatible = "qcom,qsmmuv500-tbu";
+			reg = <0x151F9000 0x1000>,
+				< 0x15182270 0x8>;
+			reg-names = "base", "status-reg";
+			qcom,stream-id-range = <0x3800 0x400>;
+			qcom,active-only;
+		};
 	};
 
 	kgsl_iommu_test_device {

@@ -31,6 +31,8 @@
 	pinctrl-0 = <&sdc2_on>;
 	pinctrl-1 = <&sdc2_off>;
 
+	cd-gpios = <&tlmm 88 GPIO_ACTIVE_HIGH>;
+
 	status = "ok";
 };
 

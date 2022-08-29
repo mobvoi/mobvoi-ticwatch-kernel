@@ -21,6 +21,7 @@ Required properties :
 			"qcom,bengal-debugcc"
 			"qcom,lemans-debugcc"
 			"qcom,sdx55-debugcc"
+			"qcom,kona-debugcc"
 
 - qcom,gcc: phandle to the GCC device node.
 - qcom,videocc: phandle to the Video CC device node.
