@@ -1699,19 +1699,15 @@ static int slatecom_pm_resume(struct device *dev)
 		IRQF_TRIGGER_HIGH | IRQF_ONESHOT, "qcom-slate_spi", spi);
 
 	if (atomic_read(&spi->irq_lock) == 1) {
-		//add some delay to see if irq still lock
-		msleep(10);
-		if (atomic_read(&spi->irq_lock) == 1){
 		atomic_set(&slate_is_spi_active, 1);
 		atomic_set(&slate_is_runtime_suspend, 0);
 		atomic_set(&state, SLATECOM_STATE_ACTIVE);
 		pr_debug("Shouldn't Execute\n");
 		return 0;
 	}
-	}
+
 	if (atomic_read(&slate_is_spi_active)) {
 		SLATECOM_INFO("Slatecom in resume state\n");
-		g_slave_status_auto_clear_reg = 0;
 		return 0;
 	} else {
 		if (!(g_slav_status_reg & BIT(31))) {
