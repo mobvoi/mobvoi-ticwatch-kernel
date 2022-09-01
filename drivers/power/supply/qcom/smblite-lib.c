@@ -4501,6 +4501,7 @@ int smblite_lib_init(struct smb_charger *chg)
 			return rc;
 		}
 
+		fg_remote_init(chg->is_fg_remote);
 		rc = qcom_step_chg_init(chg->dev, true, true, false,
 				chg->iio_chans);
 		if (rc < 0) {
