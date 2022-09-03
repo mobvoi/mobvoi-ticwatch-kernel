@@ -2753,7 +2753,7 @@ static int haptics_hw_init(struct haptics_chip *chip)
 		return 0;
 
 	/* set AUTO_mode RC CLK calibration by default */
-	val[0] = CAL_RC_CLK_AUTO_VAL << CAL_RC_CLK_SHIFT;
+	val[0] = CAL_RC_CLK_DISABLED_VAL << CAL_RC_CLK_SHIFT;
 	rc = haptics_masked_write(chip, chip->cfg_addr_base,
 			HAP_CFG_CAL_EN_REG, CAL_RC_CLK_MASK, val[0]);
 	if (rc < 0)
