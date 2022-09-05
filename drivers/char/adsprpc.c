@@ -4747,8 +4747,7 @@ static int fastrpc_mmap_remove_ssr(struct fastrpc_file *fl)
 			if (me->ramdump_handle && me->enable_ramdump) {
 				ramdump_segments_rh.address =
 				match->phys;
-				ramdump_segments_rh.v_address =
-				(void __iomem *)match->va;
+				ramdump_segments_rh.v_address = NULL;
 				ramdump_segments_rh.size = match->size;
 				ret = fastrpc_elf_ramdump(me->ramdump_handle, &ramdump_segments_rh);
 				if (ret < 0)
