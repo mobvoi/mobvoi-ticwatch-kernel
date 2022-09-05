@@ -8,11 +8,29 @@ qcom,QBG_5821929_Mobvoi_Uranus_Highpower_628mAH_PMW5100_averaged_MasterSlave_May
 	qcom,fastchg-current-ma = <800>;
 	qcom,checksum = <4311056>; /*@5, 0.005V, 4% */
 	qcom,soh-range = <0 100>;
-	qcom,battery-impedance = <47336000 94672000>; /*Nominal_Impedance in 10nohm @ SOC 50% 25C* 0:fresh cell, 1: aged cell/
+	qcom,battery-impedance = <47336000 94672000>; /*Nominal_Impedance in 10nohm @ SOC 50% 25C* 0:fresh cell, 1: aged cell*/
 	qcom,battery-capacity = <608 480>; /*Nominal_Capacity in mAh. 0: fresh cell, 1:aged cell*/ 
 	qcom,recharge-soc-delta =<5>; /*SOC delta (in percent) dropped from EOC SOC to enable recharge*/ 
 	qcom,recharge-vflt-delta =<50>; /*vfloat delta (in mV) dropped from regular vfloat in recharge*/ 
 	qcom,recharge-iterm-ma = <10>; /*termination current (in mA) in recharge*/ 
+	qcom,jeita-fcc-ranges = <0 150 300000
+				151 450 800000
+				451 550 300000
+				551 680 0>;
+
+	qcom,jeita-fv-ranges = <0   150 4450000
+				151 450 4450000
+				451 550 4200000>;
+
+	/* COOL = 15 DegC, WARM = 45 DegC */
+	qcom,jeita-soft-thresholds = <0x27c1 0x128c>;
+	/* COLD = 0 DegC, HOT = 45.1 DegC */
+	qcom,jeita-hard-thresholds = <0x3257 0x127e>;
+	
+        qcom,step-jeita-hysteresis = <5 5>;
+	qcom,jeita-soft-fcc-ua = <300000 300000>;
+	qcom,jeita-soft-fv-uv = <4450000 4200000>;
+
 
 	qcom,bp-c-table-0 {
 		qcom,temperature = <25>;
