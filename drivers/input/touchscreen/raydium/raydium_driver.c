@@ -2397,6 +2397,9 @@ exit_check_functionality_failed:
 void raydium_ts_shutdown(struct i2c_client *client)
 {
 
+	LOGD(LOG_INFO, "[touch] %s: start\n", __func__);
+
+	cancel_work_sync(&g_raydium_ts->work);
 #if defined(CONFIG_FB)
 	raydium_unregister_notifier();
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
@@ -2438,6 +2441,9 @@ void raydium_ts_shutdown(struct i2c_client *client)
 static int raydium_ts_remove(struct i2c_client *client)
 {
 
+	LOGD(LOG_INFO, "[touch] %s: start\n", __func__);
+
+	cancel_work_sync(&g_raydium_ts->work);
 #if defined(CONFIG_FB)
 	raydium_unregister_notifier();
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
