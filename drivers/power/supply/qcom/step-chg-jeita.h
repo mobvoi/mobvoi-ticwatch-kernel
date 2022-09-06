@@ -26,6 +26,7 @@ struct range_data {
 	u32 value;
 };
 
+void fg_remote_init(bool status);
 int qcom_step_chg_init(struct device *dev, bool step_chg_enable,
 	bool sw_jeita_enable, bool jeita_arb_en, struct iio_channel *iio_chans);
 void qcom_step_chg_deinit(void);

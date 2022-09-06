@@ -55,7 +55,7 @@ enum smb_parallel_iio_channels {
 
 /* For step-chg-jeita.c */
 enum step_chg_iio_channels {
-	STEP_QG_RESISTANCE_ID = 0,
+	STEP_QG_RESISTANCE_ID = 8,
 	STEP_QG_VOLTAGE_NOW,
 	STEP_QG_TEMP,
 	STEP_QG_CAPACITY,

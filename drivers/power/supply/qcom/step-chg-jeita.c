@@ -15,6 +15,7 @@
 #include <dt-bindings/iio/qti_power_supply_iio.h>
 #include "step-chg-jeita.h"
 #include "battery-profile-loader.h"
+#include "smblite-remote-bms.h"
 
 #define STEP_CHG_VOTER		"STEP_CHG_VOTER"
 #define JEITA_VOTER		"JEITA_VOTER"
@@ -40,6 +41,8 @@ struct jeita_fv_cfg {
 	struct step_chg_jeita_param	param;
 	struct range_data		fv_cfg[MAX_STEP_CHG_ENTRIES];
 };
+
+static bool is_fg_remote = false;
 
 struct step_chg_info {
 	struct device		*dev;
@@ -117,6 +120,9 @@ static bool is_bms_available(struct step_chg_info *chip)
 {
 	int rc = 0;
 	struct iio_channel **iio_list;
+
+	if (is_fg_remote)
+		return true;
 
 	if (IS_ERR(chip->iio_chan_list_qg))
 		return false;
@@ -260,6 +266,13 @@ static int step_chg_read_iio_prop(struct step_chg_info *chip,
 {
 	struct iio_channel *iio_chan_list;
 	int rc;
+
+	if (is_fg_remote && type == QG){
+		rc = remote_bms_get_prop(iio_chan, val, BMS_GLINK);
+		if ((rc < 0) && (rc != -EAGAIN))
+			pr_err("Couldn't get prop from remote bms, rc = %d channel = %d", rc, iio_chan);
+		return (rc < 0) ? rc : 0;
+	}
 
 	switch (type) {
 	case MAIN:
@@ -1026,6 +1039,10 @@ static int step_chg_register_notifier(struct step_chg_info *chip)
 	}
 
 	return 0;
+}
+
+void fg_remote_init(bool status) {
+	is_fg_remote = status;
 }
 
 int qcom_step_chg_init(struct device *dev, bool step_chg_enable,
