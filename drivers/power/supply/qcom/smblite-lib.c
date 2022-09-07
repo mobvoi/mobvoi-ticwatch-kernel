@@ -4213,8 +4213,10 @@ static void jeita_update_work(struct work_struct *work)
 	}
 
 	/* if BMS is not ready, defer the work */
-	if (IS_ERR_OR_NULL(chg->iio_chan_list_qg))
-		return;
+	if (IS_ERR_OR_NULL(chg->iio_chan_list_qg)){
+		smblite_lib_err(chg, "iio_chan_list_qg not available\n");
+		//return;
+	}
 
 	rc = smblite_lib_get_prop_from_bms(chg,
 			SMB5_QG_RESISTANCE_ID, &val.intval);
@@ -4224,9 +4226,10 @@ static void jeita_update_work(struct work_struct *work)
 	}
 
 	/* if BMS hasn't read out the batt_id yet, defer the work */
-	if (val.intval <= 0)
+	if (val.intval <= 0){
+		smblite_lib_err(chg, "BMS hasn't read out the batt_id yet\n");
 		return;
-
+	}
 	pnode = of_batterydata_get_best_profile(batt_node,
 					val.intval / 1000, NULL);
 	if (IS_ERR(pnode)) {
@@ -4247,7 +4250,6 @@ static void jeita_update_work(struct work_struct *work)
 			goto out;
 		}
 	}
-
 	rc = of_property_read_u32_array(pnode, "qcom,jeita-soft-thresholds",
 				chg->jeita_soft_thlds, 2);
 	if (!rc) {
@@ -4268,6 +4270,7 @@ static void jeita_update_work(struct work_struct *work)
 			goto out;
 		}
 	} else {
+
 		/* Populate the jeita-soft-thresholds */
 		addr = CHGR_JEITA_COOL_THRESHOLD_REG(chg->base);
 		rc = smblite_lib_batch_read(chg, addr, buff, 2);

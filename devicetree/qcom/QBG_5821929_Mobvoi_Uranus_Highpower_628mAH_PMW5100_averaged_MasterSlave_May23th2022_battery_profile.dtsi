@@ -24,8 +24,8 @@ qcom,QBG_5821929_Mobvoi_Uranus_Highpower_628mAH_PMW5100_averaged_MasterSlave_May
 
 	/* COOL = 15 DegC, WARM = 45 DegC */
 	qcom,jeita-soft-thresholds = <0x27c1 0x128c>;
-	/* COLD = 0 DegC, HOT = 45.1 DegC */
-	qcom,jeita-hard-thresholds = <0x3257 0x127e>;
+	/* COLD = 0 DegC, HOT = 55.1 DegC */
+	qcom,jeita-hard-thresholds = <0x3257 0xda1>;
 	
         qcom,step-jeita-hysteresis = <5 5>;
 	qcom,jeita-soft-fcc-ua = <300000 300000>;
