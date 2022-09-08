@@ -26,6 +26,7 @@
 #include "smblite-remote-bms.h"
 
 static struct smblite_remote_bms *the_bms;
+static int received_first_data;
 
 #define DEBUG_BATT_ID_LOW	6000
 #define DEBUG_BATT_ID_HIGH	8500
@@ -105,7 +106,7 @@ static int bms_get_buffered_data(int channel, int *val, int src)
 		rc = 0;
 	}
 
-	pr_debug("remote_bms_param:%u src:%d value:%d\n", offset, src, *val);
+	pr_info("remote_bms_param:%u src:%d value:%d\n", offset, src, *val);
 
 	return rc;
 }
@@ -113,7 +114,6 @@ static int bms_get_buffered_data(int channel, int *val, int src)
 int remote_bms_get_prop(int channel, int *val, int src)
 {
 	int rc = 0;
-	static int capacity_error_count  = 0;
 
 	if (!the_bms)
 		return -EINVAL;
@@ -130,24 +130,12 @@ int remote_bms_get_prop(int channel, int *val, int src)
 	case SMB5_QG_CAPACITY:
 		if (is_debug_batt_id(the_bms)) {
 			*val = REMOTE_FG_DEBUG_BATT_SOC;
-		} else if (!the_bms->is_seb_up) {
-			printk("Wait for remote GLINK to be up,battery capacity fake 50%\n");
-			*val=50;
-			//return -EAGAIN;
+		} else if (!the_bms->is_seb_up || !received_first_data) {
+			pr_err("Wait for remote GLINK to be up\n");
+			return -EAGAIN;
 		} else{
 			rc = bms_get_buffered_data(channel, val, src);
-			if(*val == 0)
-			{
-				*val = 50;
-				capacity_error_count++;
-				pr_err("slate is up,but received battery capacity is 0,set default 50%,capacity_error_count=%d\n",capacity_error_count);
-				if(capacity_error_count > 6){
-					*val = 0;
-					 break;
-			    }
-			}else{
-				capacity_error_count = 0;
-			}
+			pr_info("Reporting SOC as:%d\n",*val);
 		}
 		break;
 	case SMB5_QG_VOLTAGE_NOW:
@@ -391,10 +379,12 @@ static void rx_data_work(struct work_struct *work)
 		};
 	}
 
+	received_first_data = 1;
+	pr_info("First SOC reported is :%d\n", bms->rx_params[CAPACITY].data);
+
 	rc = remote_bms_handle_recharge(bms);
 	if (rc < 0) {
-		pr_err("Failed to handle recharge, rc=%d\n",
-			rc);
+		pr_err("Failed to handle recharge, rc=%d\n",rc);
 		goto out;
 	}
 
