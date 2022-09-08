@@ -19,8 +19,8 @@
 #ifndef _LINUX_BT541_TS_H
 #define _LINUX_BT541_TS_H
 
-#include "zinitix_touch_zxt_firmware.h"
-
+//#include "zinitix_touch_zxt_firmware.h"
+#include "zinitix_touch_zxt_firmware_v080302.h"
 /*used for fw compatible*/
 #define TSP_TYPE_COUNT	1
 
@@ -35,7 +35,7 @@
 #define SUPPORTED_PALM_TOUCH       1
 
 /*Support Finger Number*/
-#define MAX_SUPPORTED_FINGER_NUM	5
+#define MAX_SUPPORTED_FINGER_NUM	2
 
 /*Touch Mode Select*/
 //#define TOUCH_POINT_FLAG

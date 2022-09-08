@@ -300,6 +300,16 @@ extern int get_lcd_attached(void);
 extern unsigned int system_rev;
 static volatile int tpd_halt = 0;
 
+enum {
+	MOTION_INVALID		= 0,
+	MOTION_CLICK		= 1,
+	MOTION_DOUBLE_CLICK	= 2,
+	MOTION_LONG_PRESS	= 3,
+	MOTION_UP_ARROW		= 4,
+	MOTION_DOWN_ARROW	= 5,
+	MOTION_LEFT_ARROW	= 6,
+	MOTION_RIGHT_ARROW	= 7,
+};
 
 /* end header file */
 
@@ -1186,7 +1196,8 @@ retry_power_sequence:
 		dev_err(&client->dev, "Failed to send power sequence(program start)\n");
 		goto fail_power_sequence;
 	}
-	mdelay(FIRMWARE_ON_DELAY);	/* wait for checksum cal */
+	mdelay(50);
+	//mdelay(FIRMWARE_ON_DELAY);	/* wait for checksum cal */
 
 	dev_info(&client->dev, "bt541_power_sequence: OK\n");
 
@@ -2093,7 +2104,6 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 			if (read_data(client, 0x126,(u8 *)&gesture_flag, 2) < 0) //0x126
 			{
 				dev_err(&client->dev," gesture read reg error!!!\r\n"); 
-				
 				ret=0;
 				/*eric add 20160920*/
 				write_cmd(client, BT541_CLEAR_INT_STATUS_CMD);
@@ -2103,28 +2113,24 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 				/*wake up*/
 				/*eric add 20160920*/
 				write_cmd(client, BT541_CLEAR_INT_STATUS_CMD);
-	
+
 				dev_err(&client->dev," gesture wakeup flag:%d\r\n",gesture_flag); 		
-				
-				if(gesture_flag==1)/*1  click*/
+				if(gesture_flag==MOTION_CLICK||gesture_flag==MOTION_UP_ARROW||gesture_flag==MOTION_DOWN_ARROW||gesture_flag==MOTION_LEFT_ARROW||gesture_flag==MOTION_RIGHT_ARROW )/*1  click*/
 				{
 				input_report_key(info->input_dev, KEY_WAKEUP,1);
 					input_sync(info->input_dev);
 				input_report_key(info->input_dev, KEY_WAKEUP,0);
 					input_sync(info->input_dev);
-	
+
 					if (write_reg(client, 0x126, 0) != 0)
 					{
 						dev_err(&client->dev," gesture write reg error!!!\r\n");						
 						ret=0;
 					}
-			
 				}
-			
 			}
 			goto out;
 		}
-	
 #endif
 
 
@@ -2304,16 +2310,17 @@ static int bt541_ts_resume(struct device *dev)
 
 	//disable_irq(info->irq);
 
-	//Link  modified  on  20190703//Resume reset 
-	resume_hw_reset(info,true);
-	mdelay(50);	
+	//Link  modified  on  20190703//Resume reset
+	//resume_hw_reset(info,true);
+	write_cmd(client, 0x0FF8);
+	mdelay(50);
 	//resume sequence
-	if(!zinitix_resume_sequence(info)){
+	if(!bt541_power_sequence(info)){
 		dev_err(&client->dev, "zinitix_resume_sequence Fail\n");
-		mdelay(10);	
+		mdelay(10);
 	}
 
-	
+
     #if ESD_TIMER_INTERVAL
 		esd_timer_start(CHECK_ESD_TIMER, info);
     #endif
@@ -2371,15 +2378,16 @@ static int bt541_ts_suspend(struct device *dev)
 	}
 
 	clear_report_data(info);
-	
+
 #if ESD_TIMER_INTERVAL
 	esd_timer_stop(info);
 #endif
 
 
-	write_cmd(client, 0x000a);
-		mdelay(10); 
-
+	if (write_cmd(client, BT541_SWRESET_CMD)<0) {
+		dev_err(&client->dev,"Failed to write reset command\n");
+	}
+	mdelay(50);
 	for(i = 0; i < 3; i++) {
 		if (write_cmd(client, BT541_CLEAR_INT_STATUS_CMD) < 0) {
 			dev_err(&client->dev,"tpd_suspend fail to clear int(%d)\r\n", i);
@@ -2397,8 +2405,7 @@ static int bt541_ts_suspend(struct device *dev)
 			} else
 			break;
 		}
-	write_cmd(client, 0x000b);
-	mdelay(10);
+
 #else
 	for(i = 0; i < 3; i++) {
 		if (write_cmd(client, BT541_IDLE_CMD) < 0) {
@@ -2408,15 +2415,14 @@ static int bt541_ts_suspend(struct device *dev)
 			} else
 			break;
 		}
-	write_cmd(client, 0x000b);
-	mdelay(10);
+
 
 	tpd_halt = 1;
-	
+
 #endif
 
 	info->work_state = SUSPEND;
-	
+
 	up(&info->work_lock);
 
 	dev_err(&client->dev, "bt541_ts_suspend end \n");
