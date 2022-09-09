@@ -35,6 +35,9 @@
 #include "../../misc/qseecom_kernel.h"
 #include "slate_mobvoi_rpc_rpmsg.h"
 
+#define TIMEOUT_MS 2000
+#define TIMEOUT_MS_GLINK_OPEN 10000
+
 #define MOBVOI_SLATE_RPC_IOCTL_CMD_PASSTHROUGH 0x80551001
 typedef struct
 {
@@ -279,7 +282,7 @@ static void slate_mobvoi_rpc_slateup_work(struct work_struct *work)
 	if (!dev->slate_mobvoi_rpc_rpmsg)
 		pr_err("slate_mobvoi_rpc_rpmsg is not probed yet\n");
 	ret = wait_event_timeout(dev->link_state_wait,
-				dev->slate_mobvoi_rpc_rpmsg, msecs_to_jiffies(TIMEOUT_MS));
+				dev->slate_mobvoi_rpc_rpmsg, msecs_to_jiffies(TIMEOUT_MS_GLINK_OPEN));
 	if (ret == 0) {
 		pr_err("channel connection time out %d\n", ret);
 		goto glink_err;
