@@ -39,7 +39,7 @@
 #include "rpmsg_internal.h"
 #include "qcom_glink_native.h"
 
-#define GLINK_LOG_PAGE_CNT	2
+#define GLINK_LOG_PAGE_CNT	4
 #define GLINK_INFO(ctxt, x, ...)					       \
 	ipc_log_string(ctxt->ilc, "[%s]: "x, __func__, ##__VA_ARGS__)
 
@@ -198,6 +198,7 @@ struct glink_slatecom {
 	struct kthread_worker kworker;
 
 	uint32_t slatecom_status;
+    uint32_t counter;   //Added for pkt counter
 	struct slatecom_open_config_type slatecom_config;
 	void *slatecom_handle;
 	bool water_mark_reached;
@@ -471,6 +472,18 @@ static void glink_slatecom_tx_write(struct glink_slatecom *glink,
 					void *data, size_t dlen)
 {
 	int ret;
+#if 1
+
+	/* Added packet counter implementation below,
+	 * 12 to 15 bytes : field "param4": In "glink_slatecom_msg" is available to use
+	 * 12 to 15 bytes : field "reserved": In "cmd structure" is available to use
+	 * Hence, using 12th to 15th byte (Last 4 bytes) for assigning counter variable
+	 */
+
+	*(int*)(data + 12) = ++(glink->counter);
+	GLINK_INFO(glink, "PKT COUNTER = %d\n", glink->counter);
+
+#endif
 
 	if (dlen) {
 		ret = glink_slatecom_tx_write_one(glink, data, dlen);
@@ -684,6 +697,8 @@ static int glink_slatecom_request_intent(struct glink_slatecom *glink,
 	ret = wait_for_completion_timeout(&channel->intent_req_comp, 10 * HZ);
 	if (!ret) {
 		dev_err(glink->dev, "intent request ack timed out\n");
+		printk("[M]bug on\n");
+		BUG();
 		ret = -ETIMEDOUT;
 	}
 

@@ -9,8 +9,6 @@
 #include <linux/rpmsg.h>
 #include "slate_mobvoi_rpc.h"
 
-#define TIMEOUT_MS 4000
-
 struct slate_mobvoi_rpc_rpmsg_dev {
 	struct rpmsg_endpoint *channel;
 	struct device *dev;
