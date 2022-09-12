@@ -2311,6 +2311,14 @@ static int bt541_ts_resume(struct device *dev)
 	info->work_state = RESUME;
 
 	//disable_irq(info->irq);
+	if (!info->enable_wakeup) {
+		bt541_power_control(info, POWER_ON_SEQUENCE);
+		if (init_touch(info) == false) {
+			dev_err(&info->client->dev,"re init_touch failed!\n");
+		}
+		dev_info(&info->client->dev,"re init_touch failed!\n");
+	}
+
 
 	//Link  modified  on  20190703//Resume reset
 	//resume_hw_reset(info,true);
@@ -2422,6 +2430,9 @@ static int bt541_ts_suspend(struct device *dev)
 	tpd_halt = 1;
 
 #endif
+	if (!info->enable_wakeup) {
+		bt541_power_control(info, POWER_OFF);
+	}
 
 	info->work_state = SUSPEND;
 
@@ -3446,17 +3457,47 @@ static ssize_t show_tn_flag(struct device *dev, struct device_attribute *devattr
 	return snprintf(buf, sizeof(info->allow_tn_enable_flag),"%d\n", info->allow_tn_enable_flag);
 }
 
+
+static ssize_t show_enable_wakeup(struct device *dev, struct device_attribute *devattr, char *buf)
+{
+	struct bt541_ts_info *info = dev_get_drvdata(dev);
+
+	return snprintf(buf, 4, "%d\n", info->enable_wakeup);
+}
+
+
+static ssize_t store_enable_wakeup(struct device *dev, struct device_attribute *devattr, const char *buf, size_t count)
+{
+	int ret;
+	struct bt541_ts_info *info = dev_get_drvdata(dev);
+	struct i2c_client *client = info->client;
+
+	if (kstrtoint(buf, 0, &ret))
+		return -EINVAL;
+
+	if (info->work_state == SUSPEND)
+		dev_info(&client->dev,"%s: set enable_wakeup (%d) in SUSPEND\n",__func__, !!ret);
+
+	if (ret)
+		info->enable_wakeup = true;
+	else
+		info->enable_wakeup = false;
+
+	return count;
+}
+
 static DEVICE_ATTR(cmd, S_IWUSR | S_IWGRP, NULL, store_cmd);
 static DEVICE_ATTR(cmd_status, S_IRUGO, show_cmd_status, NULL);
 static DEVICE_ATTR(cmd_result, S_IRUGO, show_cmd_result, NULL);
 static DEVICE_ATTR(allow_tn_enable_flag, 0644, show_tn_flag, store_tn_flag);
-
+static DEVICE_ATTR(enable_wakeup, 0664, show_enable_wakeup,store_enable_wakeup);
 
 static struct attribute *touchscreen_attributes[] = {
 	&dev_attr_cmd.attr,
 	&dev_attr_cmd_status.attr,
 	&dev_attr_cmd_result.attr,
 	&dev_attr_allow_tn_enable_flag.attr,
+	&dev_attr_enable_wakeup.attr,
 	NULL,
 };
 
@@ -3987,6 +4028,22 @@ static int zinitix_seb_notifier_cb(struct notifier_block *nb,
 
 	return 0;
 }
+
+static int zinitix_ts_open(struct input_dev *input_dev)
+{
+    struct i2c_client *client = to_i2c_client(&input_dev->dev);
+	struct bt541_ts_info *info = i2c_get_clientdata(client);
+	dev_err(&info->client->dev,"[touch]%s()+\n",__func__);
+
+	return 0;	
+}
+static void zinitix_ts_close(struct input_dev *input_dev)
+{
+	struct i2c_client *client = to_i2c_client(&input_dev->dev);
+	struct bt541_ts_info *info = i2c_get_clientdata(client);
+	dev_err(&info->client->dev,"[touch]%s()-\n",__func__);
+}
+
 static int bt541_ts_probe(struct i2c_client *client,
 		const struct i2c_device_id *i2c_id)
 {
@@ -4176,6 +4233,9 @@ static int bt541_ts_probe(struct i2c_client *client,
 	
 	input_mt_init_slots(info->input_dev, info->cap_info.multi_fingers, INPUT_MT_DIRECT);
 
+	input_dev->open = zinitix_ts_open;/*touch lock*/
+	input_dev->close = zinitix_ts_close;
+
 	zinitix_debug_msg("register %s input device \r\n",info->input_dev->name);
 	input_set_drvdata(info->input_dev, info);
 	ret = input_register_device(info->input_dev);
@@ -4186,6 +4246,7 @@ static int bt541_ts_probe(struct i2c_client *client,
 
 	info->work_state = NOTHING;
 	sema_init(&info->work_lock, 1);
+	info->enable_wakeup = true;
 
 #if ESD_TIMER_INTERVAL
 	spin_lock_init(&info->lock);
