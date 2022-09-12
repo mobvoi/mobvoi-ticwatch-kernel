@@ -2401,12 +2401,17 @@ void raydium_ts_shutdown(struct i2c_client *client)
 	raydium_unregister_notifier();
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	unregister_early_suspend(&g_raydium_ts->early_suspend);
-#elif defined(CONFIG_DRM)
+#endif
+
+#if defined(CONFIG_DRM)
 	if (active_panel)
-		drm_panel_notifier_unregister(active_panel, &g_raydium_ts->fb_notifier);
+		drm_panel_notifier_unregister(active_panel, &g_raydium_ts->fb_notif);
 #endif/*end of CONFIG_FB*/
 	input_unregister_device(g_raydium_ts->input_dev);
-	input_free_device(g_raydium_ts->input_dev);
+	g_raydium_ts->input_dev = NULL;
+	if (g_raydium_ts->input_dev)
+		input_free_device(g_raydium_ts->input_dev);
+	g_raydium_ts->input_dev = NULL;
 	gpio_free(g_raydium_ts->rst_gpio);
 
 #ifdef CONFIG_RM_SYSFS_DEBUG
@@ -2437,9 +2442,11 @@ static int raydium_ts_remove(struct i2c_client *client)
 	raydium_unregister_notifier();
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	unregister_early_suspend(&g_raydium_ts->early_suspend);
-#elif defined(CONFIG_DRM)
+#endif
+
+#if defined(CONFIG_DRM)
 	if (active_panel)
-		drm_panel_notifier_unregister(active_panel, &g_raydium_ts->fb_notifier);
+		drm_panel_notifier_unregister(active_panel, &g_raydium_ts->fb_notif);
 #endif/*end of CONFIG_FB*/
 	input_unregister_device(g_raydium_ts->input_dev);
 	input_free_device(g_raydium_ts->input_dev);
