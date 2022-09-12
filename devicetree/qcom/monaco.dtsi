@@ -2252,8 +2252,8 @@ qcom,msm-adsprpc-mem {
 
 		zinitix,reset-gpio = <&tlmm 12 0x00>;
 		zinitix,irq-gpio = <&tlmm 13 0x2002>;
-		zinitix,x_resolution = <466>;
-		zinitix,y_resolution = <466>;
+		zinitix,x_resolution = <465>;
+		zinitix,y_resolution = <465>;
 		zinitix,page_size = <128>;
 		zinitix,orientation = <0>;
 		zinitix,tsp_vdd_supply_type = <1>;
