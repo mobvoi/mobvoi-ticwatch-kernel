@@ -698,7 +698,7 @@ static int glink_slatecom_request_intent(struct glink_slatecom *glink,
 	if (!ret) {
 		dev_err(glink->dev, "intent request ack timed out\n");
 		printk("[M]bug on\n");
-		BUG();
+		//BUG();
 		ret = -ETIMEDOUT;
 	}
 

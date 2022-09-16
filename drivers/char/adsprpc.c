@@ -532,6 +532,7 @@ struct fastrpc_apps {
 	struct class *class;
 	struct smq_phy_page range;
 	struct hlist_head maps;
+	struct hlist_head rh_maps;
 	uint32_t staticpd_flags;
 	dev_t dev_no;
 	int compat;
@@ -2990,6 +2991,7 @@ static void fastrpc_init(struct fastrpc_apps *me)
 
 	INIT_HLIST_HEAD(&me->drivers);
 	INIT_HLIST_HEAD(&me->maps);
+	INIT_HLIST_HEAD(&me->rh_maps);
 	spin_lock_init(&me->hlock);
 	me->channel = &gcinfo[0];
 	mutex_init(&me->mut_uid);
@@ -4660,11 +4662,13 @@ static int fastrpc_mmap_remove_ssr(struct fastrpc_file *fl)
 			if (err)
 				goto bail;
 			if (me->ramdump_handle && me->enable_ramdump) {
+				hlist_add_head(&match->hn, &me->rh_maps);
 				ramdump_segments_rh.address =
 				match->phys;
-				ramdump_segments_rh.v_address =
-				(void __iomem *)match->va;
+				ramdump_segments_rh.v_address = NULL;
 				ramdump_segments_rh.size = match->size;
+				pr_err("DBG: adsprpc: %s: calling ramdump for phys: 0x%x, va: 0x%x, size: %d\n",
+				__func__, match->phys, match->va, match->size);
 				ret = fastrpc_elf_ramdump(me->ramdump_handle, &ramdump_segments_rh);
 				if (ret < 0)
 					pr_err("adsprpc: %s: unable to dump heap (err %d)\n",
