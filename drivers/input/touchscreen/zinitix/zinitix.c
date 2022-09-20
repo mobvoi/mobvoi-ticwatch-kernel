@@ -2256,8 +2256,10 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 			dev_info(&client->dev, "Finger [%02d] up ver0x%02x hw0x%02x mode0x%02x\n",
 				i, info->cap_info.reg_data_version,info->cap_info.hw_id, m_optional_mode);
 			info->finger_cnt1--;
-			if (info->finger_cnt1 == 0)
+			if(!zinitix_bit_test(info->touch_info.status,BIT_PT_EXIST)){
+				info->finger_cnt1 = 0;
 				input_report_key(info->input_dev, BTN_TOUCH, 0);
+			}
 
 			memset(&info->touch_info.coord[i], 0x0, sizeof(struct coord));
 			input_mt_slot(info->input_dev, i);
