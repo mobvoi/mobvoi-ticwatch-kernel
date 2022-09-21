@@ -2215,7 +2215,7 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 			
 			if (zinitix_bit_test(sub_status, SUB_BIT_DOWN)){
 
-				dev_info(&client->dev, "Finger [%02d] down\n", i);
+				dev_dbg(&client->dev, "Finger [%02d] down\n", i);
 
 				info->finger_cnt1++;
 			}
@@ -2253,7 +2253,7 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 			input_report_key(info->input_dev, BTN_TOUCH, 1);
 		} else if (zinitix_bit_test(sub_status, SUB_BIT_UP) ||
 			zinitix_bit_test(prev_sub_status, SUB_BIT_EXIST)) {
-			dev_info(&client->dev, "Finger [%02d] up ver0x%02x hw0x%02x mode0x%02x\n",
+			dev_dbg(&client->dev, "Finger [%02d] up ver0x%02x hw0x%02x mode0x%02x\n",
 				i, info->cap_info.reg_data_version,info->cap_info.hw_id, m_optional_mode);
 			info->finger_cnt1--;
 			if(!zinitix_bit_test(info->touch_info.status,BIT_PT_EXIST)){
