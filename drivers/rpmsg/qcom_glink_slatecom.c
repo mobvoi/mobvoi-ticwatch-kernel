@@ -946,7 +946,7 @@ static void glink_slatecom_send_close_req(struct glink_slatecom *glink,
 		return;
 	}
 	ret = wait_for_completion_timeout(&channel->close_ack, 2 * HZ);
-	if (!ret) {
+	if (ret < 0) {
 		GLINK_ERR(glink, "rx_close_ack timedout[%d]:[%d]\n",
 				 channel->rcid, channel->lcid);
 	}
