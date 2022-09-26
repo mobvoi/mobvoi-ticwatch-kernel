@@ -1078,14 +1078,9 @@
 	ddr_bw_opp_table: ddr-bw-opp-table {
 		compatible = "operating-points-v2";
 		BW_OPP_ENTRY(  200, 4); /*  762 MB/s */ /* Low SVS */
-		BW_OPP_ENTRY(  300, 4); /* 1144 MB/s */ /* Low SVS */
-		BW_OPP_ENTRY(  451, 4); /* 1720 MB/s */ /* Low SVS */
 		BW_OPP_ENTRY(  547, 4); /* 2086 MB/s */ /* Low SVS */
 		BW_OPP_ENTRY(  681, 4); /* 2597 MB/s */ /* Low SVS */
-		BW_OPP_ENTRY(  768, 4); /* 2929 MB/s */ /* SVS     */
-		BW_OPP_ENTRY( 1017, 4); /* 3879 MB/s */ /* SVS     */
 		BW_OPP_ENTRY( 1353, 4); /* 5161 MB/s */ /* SVS     */
-		BW_OPP_ENTRY( 1555, 4); /* 5931 MB/s */ /* Nominal */
 		BW_OPP_ENTRY( 1804, 4); /* 6881 MB/s */ /* Nominal */
 		BW_OPP_ENTRY( 2092, 4); /* 7980 MB/s */ /* Turbo   */
 	};
@@ -1147,9 +1142,9 @@
 		compatible = "qcom,arm-compute-mon";
 		qcom,target-dev = <&cpu0_cpu_ddr_latfloor>;
 		qcom,core-dev-table =
-			<  614400 MHZ_TO_MBPS(  200, 4) >, /* <  614 MHz  762 MB/s > */
+			<  614400 MHZ_TO_MBPS(  547, 4) >, /* <  614 MHz 2086 MB/s > */
 			<  864000 MHZ_TO_MBPS(  547, 4) >, /* <  864 MHz 2086 MB/s > */
-			< 1363200 MHZ_TO_MBPS(  681, 4) >, /* < 1363 MHz 2597 MB/s > */
+			< 1363200 MHZ_TO_MBPS( 1353, 4) >, /* < 1363 MHz 5161 MB/s > */
 			< 1708800 MHZ_TO_MBPS( 1353, 4) >; /* < 1708 MHz 5161 MB/s > */
 		};
 	};
