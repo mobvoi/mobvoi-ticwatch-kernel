@@ -1259,12 +1259,13 @@ static int zinitix_power_control(struct bt541_ts_info *data, int on)
 
 	if (!on)
 		goto power_off;
-
+#if 0
 	rc = regulator_enable(data->vdd_v1);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vdd v1 enable failed rc=%d\n", rc);
 		return rc;
 	}
+#endif
 	rc = regulator_enable(data->vdd);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vdd enable failed rc=%d\n", rc);
@@ -1280,17 +1281,19 @@ static int zinitix_power_control(struct bt541_ts_info *data, int on)
 	return rc;
 
 power_off:
+#if 0
 	rc = regulator_disable(data->vdd_v1);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vdd v1 disable failed rc=%d\n", rc);
 		return rc;
 	}
+#endif
 	rc = regulator_disable(data->vdd);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vdd disable failed rc=%d\n", rc);
 		return rc;
 	}
-
+#if 0
 	rc = regulator_disable(data->vcc_i2c);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vcc_i2c disable failed rc=%d\n", rc);
@@ -1299,6 +1302,7 @@ power_off:
 			dev_err(&data->client->dev,"Regulator vdd enable failed rc=%d\n", rc);
 		}
 	}
+#endif
 
 	return rc;
 }
