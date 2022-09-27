@@ -941,12 +941,12 @@ static void glink_slatecom_send_close_req(struct glink_slatecom *glink,
 	CH_INFO(channel, "\n");
 
 	ret = glink_slatecom_tx(glink, &req, sizeof(req), true);
-	if (!ret) {
+	if (ret < 0) {
 		GLINK_ERR(glink, "transmit error:%d\n", ret);
 		return;
 	}
 	ret = wait_for_completion_timeout(&channel->close_ack, 2 * HZ);
-	if (ret < 0) {
+	if (!ret) {
 		GLINK_ERR(glink, "rx_close_ack timedout[%d]:[%d]\n",
 				 channel->rcid, channel->lcid);
 	}
