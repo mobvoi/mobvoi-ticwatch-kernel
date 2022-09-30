@@ -3973,7 +3973,7 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 
 	blank = evdata->data;
 	panel_power_state = (unsigned char  )*blank;
-	zinitix_printk(" DRM event:%lu,blank:%d,panel_power_state:%d ", event, *blank,panel_power_state);
+	//zinitix_printk(" DRM event:%lu,blank:%d,panel_power_state:%d ", event, *blank,panel_power_state);
 	req_header.opcode = GMI_SLATE_MOBVOI_RPC_PANNEL_POWER_STATE;//0x3;
 	req_header.payload_size = sizeof(panel_power_state);
 	memset(tx_buf,0,sizeof(tx_buf));
@@ -3998,7 +3998,7 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 			bt541_ts_suspend(&misc_touch_dev->client->dev);
 		}
 	} else{
-		zinitix_printk("DRM BLANK(%d) do not need process\n", *blank);
+		//zinitix_printk("DRM BLANK(%d) do not need process\n", *blank);
 	}
 
 	return 0;
