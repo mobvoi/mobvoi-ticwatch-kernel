@@ -302,6 +302,7 @@ static void qti_pmic_lpm_syscore_shutdown(void)
 		if (rc < 0)
 			dev_err(gchip->dev, "Failed to handle twm entry, rc:%d\n",
 				rc);
+		mdelay(1000);
 		pr_debug("PMIC TWM enabled\n");
 	}
 }
