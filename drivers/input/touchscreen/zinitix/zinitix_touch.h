@@ -19,8 +19,8 @@
 #ifndef _LINUX_BT541_TS_H
 #define _LINUX_BT541_TS_H
 
-#include "zinitix_touch_zxt_firmware.h"
-//#include "zinitix_touch_zxt_firmware_v080302.h"
+//#include "zinitix_touch_zxt_firmware.h"
+#include "zinitix_touch_zxt_firmware_v080304.h"
 /*used for fw compatible*/
 #define TSP_TYPE_COUNT	1
 
