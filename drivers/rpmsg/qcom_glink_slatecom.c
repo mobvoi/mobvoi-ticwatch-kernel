@@ -1296,9 +1296,10 @@ static void glink_slatecom_rx_close(struct glink_slatecom *glink, unsigned int r
 	mutex_lock(&glink->idr_lock);
 	channel = idr_find(&glink->rcids, rcid);
 	mutex_unlock(&glink->idr_lock);
-    channel->remote_close = true;
+   
 	if (WARN(!channel, "close request on unknown channel\n"))
 		return;
+	channel->remote_close = true;
 	CH_INFO(channel, "\n");
 
 	/* Decouple the potential rpdev from the channel */
