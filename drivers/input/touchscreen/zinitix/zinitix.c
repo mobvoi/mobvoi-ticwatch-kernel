@@ -2668,12 +2668,11 @@ static void fw_update(void *device_data)
 		break;
 
 	case UMS:
-
+		dev_info(&client->dev,"start adb update touch firmware\n");
 		snprintf(fw_path, MAX_FW_PATH, "/sdcard/%s", TSP_FW_FILENAME);
 		fp = filp_open(fw_path, O_RDONLY, 0);
 		if (IS_ERR(fp)) {
-			dev_err(&client->dev,
-				"file %s open \n", fw_path);
+			dev_err(&client->dev,"file %s open error\n", fw_path);
 			info->factory_info->cmd_state = 3;
 			goto err_open;
 		}
@@ -2693,8 +2692,11 @@ static void fw_update(void *device_data)
 			goto err_alloc;
 		}
 
+		old_fs = get_fs();
+		set_fs(KERNEL_DS);
 		nread = vfs_read(fp, (char __user *)buff, fsize, &fp->f_pos);
 		if (nread != fsize) {
+			dev_err(&client->dev, "vfs_read fw error!!,nread=%d,fsize=%d\n",nread,fsize);
 			info->factory_info->cmd_state = 3;
 			goto err_fw_size;
 		}
@@ -2706,6 +2708,7 @@ static void fw_update(void *device_data)
 		ret = ts_upgrade_sequence((u8 *)buff);
 		info->checkUMSmode = false;
 		if(ret<0) {
+			dev_err(&client->dev, "adb fw update failed!!\n");
 			kfree(buff);
 			info->factory_info->cmd_state = 3;
 			return;
