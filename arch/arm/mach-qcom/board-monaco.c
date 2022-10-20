@@ -20,7 +20,7 @@ static void __init monaco_init(void)
 }
 
 DT_MACHINE_START(MONACO_DT,
-	"Qualcomm Technologies, Inc. MONACO (Flattened Device Tree)")
+	"Qualcomm Technologies, Inc. MONACO (Flattened Device Tree)SW5100")
 	.init_machine		= monaco_init,
 	.dt_compat		= monaco_dt_match,
 MACHINE_END
