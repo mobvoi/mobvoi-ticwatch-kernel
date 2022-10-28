@@ -106,7 +106,7 @@ static int bms_get_buffered_data(int channel, int *val, int src)
 		rc = 0;
 	}
 
-	pr_info("remote_bms_param:%u src:%d value:%d\n", offset, src, *val);
+	pr_debug("remote_bms_param:%u src:%d value:%d\n", offset, src, *val);
 
 	return rc;
 }
@@ -135,7 +135,7 @@ int remote_bms_get_prop(int channel, int *val, int src)
 			return -EAGAIN;
 		} else{
 			rc = bms_get_buffered_data(channel, val, src);
-			pr_info("Reporting SOC as:%d\n",*val);
+			pr_debug("Reporting SOC as:%d\n",*val);
 		}
 		break;
 	case SMB5_QG_VOLTAGE_NOW:
