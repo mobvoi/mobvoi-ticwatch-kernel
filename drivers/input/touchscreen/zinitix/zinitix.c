@@ -2442,6 +2442,15 @@ static int bt541_ts_suspend(struct device *dev)
 
 	up(&info->work_lock);
 
+	mdelay(50);
+	write_reg(client, 0x0138, 0);
+	mdelay(300);
+	write_reg(client, 0x0138, 10);
+	mdelay(200);
+	write_reg(client, 0x0138, 0);
+	mdelay(300);
+	write_reg(client, 0x0138, 10);
+
 	dev_err(&client->dev, "bt541_ts_suspend end \n");
 
 	return 0;
