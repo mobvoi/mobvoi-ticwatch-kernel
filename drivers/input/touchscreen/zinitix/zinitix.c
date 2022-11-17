@@ -2320,7 +2320,6 @@ static int bt541_ts_resume(struct device *dev)
 		if (init_touch(info) == false) {
 			dev_err(&info->client->dev,"re init_touch failed!\n");
 		}
-		dev_info(&info->client->dev,"re init_touch failed!\n");
 	}
 
 
@@ -3488,16 +3487,20 @@ static ssize_t store_enable_wakeup(struct device *dev, struct device_attribute *
 	struct bt541_ts_info *info = dev_get_drvdata(dev);
 	struct i2c_client *client = info->client;
 
-	if (kstrtoint(buf, 0, &ret))
+	if (kstrtoint(buf, 0, &ret)){
+		dev_err(&client->dev,"%s: set enable_wakeup error\n",__func__);
 		return -EINVAL;
-
-	if (info->work_state == SUSPEND)
-		dev_info(&client->dev,"%s: set enable_wakeup (%d) in SUSPEND\n",__func__, !!ret);
-
+	}
 	if (ret)
 		info->enable_wakeup = true;
 	else
 		info->enable_wakeup = false;
+	dev_info(&client->dev,"enable_wakeup=%d\n",info->enable_wakeup);
+
+	if (info->work_state == SUSPEND && info->enable_wakeup == false){
+		dev_info(&client->dev,"%s: set enable_wakeup (%d) in SUSPEND\n",__func__, !!ret);
+		bt541_power_control(info, POWER_OFF);//suspend status need to immediately power off tp
+	}
 
 	return count;
 }
