@@ -2436,6 +2436,7 @@ void raydium_ts_shutdown(struct i2c_client *client)
 	raydium_release_sysfs(client);
 #endif /*end of CONFIG_RM_SYSFS_DEBUG*/
 
+	disable_irq(g_raydium_ts->irq);
 	free_irq(client->irq, g_raydium_ts);
 
 	if (gpio_is_valid(g_raydium_ts->rst_gpio))
@@ -2481,6 +2482,7 @@ static int raydium_ts_remove(struct i2c_client *client)
 	raydium_release_sysfs(client);
 #endif /*end of CONFIG_RM_SYSFS_DEBUG*/
 
+	disable_irq(g_raydium_ts->irq);
 	free_irq(client->irq, g_raydium_ts);
 
 	if (gpio_is_valid(g_raydium_ts->rst_gpio))
