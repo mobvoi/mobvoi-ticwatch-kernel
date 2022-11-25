@@ -246,6 +246,13 @@ enum fastrpc_msg_type {
 	KERNEL_MSG_WITH_NONZERO_PID,
 };
 
+/* FastRPC remote subsystem state*/
+enum fastrpc_remote_subsys_state {
+	SUBSYSTEM_RESTARTING = 0,
+	SUBSYSTEM_DOWN,
+	SUBSYSTEM_UP,
+};
+
 #define PERF_END (void)0
 
 #define PERF(enb, cnt, ff) \
@@ -511,7 +518,7 @@ struct fastrpc_channel_ctx {
 	int in_hib;
 	void *handle;
 	uint64_t prevssrcount;
-	int issubsystemup;
+	int subsystemstate;
 	int vmid;
 	struct secure_vm rhvm;
 	int ramdumpenabled;
@@ -4329,7 +4336,7 @@ static int fastrpc_release_current_dsp_process(struct fastrpc_file *fl)
 		err = -ENODEV;
 		goto bail;
 	}
-	VERIFY(err, fl->apps->channel[cid].issubsystemup == 1);
+	VERIFY(err, fl->apps->channel[cid].subsystemstate != SUBSYSTEM_RESTARTING);
 	if (err) {
 		wait_for_completion(&fl->shutdown);
 		goto bail;
@@ -5489,8 +5496,8 @@ static ssize_t fastrpc_debugfs_read(struct file *filp, char __user *buffer,
 		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
 			"\n%s %s %s\n", title, " CHANNEL INFO ", title);
 		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
-			"%-7s|%-10s|%-14s|%-9s|%-13s\n",
-			"subsys", "sesscount", "issubsystemup",
+			"%-7s|%-10s|%-15s|%-9s|%-13s\n",
+			"subsys", "sesscount", "subsystemstate",
 			"ssrcount", "session_used");
 		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
 			"-%s%s%s%s-\n", single_line, single_line,
@@ -5504,8 +5511,8 @@ static ssize_t fastrpc_debugfs_read(struct file *filp, char __user *buffer,
 				DEBUGFS_SIZE - len, "|%-10u",
 				chan->sesscount);
 			len += scnprintf(fileinfo + len,
-				DEBUGFS_SIZE - len, "|%-14d",
-				chan->issubsystemup);
+				DEBUGFS_SIZE - len, "|%-15d",
+				chan->subsystemstate);
 			len += scnprintf(fileinfo + len,
 				DEBUGFS_SIZE - len, "|%-9u",
 				chan->ssrcount);
@@ -5721,7 +5728,7 @@ static int fastrpc_channel_open(struct fastrpc_file *fl)
 	mutex_lock(&me->channel[cid].smd_mutex);
 	if (me->channel[cid].ssrcount !=
 				 me->channel[cid].prevssrcount) {
-		if (!me->channel[cid].issubsystemup) {
+		if (me->channel[cid].subsystemstate != SUBSYSTEM_UP) {
 			err = -ECONNREFUSED;
 			mutex_unlock(&me->channel[cid].smd_mutex);
 			goto bail;
@@ -6503,7 +6510,7 @@ static int fastrpc_restart_notifier_cb(struct notifier_block *nb,
 			__func__, gcinfo[cid].subsys);
 		mutex_lock(&me->channel[cid].smd_mutex);
 		ctx->ssrcount++;
-		ctx->issubsystemup = 0;
+		ctx->subsystemstate = SUBSYSTEM_RESTARTING;
 		mutex_unlock(&me->channel[cid].smd_mutex);
 	} else if (code == SUBSYS_AFTER_SHUTDOWN) {
 		pr_info("adsprpc: %s: %s subsystem is down\n",
@@ -6515,6 +6522,7 @@ static int fastrpc_restart_notifier_cb(struct notifier_block *nb,
 			complete(&fl->shutdown);
 		}
 		spin_unlock(&me->hlock);
+		ctx->subsystemstate = SUBSYSTEM_DOWN;
 	} else if (code == SUBSYS_RAMDUMP_NOTIFICATION) {
 		if (cid == RH_CID) {
 			if (me->ramdump_handle)
@@ -6536,7 +6544,7 @@ static int fastrpc_restart_notifier_cb(struct notifier_block *nb,
 	} else if (code == SUBSYS_AFTER_POWERUP) {
 		pr_info("adsprpc: %s: %s subsystem is up\n",
 			__func__, gcinfo[cid].subsys);
-		ctx->issubsystemup = 1;
+		ctx->subsystemstate = SUBSYSTEM_UP;
 	}
 	return NOTIFY_DONE;
 }
@@ -7170,7 +7178,7 @@ static int __init fastrpc_device_init(void)
 		me->channel[i].ssrcount = 0;
 		me->channel[i].in_hib = 0;
 		me->channel[i].prevssrcount = 0;
-		me->channel[i].issubsystemup = 1;
+		me->channel[i].subsystemstate = SUBSYSTEM_UP;
 		me->channel[i].ramdumpenabled = 0;
 		me->channel[i].rh_dump_dev = NULL;
 		me->channel[i].nb.notifier_call = fastrpc_restart_notifier_cb;
