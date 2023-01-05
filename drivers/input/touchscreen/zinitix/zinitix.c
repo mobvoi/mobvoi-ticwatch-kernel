@@ -1259,13 +1259,6 @@ static int zinitix_power_control(struct bt541_ts_info *data, int on)
 
 	if (!on)
 		goto power_off;
-#if 0
-	rc = regulator_enable(data->vdd_v1);
-	if (rc) {
-		dev_err(&data->client->dev,"Regulator vdd v1 enable failed rc=%d\n", rc);
-		return rc;
-	}
-#endif
 	rc = regulator_enable(data->vdd);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vdd enable failed rc=%d\n", rc);
@@ -1281,19 +1274,12 @@ static int zinitix_power_control(struct bt541_ts_info *data, int on)
 	return rc;
 
 power_off:
-#if 0
-	rc = regulator_disable(data->vdd_v1);
-	if (rc) {
-		dev_err(&data->client->dev,"Regulator vdd v1 disable failed rc=%d\n", rc);
-		return rc;
-	}
-#endif
 	rc = regulator_disable(data->vdd);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vdd disable failed rc=%d\n", rc);
 		return rc;
 	}
-#if 0
+	dev_err(&data->client->dev,"Regulator vdd disable success rc=%d\n", rc);
 	rc = regulator_disable(data->vcc_i2c);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vcc_i2c disable failed rc=%d\n", rc);
@@ -1302,7 +1288,7 @@ power_off:
 			dev_err(&data->client->dev,"Regulator vdd enable failed rc=%d\n", rc);
 		}
 	}
-#endif
+	dev_err(&data->client->dev,"Regulator vcc_i2c disable success rc=%d\n", rc);
 
 	return rc;
 }
@@ -2316,6 +2302,8 @@ static int bt541_ts_resume(struct device *dev)
 
 	//disable_irq(info->irq);
 	if (!info->enable_wakeup) {
+		gpio_direction_input(info->pdata->gpio_int);
+		msleep(10);
 		bt541_power_control(info, POWER_ON_SEQUENCE);
 		if (init_touch(info) == false) {
 			dev_err(&info->client->dev,"re init_touch failed!\n");
@@ -2434,6 +2422,9 @@ static int bt541_ts_suspend(struct device *dev)
 
 #endif
 	if (!info->enable_wakeup) {
+		gpio_set_value(info->pdata->gpio_reset, 0);
+		gpio_direction_output(info->pdata->gpio_int,0);
+		msleep(10);
 		bt541_power_control(info, POWER_OFF);
 	}
 
@@ -3497,6 +3488,9 @@ static ssize_t store_enable_wakeup(struct device *dev, struct device_attribute *
 
 	if (info->work_state == SUSPEND && info->enable_wakeup == false){
 		dev_info(&client->dev,"%s: set enable_wakeup (%d) in SUSPEND\n",__func__, !!ret);
+		gpio_set_value(info->pdata->gpio_reset, 0);
+		gpio_direction_output(info->pdata->gpio_int,0);
+		msleep(10);
 		bt541_power_control(info, POWER_OFF);//suspend status need to immediately power off tp
 	}
 
@@ -3741,7 +3735,7 @@ static const struct of_device_id zinitix_match_table[] = {
 static int zinitix_hw_reset( struct bt541_ts_info* data,bool on )
 {
 	int err = 0;
-	printk("zinitix_hw_reset: on = %d, gpio_reset = %d\n", on, data->pdata->gpio_reset);
+	dev_err(&data->client->dev,"zinitix_hw_reset: on = %d, gpio_reset = %d\n", on, data->pdata->gpio_reset);
 	if(on)
 	{
 		if (gpio_is_valid(data->pdata->gpio_reset)) {
@@ -3964,6 +3958,8 @@ void bt541_register_callback(struct tsp_callbacks *cb)
 static int zinitix_notifier_callback(struct notifier_block *self,
 			unsigned long event, void *data)
 {
+	struct bt541_ts_info *info =
+		container_of(self, struct bt541_ts_info, drm_notif);
 	struct drm_panel_notifier *evdata = data;
 	int *blank,i = 0;
 	unsigned char  panel_power_state = 0;
@@ -3977,11 +3973,11 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 	}
 
 	if (!evdata){
-		zinitix_printk("evdata error!\n");
+		dev_err(&info->client->dev,"evdata error!\n");
 	}
 
 	if (!(event == DRM_PANEL_EARLY_EVENT_BLANK || event == DRM_PANEL_EVENT_BLANK)) {
-		zinitix_printk("Event(%lu) do not need process\n", event);
+		dev_err(&info->client->dev,"Event(%lu) do not need process\n", event);
 	}
 
 	blank = evdata->data;
@@ -3994,7 +3990,7 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 	memcpy(tx_buf+sizeof(req_header), &panel_power_state, sizeof(panel_power_state));
 
 	if (*blank == DRM_PANEL_BLANK_UNBLANK) {
-		zinitix_printk("DRM_PANEL_BLANK_UNBLANK,pannel power on,allow_tn_enable_flag=%d!\n",misc_touch_dev->allow_tn_enable_flag);
+		dev_err(&info->client->dev,"DRM_PANEL_BLANK_UNBLANK,pannel power on,allow_tn_enable_flag=%d!\n",misc_touch_dev->allow_tn_enable_flag);
 		if(misc_touch_dev->allow_tn_enable_flag){
 			slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
 		}
@@ -4003,7 +3999,7 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 		}
 
 	} else if (*blank == DRM_PANEL_BLANK_POWERDOWN || *blank == DRM_PANEL_BLANK_LP ) {
-		zinitix_printk("DRM_PANEL_BLANK_POWERDOWN,pannel power off,allow_tn_enable_flag=%d!\n",misc_touch_dev->allow_tn_enable_flag);
+		dev_err(&info->client->dev,"DRM_PANEL_BLANK_POWERDOWN,pannel power off,allow_tn_enable_flag=%d!\n",misc_touch_dev->allow_tn_enable_flag);
 		if(misc_touch_dev->allow_tn_enable_flag){
 			slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
 		}
@@ -4038,8 +4034,9 @@ static int zinitix_seb_notifier_cb(struct notifier_block *nb,
 		bt541_power_control(info, POWER_ON_SEQUENCE);
 		if (init_touch(info) == false) {
 			dev_err(&info->client->dev,"re init_touch failed!\n");
+		}else{
+			dev_info(&info->client->dev,"re power on success!\n");
 		}
-		dev_info(&info->client->dev,"re power on success!\n");
 
 	}
 
