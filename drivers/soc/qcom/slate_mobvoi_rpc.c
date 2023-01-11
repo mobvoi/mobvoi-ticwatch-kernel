@@ -426,6 +426,58 @@ static void ssr_register(void)
 	
 }
 
+
+static ssize_t show_slate_asset(struct device *dev, struct device_attribute
+			       *devattr, char *buf)
+{
+	int ret = 0;
+
+	return ret;
+}
+
+
+static ssize_t set_slate_asset(struct device *dev, struct device_attribute
+			 *devattr, const char *buf, size_t count)
+{
+	int rc,i;
+	int data;
+	wear_header_t req_header;
+	char  *tx_buf;
+	unsigned char  tn_enable = 0;
+	unsigned int tx_buf_size;
+
+	struct slatemobrpc_priv *pdev = container_of(slate_mobvoi_rpc_drv,
+					struct slatemobrpc_priv,lhndl);
+
+	tx_buf_size = sizeof(req_header) + 4;
+
+	tx_buf = kzalloc(tx_buf_size, GFP_KERNEL);
+	if (!tx_buf) {
+		return -ENOMEM;
+	}
+
+	rc = kstrtoint(buf, 10, &data);
+	if (rc) {
+		pr_err("kstrtoint failed, rc = %d\n", rc);
+		return -EINVAL;
+	}
+    tn_enable = data ? 1 : 0;
+
+	req_header.opcode = GMI_SLATE_MOBVOI_RPC_SET_ASSERT;//0x4;
+	req_header.payload_size = sizeof(tn_enable);
+
+	memcpy(tx_buf, &req_header, sizeof(req_header));
+	memcpy(tx_buf+sizeof(req_header), &tn_enable, sizeof(tn_enable));
+	for(i=0; i< req_header.payload_size + sizeof(req_header);i++)
+		pr_err("tx_buf[%d]=%d\n",i, tx_buf[i]);
+
+	slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+	return count;
+}
+
+static DEVICE_ATTR(slate_asset, 0664, show_slate_asset,set_slate_asset);
+
+
 static ssize_t show_tn_enable(struct device *dev, struct device_attribute
 			       *devattr, char *buf)
 {
@@ -478,7 +530,7 @@ static DEVICE_ATTR(tn_enable, 0664, show_tn_enable,store_tn_enable);
 
 static struct attribute *mobrpc_attributes[] = {
 	&dev_attr_tn_enable.attr,
-
+	&dev_attr_slate_asset.attr,
 	NULL,
 };
 

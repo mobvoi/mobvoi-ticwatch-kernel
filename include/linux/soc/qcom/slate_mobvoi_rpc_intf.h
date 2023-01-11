@@ -19,6 +19,7 @@ enum WMSlateCtrlChnlOpcode {
 
 	GMI_MGR_TEST2 = 2,
 	GMI_SLATE_MOBVOI_RPC_PANNEL_POWER_STATE = 3,
+	GMI_SLATE_MOBVOI_RPC_SET_ASSERT = 4,
 };
 
 int slate_mobvoi_rpc_tx_msg_ext(void  *msg, size_t len);
