@@ -5,7 +5,6 @@
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_nolab_amoled>;
 	qcom,platform-reset-gpio = <&pm5100_gpios 2 0>;
 	qcom,platform-en-gpio = <&pm5100_gpios 1 0>;
-	qcom,mutex-gpio = <&tlmm 104 0>;
 };
 
 &sde_dsi {
