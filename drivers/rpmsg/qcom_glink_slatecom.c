@@ -292,7 +292,8 @@ struct rx_pkt {
 
 static const struct rpmsg_endpoint_ops glink_endpoint_ops;
 
-
+struct glink_slatecom_rx_intent *g_lcid5_intent = NULL;
+struct glink_slatecom_rx_intent *g_lcid3_intent = NULL;
 #define SLATECOM_CMD_VERSION			0
 #define SLATECOM_CMD_VERSION_ACK			1
 #define SLATECOM_CMD_OPEN				2
@@ -623,10 +624,30 @@ static void glink_slatecom_handle_intent_req_ack(struct glink_slatecom *glink,
 		dev_err(glink->dev, "unable to find channel\n");
 		return;
 	}
-
+	printk("glink_slatecom_handle_intent_req_ack lcid=%u,cid=%u,granted=%d\n",channel->lcid,cid,granted);
 	channel->intent_req_result = granted;
 	complete(&channel->intent_req_comp);
 	CH_INFO(channel, "\n");
+
+	if(cid==5)
+	{
+		printk("try reset lcid5\n");
+		if(g_lcid5_intent)
+		{
+			g_lcid5_intent->offset = 0;
+			g_lcid5_intent->in_use = false;
+		}
+
+	}
+	else if(cid==3)
+	{
+		printk("try reset lcid3\n");
+		if(g_lcid3_intent)
+		{
+			g_lcid3_intent->offset = 0;
+			g_lcid3_intent->in_use = false;
+		}
+	}
 }
 
 /**
@@ -839,6 +860,15 @@ static int __glink_slatecom_send(struct glink_slatecom_channel *channel,
 	while (!intent) {
 		mutex_lock(&channel->intent_lock);
 		idr_for_each_entry(&channel->riids, tmp, iid) {
+			if(channel->lcid==5){
+				printk("lcid5 tmp->size=%d,tmp->in_use=%d,len=%d\n",tmp->size,tmp->in_use,len);
+				if(intent) printk("lcid5 intent->size=%d\n",intent->size);
+			}
+			else if(channel->lcid==3){
+				printk("lcid3 tmp->size=%d,tmp->in_use=%d,len=%d\n",tmp->size,tmp->in_use,len);
+				if(intent) printk("lcid3 intent->size=%d\n",intent->size);
+			}
+
 			if (tmp->size >= len && !tmp->in_use) {
 				if (!intent)
 					intent = tmp;
@@ -851,7 +881,19 @@ static int __glink_slatecom_send(struct glink_slatecom_channel *channel,
 		if (intent)
 			intent->in_use = true;
 		mutex_unlock(&channel->intent_lock);
+		if(channel->lcid == 5 || channel->lcid == 3)
+		{
+			printk("lcid%d: intent=%u\n",channel->lcid,intent);
+			if(channel->lcid == 5 && intent)
+			{
+				g_lcid5_intent=intent;
+			}
+			else if(channel->lcid == 3 && intent)
+			{
+				g_lcid3_intent=intent;
+			}
 
+		}
 		/* We found an available intent */
 		if (intent)
 			break;
@@ -2008,6 +2050,10 @@ static void glink_slatecom_process_cmd(struct glink_slatecom *glink, void *rx_da
 		param3 = le32_to_cpu(msg->param3);
 		param4 = le32_to_cpu(msg->param4);
 
+		if(param1==5 || param1==3){
+			printk("glink_slatecom_process_cmd cmd:%u,p1:%u,p2:%u,p3:%u,p4:%u\n",cmd,param1,param2,param3,param4);
+		}
+		
 		switch (cmd) {
 		case SLATECOM_CMD_VERSION:
 			glink_slatecom_receive_version(glink, param1, param2);
