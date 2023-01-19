@@ -3238,7 +3238,7 @@ static void update_sw_icl_max(struct smb_charger *chg,
 		 * if this is a SDP and appropriately set the current
 		 */
 		vote(chg->usb_icl_votable, SW_ICL_MAX_VOTER, true,
-						USBIN_100UA);
+						CDP_CURRENT_UA);
 		break;
 	case POWER_SUPPLY_TYPE_UNKNOWN:
 	default:
