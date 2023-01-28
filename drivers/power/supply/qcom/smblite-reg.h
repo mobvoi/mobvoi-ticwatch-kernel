@@ -341,6 +341,8 @@ enum {
 #define USBIN_AICL_PERIODIC_RERUN_EN_BIT	BIT(5)
 #define USBIN_AICL_RERUN_TIME_MASK		GENMASK(1, 0)
 #define AICL_RERUN_TIME_12S_VAL			0x01
+#define AICL_RERUN_TIME_3S_VAL			0x00
+
 
 #define WD_CFG_REG(base)				(base.misc_base + 0x58)
 #define BITE_WDOG_DISABLE_CHARGING_CFG_BIT	BIT(7)

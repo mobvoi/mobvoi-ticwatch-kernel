@@ -1214,7 +1214,7 @@ static int smblite_init_hw(struct smblite *chip)
 	 */
 
 	mask = USBIN_AICL_PERIODIC_RERUN_EN_BIT | USBIN_AICL_RERUN_TIME_MASK;
-	val = USBIN_AICL_PERIODIC_RERUN_EN_BIT | AICL_RERUN_TIME_12S_VAL;
+	val = USBIN_AICL_PERIODIC_RERUN_EN_BIT | AICL_RERUN_TIME_3S_VAL;
 	rc = smblite_lib_masked_write(chg, MISC_AICL_RERUN_CFG_REG(chg->base), mask, val);
 	if (rc < 0) {
 		dev_err(chg->dev, "Couldn't config AICL rerun rc=%d\n", rc);
