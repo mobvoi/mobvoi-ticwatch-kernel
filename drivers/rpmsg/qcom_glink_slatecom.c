@@ -294,6 +294,9 @@ static const struct rpmsg_endpoint_ops glink_endpoint_ops;
 
 struct glink_slatecom_rx_intent *g_lcid5_intent = NULL;
 struct glink_slatecom_rx_intent *g_lcid3_intent = NULL;
+uint32_t g_lcid3_miss_rxdone_cnt=0;
+uint32_t g_lcid5_other_id=0;
+
 #define SLATECOM_CMD_VERSION			0
 #define SLATECOM_CMD_VERSION_ACK			1
 #define SLATECOM_CMD_OPEN				2
@@ -629,9 +632,9 @@ static void glink_slatecom_handle_intent_req_ack(struct glink_slatecom *glink,
 	complete(&channel->intent_req_comp);
 	CH_INFO(channel, "\n");
 
-	if(cid==5)
+	if(channel->name && (!strcmp(channel->name, "slate-mobvoi-rpc")))
 	{
-		printk("try reset lcid5\n");
+		printk("try reset lcid5 cid=%d\n",cid);
 		if(g_lcid5_intent)
 		{
 			g_lcid5_intent->offset = 0;
@@ -641,11 +644,16 @@ static void glink_slatecom_handle_intent_req_ack(struct glink_slatecom *glink,
 	}
 	else if(cid==3)
 	{
-		printk("try reset lcid3\n");
-		if(g_lcid3_intent)
-		{
-			g_lcid3_intent->offset = 0;
-			g_lcid3_intent->in_use = false;
+		g_lcid3_miss_rxdone_cnt++;
+		printk("g_lcid3_miss_rxdone_cnt=%d\n",g_lcid3_miss_rxdone_cnt);
+		if(g_lcid3_miss_rxdone_cnt>=10){
+			g_lcid3_miss_rxdone_cnt=0;
+			printk("try reset lcid3\n");
+			if(g_lcid3_intent)
+			{
+				g_lcid3_intent->offset = 0;
+				g_lcid3_intent->in_use = false;
+			}
 		}
 	}
 }
@@ -852,6 +860,7 @@ static int __glink_slatecom_send(struct glink_slatecom_channel *channel,
 	struct glink_slatecom_rx_intent *tmp;
 	int iid = 0;
 	int ret = 0;
+	int is_mrpc=0;
 
 	CH_INFO(channel, "size:%d, wait:%d\n", len, wait);
 
@@ -860,13 +869,12 @@ static int __glink_slatecom_send(struct glink_slatecom_channel *channel,
 	while (!intent) {
 		mutex_lock(&channel->intent_lock);
 		idr_for_each_entry(&channel->riids, tmp, iid) {
-			if(channel->lcid==5){
-				printk("lcid5 tmp->size=%d,tmp->in_use=%d,len=%d\n",tmp->size,tmp->in_use,len);
-				if(intent) printk("lcid5 intent->size=%d\n",intent->size);
+			if(channel->name && (!strcmp(channel->name, "slate-mobvoi-rpc"))){
+				printk("mobvoi_rpc lcid%d tmp->size=%d,tmp->in_use=%d,len=%d\n",channel->lcid,tmp->size,tmp->in_use,len);
+				g_lcid5_other_id=channel->lcid;
 			}
 			else if(channel->lcid==3){
 				printk("lcid3 tmp->size=%d,tmp->in_use=%d,len=%d\n",tmp->size,tmp->in_use,len);
-				if(intent) printk("lcid3 intent->size=%d\n",intent->size);
 			}
 
 			if (tmp->size >= len && !tmp->in_use) {
@@ -881,10 +889,14 @@ static int __glink_slatecom_send(struct glink_slatecom_channel *channel,
 		if (intent)
 			intent->in_use = true;
 		mutex_unlock(&channel->intent_lock);
-		if(channel->lcid == 5 || channel->lcid == 3)
+		if((channel->name && (!strcmp(channel->name, "slate-mobvoi-rpc"))))
+		{
+			is_mrpc=1;
+		}
+		if( is_mrpc || channel->lcid == 3)
 		{
 			printk("lcid%d: intent=%u\n",channel->lcid,intent);
-			if(channel->lcid == 5 && intent)
+			if(is_mrpc && intent)
 			{
 				g_lcid5_intent=intent;
 			}
@@ -2018,6 +2030,10 @@ static void glink_slatecom_handle_rx_done(struct glink_slatecom *glink,
 	intent->offset = 0;
 	intent->in_use = false;
 	CH_INFO(channel, "reuse:%d iid:%d\n", reuse, intent->id);
+	if(cid==3)
+	{
+		g_lcid3_miss_rxdone_cnt=0;
+	}
 
 	if (!reuse) {
 		idr_remove(&channel->riids, intent->id);
@@ -2050,7 +2066,7 @@ static void glink_slatecom_process_cmd(struct glink_slatecom *glink, void *rx_da
 		param3 = le32_to_cpu(msg->param3);
 		param4 = le32_to_cpu(msg->param4);
 
-		if(param1==5 || param1==3){
+		if(param1==5 || param1==3 || param1==g_lcid5_other_id){
 			printk("glink_slatecom_process_cmd cmd:%u,p1:%u,p2:%u,p3:%u,p4:%u\n",cmd,param1,param2,param3,param4);
 		}
 		
