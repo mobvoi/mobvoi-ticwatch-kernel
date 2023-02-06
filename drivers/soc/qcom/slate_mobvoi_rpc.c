@@ -202,6 +202,37 @@ int slate_mobvoi_rpc_tx_msg_ext(void  *msg, size_t len)
 }
 EXPORT_SYMBOL(slate_mobvoi_rpc_tx_msg_ext);
 
+
+void slate_restart_subsys(void)
+{
+
+	wear_header_t req_header;
+	char  tx_buf[32];
+	int i=0;
+	unsigned int tx_buf_size;
+	unsigned char data=1;
+	tx_buf_size = sizeof(req_header) + 4;
+	if(tx_buf_size>32)
+	{
+		return;
+	}
+	req_header.opcode = GMI_SLATE_MOBVOI_RPC_SET_ASSERT;//0x4;
+	req_header.payload_size = sizeof(data);
+
+	memcpy(tx_buf, &req_header, sizeof(req_header));
+	memcpy(tx_buf+sizeof(req_header), &data, sizeof(data));
+	for(i=0; i< req_header.payload_size + sizeof(req_header);i++)
+	{
+		pr_err("slate_restart_subsys tx_buf[%d]=%d\n",i, tx_buf[i]);
+	}
+
+	printk("slate_restart_subsys \n");
+
+	slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+
+}
+EXPORT_SYMBOL(slate_restart_subsys);
+
 static int slate_mobvoi_rpc_char_open(struct inode *inode, struct file *file)
 {
 	printk("slate_mobvoi_rpc_char_open\n");
