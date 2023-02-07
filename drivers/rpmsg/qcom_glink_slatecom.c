@@ -431,10 +431,18 @@ free_intent:
 static void tx_wakeup_worker(struct glink_slatecom *glink)
 {
 	struct slatecom_fifo_fill fifo_fill;
+	int rc;
 
 	mutex_lock(&glink->tx_avail_lock);
-	slatecom_reg_read(glink->slatecom_handle, SLATECOM_REG_FIFO_FILL, 1,
-						&fifo_fill);
+	__pm_stay_awake(glink->ws);
+
+	rc = slatecom_reg_read(glink->slatecom_handle, SLATECOM_REG_FIFO_FILL, 1,
+		&fifo_fill);
+	if (rc < 0)
+		GLINK_ERR(glink, "%s: Error %d receiving data\n",
+					__func__, rc);
+	__pm_relax(glink->ws);
+
 	glink->fifo_fill.tx_avail = fifo_fill.tx_avail;
 	if (glink->fifo_fill.tx_avail > glink->fifo_size.to_slave/2)
 		glink->water_mark_reached = false;
