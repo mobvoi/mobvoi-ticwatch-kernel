@@ -179,7 +179,7 @@
 	dpdm-supply = <&usb2_phy0>;
 	nvmem-cell-names = "charger_debug_mask";
 	nvmem-cells = <&charger_debug_mask>;
-	qcom,auto-recharge-soc = <98>;
+	qcom,auto-recharge-soc = <99>;
 	qcom,suspend-input-on-debug-batt;
 	qcom,chg-term-src = <1>;
 	qcom,chg-term-current-ma = <(-20)>;
