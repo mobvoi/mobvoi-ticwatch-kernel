@@ -1253,19 +1253,33 @@ fail_zinitix_resume_sequence:
 	return false;
 }
 
+
+static int zinitix_suspend_power_control(struct bt541_ts_info *data, int on)
+{
+	int rc;
+	dev_info(&data->client->dev,"zinitix_suspend_power_control on=%d\n", on);
+	if (!on){
+		rc = regulator_disable(data->vdd);
+		if (rc) {
+			dev_err(&data->client->dev,"Regulator vdd disable failed rc=%d\n", rc);
+			return rc;
+		}
+	}else{
+		rc = regulator_enable(data->vdd);
+		if (rc) {
+			dev_err(&data->client->dev,"Regulator vdd enable failed rc=%d\n", rc);
+			return rc;
+		}
+	}
+	return rc;
+}
+
 static int zinitix_power_control(struct bt541_ts_info *data, int on)
 {
 	int rc;
 
 	if (!on)
 		goto power_off;
-#if 0
-	rc = regulator_enable(data->vdd_v1);
-	if (rc) {
-		dev_err(&data->client->dev,"Regulator vdd v1 enable failed rc=%d\n", rc);
-		return rc;
-	}
-#endif
 	rc = regulator_enable(data->vdd);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vdd enable failed rc=%d\n", rc);
@@ -1281,19 +1295,11 @@ static int zinitix_power_control(struct bt541_ts_info *data, int on)
 	return rc;
 
 power_off:
-#if 0
-	rc = regulator_disable(data->vdd_v1);
-	if (rc) {
-		dev_err(&data->client->dev,"Regulator vdd v1 disable failed rc=%d\n", rc);
-		return rc;
-	}
-#endif
 	rc = regulator_disable(data->vdd);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vdd disable failed rc=%d\n", rc);
 		return rc;
 	}
-#if 0
 	rc = regulator_disable(data->vcc_i2c);
 	if (rc) {
 		dev_err(&data->client->dev,"Regulator vcc_i2c disable failed rc=%d\n", rc);
@@ -1302,7 +1308,6 @@ power_off:
 			dev_err(&data->client->dev,"Regulator vdd enable failed rc=%d\n", rc);
 		}
 	}
-#endif
 
 	return rc;
 }
@@ -2151,7 +2156,7 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 	if (ts_read_coord(info) == false ) 
 	{
 		dev_err(&client->dev, "couldn't read touch_dev coord. read fail\r\n");
-
+		bt541_power_control(info, POWER_OFF);
 		bt541_power_control(info, POWER_ON_SEQUENCE);
 		mini_init_touch(info);
 		goto out;
@@ -2316,7 +2321,10 @@ static int bt541_ts_resume(struct device *dev)
 
 	//disable_irq(info->irq);
 	if (!info->enable_wakeup) {
-		bt541_power_control(info, POWER_ON_SEQUENCE);
+		//bt541_power_control(info, POWER_ON_SEQUENCE);
+		zinitix_suspend_power_control(info, 1);
+		zinitix_hw_reset(info,true);
+		mdelay(CHIP_ON_DELAY);
 		if (init_touch(info) == false) {
 			dev_err(&info->client->dev,"re init_touch failed!\n");
 		}
@@ -2434,7 +2442,8 @@ static int bt541_ts_suspend(struct device *dev)
 
 #endif
 	if (!info->enable_wakeup) {
-		bt541_power_control(info, POWER_OFF);
+		//bt541_power_control(info, POWER_OFF);
+		zinitix_suspend_power_control(info,POWER_OFF);
 	}
 
 	info->work_state = SUSPEND;
@@ -3489,7 +3498,7 @@ static ssize_t store_enable_wakeup(struct device *dev, struct device_attribute *
 
 	if (info->work_state == SUSPEND && info->enable_wakeup == false){
 		dev_info(&client->dev,"%s: set enable_wakeup (%d) in SUSPEND\n",__func__, !!ret);
-		bt541_power_control(info, POWER_OFF);//suspend status need to immediately power off tp
+		zinitix_suspend_power_control(info, POWER_OFF);//suspend status need to immediately power off tp
 	}
 
 	return count;
@@ -3733,7 +3742,7 @@ static const struct of_device_id zinitix_match_table[] = {
 static int zinitix_hw_reset( struct bt541_ts_info* data,bool on )
 {
 	int err = 0;
-	printk("zinitix_hw_reset: on = %d, gpio_reset = %d\n", on, data->pdata->gpio_reset);
+	dev_info(&data->client->dev,"zinitix_hw_reset: on = %d, gpio_reset = %d\n", on, data->pdata->gpio_reset);
 	if(on)
 	{
 		if (gpio_is_valid(data->pdata->gpio_reset)) {
@@ -4030,8 +4039,8 @@ static int zinitix_seb_notifier_cb(struct notifier_block *nb,
 		bt541_power_control(info, POWER_ON_SEQUENCE);
 		if (init_touch(info) == false) {
 			dev_err(&info->client->dev,"re init_touch failed!\n");
-		}
-		dev_info(&info->client->dev,"re power on success!\n");
+		}else
+			dev_info(&info->client->dev,"re power on success!\n");
 
 	}
 
