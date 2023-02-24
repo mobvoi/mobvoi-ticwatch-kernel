@@ -1274,6 +1274,23 @@ static int zinitix_suspend_power_control(struct bt541_ts_info *data, int on)
 	return rc;
 }
 
+static int zinitix_shutdown_power_control(struct bt541_ts_info *data)
+{
+	int rc;
+	rc = regulator_force_disable(data->vdd);
+	if (rc) {
+		dev_err(&data->client->dev,"Regulator vdd disable failed rc=%d\n", rc);
+		return rc;
+	}
+	rc = regulator_disable(data->vcc_i2c);
+	if (rc) {
+		dev_err(&data->client->dev,"Regulator vcc_i2c disable failed rc=%d\n", rc);
+		return rc;
+	}
+	zinitix_printk("zinitix_shutdown_power down success\n");
+	return rc;
+}
+
 static int zinitix_power_control(struct bt541_ts_info *data, int on)
 {
 	int rc;
@@ -2359,7 +2376,6 @@ static int bt541_ts_resume(struct device *dev)
 
 	return 0;
 }
-
 static int bt541_ts_suspend(struct device *dev)
 {
 	int i =0;
@@ -4457,7 +4473,6 @@ static int bt541_ts_remove(struct i2c_client *client)
 void bt541_ts_shutdown(struct i2c_client *client)
 {
 	struct bt541_ts_info *info = i2c_get_clientdata(client);
-
 	dev_info(&client->dev, "%s++\n", __func__);
 	disable_irq(info->irq);
 	down(&info->work_lock);
@@ -4466,7 +4481,8 @@ void bt541_ts_shutdown(struct i2c_client *client)
 	esd_timer_stop(info);
 #endif
 	up(&info->work_lock);
-	bt541_power_control(info, POWER_OFF);
+	//bt541_power_control(info, POWER_OFF);
+	zinitix_shutdown_power_control(info);
 	dev_info(&client->dev, "%s--\n", __func__);
 }
 
