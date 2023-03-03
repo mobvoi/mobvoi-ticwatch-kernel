@@ -35,7 +35,7 @@
 #include "../../misc/qseecom_kernel.h"
 #include "slate_mobvoi_rpc_rpmsg.h"
 
-#define TIMEOUT_MS 2000
+#define TIMEOUT_MS 4000
 #define TIMEOUT_MS_GLINK_OPEN 10000
 
 #define MOBVOI_SLATE_RPC_IOCTL_CMD_PASSTHROUGH 0x80551001
