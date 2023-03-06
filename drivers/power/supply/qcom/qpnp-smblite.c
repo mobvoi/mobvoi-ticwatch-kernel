@@ -661,8 +661,6 @@ static enum power_supply_property smblite_batt_props[] = {
 };
 
 #define DEBUG_ACCESSORY_TEMP_DECIDEGC	250
-static int percent99_cnt  = 0;
-static int charging_status  = 0;
 static int smblite_batt_get_prop(struct power_supply *psy,
 		enum power_supply_property psp,
 		union power_supply_propval *val)
@@ -673,7 +671,6 @@ static int smblite_batt_get_prop(struct power_supply *psy,
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
 		rc = smblite_lib_get_prop_batt_status(chg, val);
-		charging_status = val->intval;
 		break;
 	case POWER_SUPPLY_PROP_HEALTH:
 		rc = smblite_lib_get_prop_batt_health(chg, val);
@@ -686,20 +683,6 @@ static int smblite_batt_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
 		rc = smblite_lib_get_prop_batt_capacity(chg, val);
-		if(val->intval == 99)
-		{
-			if(charging_status == POWER_SUPPLY_STATUS_CHARGING){
-				percent99_cnt++;
-				if(percent99_cnt > 60)
-				{
-					val->intval = 100;
-				}
-			}else{
-				val->intval = 99;
-			}
-		}else{
-			percent99_cnt  = 0;
-		}
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT:
 		rc = smblite_lib_get_prop_system_temp_level(chg, val);
