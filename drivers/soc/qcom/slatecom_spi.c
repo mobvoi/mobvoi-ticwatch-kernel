@@ -432,7 +432,7 @@ static void parse_fifo(uint8_t *data, union slatecom_event_data_type *event_data
 			}
 		} else if (event_id == 0xc8) {
 			data = data + 12;
-			pr_err("Packet Received = 0x%X, len = %u\n",event_id, p_len);
+			pr_info("Packet Received = 0x%X, len = %u\n",event_id, p_len);
 		}
 		data = data + p_len;
 	}
@@ -626,7 +626,7 @@ static void wakeup_ahb_read(void *handle)
 	uint8_t cmnd = 0;
 	int ret = 0;
 
-	pr_err("slatecom AHB read to resume\n");
+	pr_info("slatecom AHB read to resume\n");
 	txn_len = 8;
 	cmnd |= SLATE_SPI_AHB_READ_CMD;
 	memcpy(tx_ahb_buf, &cmnd, sizeof(cmnd));
