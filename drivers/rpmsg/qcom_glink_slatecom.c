@@ -640,6 +640,7 @@ static void glink_slatecom_handle_intent_req_ack(struct glink_slatecom *glink,
 	complete(&channel->intent_req_comp);
 	CH_INFO(channel, "\n");
 
+#if 0
 	if(channel->name && (!strcmp(channel->name, "slate-mobvoi-rpc")))
 	{
 		printk("try reset lcid5 cid=%d\n",cid);
@@ -650,7 +651,8 @@ static void glink_slatecom_handle_intent_req_ack(struct glink_slatecom *glink,
 		}
 
 	}
-	else if(cid==3)
+#endif	
+	if(cid==3)
 	{
 		g_lcid3_miss_rxdone_cnt++;
 		printk("g_lcid3_miss_rxdone_cnt=%d\n",g_lcid3_miss_rxdone_cnt);
@@ -880,6 +882,15 @@ static int __glink_slatecom_send(struct glink_slatecom_channel *channel,
 			if(channel->name && (!strcmp(channel->name, "slate-mobvoi-rpc"))){
 				printk("mobvoi_rpc lcid%d tmp->size=%d,tmp->in_use=%d,len=%d\n",channel->lcid,tmp->size,tmp->in_use,len);
 				g_lcid5_other_id=channel->lcid;
+				//reset lcid5
+				if(tmp->in_use==1)
+				{
+					printk("mobvoi_rpc in used,sleep 1s, reset\n");
+					msleep(1000);
+					tmp->in_use=0;
+					tmp->offset = 0;
+					printk("mobvoi_rpc recovery\n");
+				}
 			}
 			else if(channel->lcid==3){
 				printk("lcid3 tmp->size=%d,tmp->in_use=%d,len=%d\n",tmp->size,tmp->in_use,len);
