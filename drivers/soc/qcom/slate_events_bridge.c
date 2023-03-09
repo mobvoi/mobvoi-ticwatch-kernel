@@ -64,10 +64,13 @@ static LIST_HEAD(seb_notify_list);
 static DEFINE_SPINLOCK(notif_lock);
 static DEFINE_MUTEX(notif_add_lock);
 
+static int tn_flag=0;
+
 struct seb_priv {
 	void *handle;
 	struct input_dev *input;
 	struct mutex glink_mutex;
+	struct mutex tn_flag_mutex;
 	struct mutex seb_state_mutex;
 	enum seb_state seb_current_state;
 	void *lhndl;
@@ -451,6 +454,32 @@ int seb_unregister_for_slate_event(void *seb_notif_handle,
 }
 EXPORT_SYMBOL(seb_unregister_for_slate_event);
 
+void slate_event_set_tn_flag(uint32_t flag)
+{
+	struct seb_priv *dev =
+		container_of(seb_drv, struct seb_priv, lhndl);
+	
+	mutex_lock(&dev->tn_flag_mutex);
+	tn_flag=flag;
+	mutex_unlock(&dev->tn_flag_mutex);
+	printk("[TN]slate_event_set_tn_flag:%d\n",flag);
+}
+EXPORT_SYMBOL(slate_event_set_tn_flag);
+
+uint32_t slate_event_get_tn_flag(void)
+{
+	uint32_t data;
+	struct seb_priv *dev =
+		container_of(seb_drv, struct seb_priv, lhndl);
+	
+	mutex_lock(&dev->tn_flag_mutex);
+	data=tn_flag;
+	mutex_unlock(&dev->tn_flag_mutex);
+	printk("[TN]slate_event_get_tn_flag:%d\n",data);
+	return data;
+}
+EXPORT_SYMBOL(slate_event_get_tn_flag);
+
 void handle_rx_event(struct seb_priv *dev, void *rx_event_buf, int len)
 {
 	struct gmi_header *event_header = NULL;
@@ -477,6 +506,13 @@ void handle_rx_event(struct seb_priv *dev, void *rx_event_buf, int len)
 		seb_send_input(evnt);
 		kfree(evnt);
 	} else if (event_header->opcode == GMI_SLATE_EVENT_TOUCH) {
+		return;
+	}
+	else if(event_header->opcode == GMI_SLATE_EVENT_TN_OFF_COMPLETED)
+	{
+		uint32_t data= *(uint32_t *)(rx_event_buf + sizeof(struct gmi_header));
+		printk("slate-tn TN_OFF_COMPLETED:%d\n",data);
+		slate_event_set_tn_flag(0);
 		return;
 	}
 
@@ -588,6 +624,7 @@ static int seb_init(struct seb_priv *dev)
 	seb_drv = &dev->lhndl;
 	mutex_init(&dev->glink_mutex);
 	mutex_init(&dev->seb_state_mutex);
+	mutex_init(&dev->tn_flag_mutex);
 
 	dev->seb_wq =
 		create_singlethread_workqueue("seb-work-queue");

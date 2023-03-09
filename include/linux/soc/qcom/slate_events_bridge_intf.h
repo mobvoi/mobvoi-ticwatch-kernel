@@ -15,11 +15,14 @@ enum event_group_type {
 	GMI_SLATE_EVENT_BUTTON  = 0x03,
 	GMI_SLATE_EVENT_TOUCH   = 0x04,
 	GMI_SLATE_EVENT_SENSOR  = 0x05,
+	GMI_SLATE_EVENT_TN_OFF_COMPLETED = 0x06,
 
 	GLINK_CHANNEL_STATE_UP   = 0xfd,
 	GLINK_CHANNEL_STATE_DOWN = 0xfe,
 	GMI_SLATE_EVENT_MAX      = 0xff,
 };
+void slate_event_set_tn_flag(uint32_t flag);
+uint32_t slate_event_get_tn_flag(void);
 
 #ifdef CONFIG_MSM_SEB
 /* Use the seb_register_for_slate_event API to register for events for

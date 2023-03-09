@@ -3978,6 +3978,7 @@ void bt541_register_callback(struct tsp_callbacks *cb)
 }
 #endif
 
+static unsigned char last_power_state=0xff;
 static int zinitix_notifier_callback(struct notifier_block *self,
 			unsigned long event, void *data)
 {
@@ -4013,7 +4014,14 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 	if (*blank == DRM_PANEL_BLANK_UNBLANK) {
 		zinitix_printk("DRM_PANEL_BLANK_UNBLANK,pannel power on,allow_tn_enable_flag=%d!\n",misc_touch_dev->allow_tn_enable_flag);
 		if(misc_touch_dev->allow_tn_enable_flag){
-			slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+			if(last_power_state!=panel_power_state){
+				if(panel_power_state==0 || panel_power_state==2)
+				{
+					slate_event_set_tn_flag(1);
+				}
+				slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+			}
+			last_power_state=panel_power_state;
 		}
 		if (event == DRM_PANEL_EVENT_BLANK) {
 			bt541_ts_resume(&misc_touch_dev->client->dev);
@@ -4022,7 +4030,14 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 	} else if (*blank == DRM_PANEL_BLANK_POWERDOWN || *blank == DRM_PANEL_BLANK_LP ) {
 		zinitix_printk("DRM_PANEL_BLANK_POWERDOWN,pannel power off,allow_tn_enable_flag=%d!\n",misc_touch_dev->allow_tn_enable_flag);
 		if(misc_touch_dev->allow_tn_enable_flag){
-			slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+			if(last_power_state!=panel_power_state){
+				if(panel_power_state==0 || panel_power_state==2)
+				{
+					slate_event_set_tn_flag(1);
+				}
+				slate_mobvoi_rpc_tx_msg_ext(tx_buf,req_header.payload_size + sizeof(req_header));
+			}
+			last_power_state=panel_power_state;
 		}
 		if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
 			bt541_ts_suspend(&misc_touch_dev->client->dev);
