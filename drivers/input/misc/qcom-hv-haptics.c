@@ -4738,7 +4738,7 @@ static int haptics_probe(struct platform_device *pdev)
 	struct input_dev *input_dev;
 	struct ff_device *ff_dev;
 	int rc, count;
-
+	dev_err(chip->dev, "haptics_probe start\n");
 	chip = devm_kzalloc(&pdev->dev, sizeof(*chip), GFP_KERNEL);
 	if (!chip)
 		return -ENOMEM;
@@ -4746,7 +4746,7 @@ static int haptics_probe(struct platform_device *pdev)
 	input_dev = devm_input_allocate_device(&pdev->dev);
 	if (!input_dev)
 		return -ENOMEM;
-
+	dev_err(chip->dev, "haptics_probe start1\n");
 	chip->dev = &pdev->dev;
 	chip->regmap = dev_get_regmap(chip->dev->parent, NULL);
 	if (!chip->regmap) {
@@ -4849,6 +4849,7 @@ static int haptics_probe(struct platform_device *pdev)
 	if (rc < 0)
 		dev_err(chip->dev, "Creating debugfs failed, rc=%d\n", rc);
 #endif
+	dev_err(chip->dev, "haptics_probe end\n");
 	return 0;
 destroy_ff:
 	input_ff_destroy(chip->input_dev);
