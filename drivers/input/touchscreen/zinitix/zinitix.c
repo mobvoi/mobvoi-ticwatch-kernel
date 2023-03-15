@@ -170,6 +170,8 @@ struct reg_ioctl {
 
 #define BT541_IDLE_CMD			0x0004
 #define BT541_SLEEP_CMD			0x0005
+#define BT541_DEEP_SLEEP_CMD		0x0009
+
 
 #define BT541_CLEAR_INT_STATUS_CMD	0x0003
 #define BT541_CALIBRATE_CMD		0x0006
@@ -2173,7 +2175,6 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 	if (ts_read_coord(info) == false ) 
 	{
 		dev_err(&client->dev, "couldn't read touch_dev coord. read fail\r\n");
-		bt541_power_control(info, POWER_OFF);
 		bt541_power_control(info, POWER_ON_SEQUENCE);
 		mini_init_touch(info);
 		goto out;
@@ -2338,13 +2339,8 @@ static int bt541_ts_resume(struct device *dev)
 
 	//disable_irq(info->irq);
 	if (!info->enable_wakeup) {
-		//bt541_power_control(info, POWER_ON_SEQUENCE);
-		zinitix_suspend_power_control(info, 1);
 		zinitix_hw_reset(info,true);
 		mdelay(CHIP_ON_DELAY);
-		if (init_touch(info) == false) {
-			dev_err(&info->client->dev,"re init_touch failed!\n");
-		}
 	}
 
 
@@ -2458,8 +2454,15 @@ static int bt541_ts_suspend(struct device *dev)
 
 #endif
 	if (!info->enable_wakeup) {
-		//bt541_power_control(info, POWER_OFF);
-		zinitix_suspend_power_control(info,POWER_OFF);
+		//zinitix_suspend_power_control(info,POWER_OFF);
+		for(i = 0; i < 3; i++) {
+		if (write_cmd(client, BT541_DEEP_SLEEP_CMD) < 0) {
+			dev_err(&client->dev,"tpd_suspend fail to send deep sleep cmd(%d)\r\n", i);
+			mdelay(10);
+			continue;
+			} else
+			break;
+		}
 	}
 
 	info->work_state = SUSPEND;
@@ -3498,7 +3501,7 @@ static ssize_t show_enable_wakeup(struct device *dev, struct device_attribute *d
 
 static ssize_t store_enable_wakeup(struct device *dev, struct device_attribute *devattr, const char *buf, size_t count)
 {
-	int ret;
+	int ret,i;
 	struct bt541_ts_info *info = dev_get_drvdata(dev);
 	struct i2c_client *client = info->client;
 
@@ -3514,7 +3517,15 @@ static ssize_t store_enable_wakeup(struct device *dev, struct device_attribute *
 
 	if (info->work_state == SUSPEND && info->enable_wakeup == false){
 		dev_info(&client->dev,"%s: set enable_wakeup (%d) in SUSPEND\n",__func__, !!ret);
-		zinitix_suspend_power_control(info, POWER_OFF);//suspend status need to immediately power off tp
+		//zinitix_suspend_power_control(info, POWER_OFF);//suspend status need to immediately power off tp
+		for(i = 0; i < 3; i++) {
+		if (write_cmd(client, BT541_DEEP_SLEEP_CMD) < 0) {
+			dev_err(&client->dev,"tpd_suspend fail to send deep sleep cmd(%d)\r\n", i);
+			mdelay(10);
+			continue;
+			} else
+			break;
+		}
 	}
 
 	return count;
@@ -4065,13 +4076,14 @@ static int zinitix_seb_notifier_cb(struct notifier_block *nb,
 
 	if (event == GLINK_CHANNEL_STATE_UP) {
 		info->is_slate_up = true;
-		dev_info(&info->client->dev,"Slate-UP, we can do reinit of tp!\n");
-		bt541_power_control(info, POWER_OFF);
-		bt541_power_control(info, POWER_ON_SEQUENCE);
-		if (init_touch(info) == false) {
+		dev_info(&info->client->dev,"Slate-UP, reset touch pannel!\n");
+		msleep(100);
+		zinitix_hw_reset(info,true);
+		mdelay(CHIP_ON_DELAY);
+		if (bt541_power_sequence(info) == false) {
 			dev_err(&info->client->dev,"re init_touch failed!\n");
 		}else
-			dev_info(&info->client->dev,"re power on success!\n");
+			dev_info(&info->client->dev,"repower on success!\n");
 
 	}
 
