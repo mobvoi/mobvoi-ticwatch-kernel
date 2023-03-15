@@ -574,8 +574,6 @@ struct bt541_ts_info {
 	struct notifier_block		seb_nb;
 	bool				is_slate_up;
 	int allow_tn_enable_flag;
-	bool				is_touch_repower_success;
-
 };
 typedef struct
 {
@@ -2111,14 +2109,6 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 	u16 gesture_flag=0;
 	int ret =0;
 #endif
-    if(info->is_touch_repower_success == false)
-    {
-		dev_err(&client->dev, "%s: touch ic have not repower on success,ignore touch interrupt\n", __func__);
-		info->work_state = NOTHING;
-		write_cmd(client, BT541_CLEAR_INT_STATUS_CMD);
-		return IRQ_HANDLED;
-    }
-
 
 	if (down_trylock(&info->work_lock)) {
 		dev_err(&client->dev, "%s: Failed to occupy work lock\n", __func__);
@@ -2127,8 +2117,8 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 
 		return IRQ_HANDLED;
 	}
-
-
+	
+	
 #if ESD_TIMER_INTERVAL
 	esd_timer_stop(info);
 #endif
@@ -2180,14 +2170,15 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 	info->work_state = NORMAL;
 
 
-	if (ts_read_coord(info) == false )
+	if (ts_read_coord(info) == false ) 
 	{
 		dev_err(&client->dev, "couldn't read touch_dev coord. read fail\r\n");
+		bt541_power_control(info, POWER_OFF);
 		bt541_power_control(info, POWER_ON_SEQUENCE);
 		mini_init_touch(info);
 		goto out;
 
-	}
+	}	
 
 	if(write_cmd(client, BT541_CLEAR_INT_STATUS_CMD)!=0)
 		dev_err(&client->dev, "BT541_CLEAR_INT_STATUS_CMD error 11\n");
@@ -2244,10 +2235,10 @@ static irqreturn_t bt541_touch_work(int irq, void *data)
 
 			info->touch_info.coord[i].x = x;
 			info->touch_info.coord[i].y = y;
-
-			dev_dbg(&client->dev, "Finger [%02d] x = %d, y = %d,"
-									" w = %d, p = %d\n", i, x, y, w, palm);
-
+			
+			//dev_err(&client->dev, "Finger [%02d] x = %d, y = %d,"
+			//						" w = %d, p = %d\n", i, x, y, w, palm);
+			
 			if (zinitix_bit_test(sub_status, SUB_BIT_DOWN)){
 
 				dev_dbg(&client->dev, "Finger [%02d] down\n", i);
@@ -4074,16 +4065,14 @@ static int zinitix_seb_notifier_cb(struct notifier_block *nb,
 
 	if (event == GLINK_CHANNEL_STATE_UP) {
 		info->is_slate_up = true;
-		dev_info(&info->client->dev,"Slate-UP,repower on tp!\n");
-		msleep(3);
+		dev_info(&info->client->dev,"Slate-UP, we can do reinit of tp!\n");
 		bt541_power_control(info, POWER_OFF);
 		bt541_power_control(info, POWER_ON_SEQUENCE);
 		if (init_touch(info) == false) {
 			dev_err(&info->client->dev,"re init_touch failed!\n");
-		}else{
+		}else
 			dev_info(&info->client->dev,"re power on success!\n");
-			info->is_touch_repower_success = true;
-		}
+
 	}
 
 	return 0;
@@ -4162,7 +4151,6 @@ static int bt541_ts_probe(struct i2c_client *client,
 	info->client = client;
 	info->pdata = pdata;
 	info->device_enabled = 1;
-	info->is_touch_repower_success = false;
 	misc_touch_dev = info;
     info->allow_tn_enable_flag = 0;
 	ret = zinitix_check_dsi_panel_dt(np, &active_panel);
