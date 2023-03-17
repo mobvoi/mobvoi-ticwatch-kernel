@@ -72,6 +72,7 @@ struct seb_priv {
 	struct mutex glink_mutex;
 	struct mutex tn_flag_mutex;
 	struct mutex seb_state_mutex;
+	struct mutex seb_api_mutex;
 	enum seb_state seb_current_state;
 	void *lhndl;
 	char rx_buf[SEB_GLINK_INTENT_SIZE];
@@ -98,7 +99,6 @@ struct seb_priv {
 };
 
 static void *seb_drv;
-static struct mutex seb_api_mutex;
 
 /*
  * Register notify cb and manage the list
@@ -335,7 +335,7 @@ int seb_send_event_to_slate(void *seb_handle, enum event_group_type event,
 		return -ENODEV;
 	}
 
-	mutex_lock(&seb_api_mutex);
+	mutex_lock(&dev->seb_api_mutex);
 
 	txn_len = sizeof(req_header) + buf_size;
 
@@ -355,7 +355,7 @@ int seb_send_event_to_slate(void *seb_handle, enum event_group_type event,
 
 error_ret:
 	kfree(tx_buf);
-	mutex_unlock(&seb_api_mutex);
+	mutex_unlock(&dev->seb_api_mutex);
 	return rc;
 }
 EXPORT_SYMBOL(seb_send_event_to_slate);
@@ -625,6 +625,7 @@ static int seb_init(struct seb_priv *dev)
 	mutex_init(&dev->glink_mutex);
 	mutex_init(&dev->seb_state_mutex);
 	mutex_init(&dev->tn_flag_mutex);
+	mutex_init(&dev->seb_api_mutex);
 
 	dev->seb_wq =
 		create_singlethread_workqueue("seb-work-queue");
