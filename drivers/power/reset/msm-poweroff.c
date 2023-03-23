@@ -142,6 +142,7 @@ static struct notifier_block panic_blk = {
 
 static void set_dload_mode(int on)
 {
+	pr_err("QDL: set_dload_mode on = %d, dload_type = %d, tcsr_boot_misc_detect = %d\n", on, dload_type, tcsr_boot_misc_detect);
 	if (dload_mode_addr) {
 		__raw_writel(on ? 0xE47B337D : 0, dload_mode_addr);
 		__raw_writel(on ? 0xCE14091A : 0,
@@ -181,6 +182,7 @@ static void enable_emergency_dload_mode(void)
 		mb();
 	}
 
+	pr_err("QDL: enable_emergency_dload_mode: %d\n", emergency_dload_mode_addr);
 	qcom_scm_set_download_mode(SCM_EDLOAD_MODE, tcsr_boot_misc_detect ?: 0);
 }
 
@@ -451,6 +453,7 @@ static void msm_restart_prepare(const char *cmd)
 	 * Kill download mode if master-kill switch is set
 	 */
 
+	pr_err("QDL: msm_restart_prepare: download_mode = %d, in_panic = %d, restart_mode = %d\n", download_mode, in_panic, restart_mode);
 	if (cmd != NULL && !strcmp(cmd, "qcom_dload"))
 		restart_mode = RESTART_DLOAD;
 
@@ -505,6 +508,7 @@ static void msm_restart_prepare(const char *cmd)
 				__raw_writel(0x6f656d00 | (code & 0xff),
 					     restart_reason);
 		} else if (!strncmp(cmd, "edl", 3)) {
+			pr_err("QDL: adb shell reboot edl\n");
 			enable_emergency_dload_mode();
 		} else if (!strnstr(cmd, "silent", 6)) {
 			reason = silent_restart(cmd);

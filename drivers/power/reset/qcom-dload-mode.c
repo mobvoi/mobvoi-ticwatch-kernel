@@ -44,6 +44,7 @@ static enum qcom_download_mode dump_mode = QCOM_DOWNLOAD_FULLDUMP;
 
 static int set_download_mode(enum qcom_download_mode mode)
 {
+	pr_err("QDL: set_download_mode: mode = %d\n", mode);
 	if ((mode & QCOM_DOWNLOAD_MINIDUMP) && !msm_minidump_enabled()) {
 		mode &= ~QCOM_DOWNLOAD_MINIDUMP;
 		pr_warn("Minidump not enabled.\n");
@@ -59,6 +60,7 @@ static int set_dump_mode(enum qcom_download_mode mode)
 {
 	int ret = 0;
 
+	pr_err("QDL: set_dump_mode: mode = %d\n", mode);
 	if (enable_dump) {
 		ret = set_download_mode(mode);
 		if (likely(!ret))
@@ -70,6 +72,7 @@ static int set_dump_mode(enum qcom_download_mode mode)
 
 static void msm_enable_dump_mode(bool enable)
 {
+	pr_err("QDL: msm_enable_dump_mode: enable = %d\n", enable);
 	if (enable)
 		set_download_mode(dump_mode);
 	else
@@ -272,6 +275,7 @@ static int qcom_dload_reboot(struct notifier_block *this, unsigned long event,
 	struct qcom_dload *poweroff = container_of(this, struct qcom_dload,
 						     reboot_nb);
 
+	pr_err("QDL: qcom_dload_reboot:  cmd %s, %d\n", cmd, poweroff->in_panic);
 	/* Clean shutdown, disable dump mode to allow normal restart */
 	if (!poweroff->in_panic)
 		set_download_mode(QCOM_DOWNLOAD_NODUMP);
