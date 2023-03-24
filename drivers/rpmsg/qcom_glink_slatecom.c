@@ -977,7 +977,7 @@ static void glink_slatecom_send_close_req(struct glink_slatecom *glink,
 		ret = wait_for_completion_timeout(&channel->close_ack, 2 * HZ);
 		if (!ret)
 			GLINK_ERR(glink, "rx_close_ack timedout[%d]:[%d]\n",
-				 channel->rcid, channel->lcid);
+				 channel->lcid, channel->rcid);
 	}
 }
 
@@ -1320,6 +1320,7 @@ static void glink_slatecom_rx_close_ack(struct glink_slatecom *glink,
 	idr_remove(&glink->lcids, channel->lcid);
 	channel->lcid = 0;
 	mutex_unlock(&glink->idr_lock);
+	complete_all(&channel->close_ack);
 
 	/* Decouple the potential rpdev from the channel */
 	if (channel->rpdev) {
@@ -1329,7 +1330,6 @@ static void glink_slatecom_rx_close_ack(struct glink_slatecom *glink,
 
 		rpmsg_unregister_device(glink->dev, &chinfo);
 	}
-	complete_all(&channel->close_ack);
 	channel->rpdev = NULL;
 
 	kref_put(&channel->refcount, glink_slatecom_channel_release);
@@ -2274,7 +2274,6 @@ static int glink_slatecom_probe(struct platform_device *pdev)
 	dev = glink->dev;
 	dev->of_node = pdev->dev.of_node;
 	dev->release = glink_slatecom_release;
-	dev_set_name(dev, "%s", dev->of_node->name);
 	dev_set_drvdata(dev, glink);
 
 	ret = of_property_read_string(dev->of_node, "label", &glink->name);
