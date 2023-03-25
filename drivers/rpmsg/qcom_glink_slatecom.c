@@ -436,17 +436,11 @@ static void tx_wakeup_worker(struct glink_slatecom *glink)
 	mutex_lock(&glink->tx_avail_lock);
 	__pm_stay_awake(glink->ws);
 
-	do {
-		rc = slatecom_reg_read(glink->slatecom_handle, SLATECOM_REG_FIFO_FILL, 1,
-			&fifo_fill);
-		if (rc < 0) {
-			GLINK_ERR(glink, "%s: Error %d receiving data\n",
-							__func__, rc);
-			if (rc == -ECANCELED)
-				usleep_range(TX_WAIT_US, TX_WAIT_US + 1000);
-		}
-	} while (rc == -ECANCELED);
-
+	rc = slatecom_reg_read(glink->slatecom_handle, SLATECOM_REG_FIFO_FILL, 1,
+		&fifo_fill);
+	if (rc < 0)
+		GLINK_ERR(glink, "%s: Error %d receiving data\n",
+					__func__, rc);
 	__pm_relax(glink->ws);
 
 	glink->fifo_fill.tx_avail = fifo_fill.tx_avail;
@@ -550,20 +544,13 @@ static void glink_slatecom_send_read_notify(struct glink_slatecom *glink)
 
 	GLINK_INFO(glink, "Cmd size in words = %d\n", sizeof(msg)/WORD_SIZE);
 
-	do {
-		ret = slatecom_fifo_write(glink->slatecom_handle, sizeof(msg)/WORD_SIZE,
-									&msg);
-		if (ret < 0) {
-			GLINK_ERR(glink, "%s: Error %d writing data\n",
-								__func__, ret);
-			if (ret == -ECANCELED) {
-                                usleep_range(TX_WAIT_US, TX_WAIT_US + 1000);
-			} else {
-				return;
-			}
-		}
-	} while (ret == -ECANCELED);
-
+	ret = slatecom_fifo_write(glink->slatecom_handle, sizeof(msg)/WORD_SIZE,
+								&msg);
+	if (ret < 0) {
+		GLINK_ERR(glink, "%s: Error %d writing data\n",
+							__func__, ret);
+		return;
+	}
 
 	glink_slatecom_update_tx_avail(glink, sizeof(msg)/WORD_SIZE);
 }
@@ -810,7 +797,6 @@ static int glink_slatecom_send_final(struct glink_slatecom_channel *channel,
 				struct glink_slatecom_rx_intent *intent,
 				bool wait)
 {
-	int rc;
 	struct glink_slatecom *glink = channel->glink;
 	struct {
 		struct glink_slatecom_msg msg;
@@ -865,17 +851,9 @@ static int glink_slatecom_send_final(struct glink_slatecom_channel *channel,
 			glink->sent_read_notify = false;
 	}
 
-	do {
-		rc = slatecom_ahb_write_bytes(glink->slatecom_handle,
-					(uint32_t)(size_t)(intent->addr + intent->offset),
-					len, data);
-		if (rc < 0) {
-			GLINK_ERR(glink, "%s: Error %d writing data\n",
-							__func__, rc);
-			if (rc == -ECANCELED)
-				usleep_range(TX_WAIT_US, TX_WAIT_US + 1000);
-		}
-	} while (rc == -ECANCELED);
+	slatecom_ahb_write_bytes(glink->slatecom_handle,
+	(uint32_t)(size_t)(intent->addr + intent->offset),
+	len, data);
 
 	intent->offset += len;
 	glink_slatecom_tx_write(glink, &req, sizeof(req));
@@ -2226,23 +2204,12 @@ static void rx_worker(struct kthread_work *work)
 static void glink_slatecom_linkup(struct glink_slatecom *glink)
 {
 	int ret;
-	int rc;
 
 	if (glink->slatecom_status != SLATECOM_LINKUP)
 		return;
 	atomic_set(&glink->in_reset, 0);
-
-	do {
-		rc = slatecom_reg_read(glink->slatecom_handle, SLATECOM_REG_FIFO_SIZE, 1,
-			&glink->fifo_size);
-		if (rc < 0) {
-			GLINK_ERR(glink, "%s: Error %d receiving data\n",
-							__func__, rc);
-			if (rc == -ECANCELED)
-				usleep_range(TX_WAIT_US, TX_WAIT_US + 1000);
-		}
-	} while (rc == -ECANCELED);
-
+	slatecom_reg_read(glink->slatecom_handle, SLATECOM_REG_FIFO_SIZE, 1,
+				&glink->fifo_size);
 	mutex_lock(&glink->tx_avail_lock);
 	glink->fifo_fill.tx_avail = glink->fifo_size.to_master;
 	mutex_unlock(&glink->tx_avail_lock);
