@@ -1061,10 +1061,10 @@ static int haptics_get_closeloop_lra_period_v2(
 	tlra_cl_err_sts =
 		((val[0] & TLRA_CL_ERR_MSB_MASK) << 8) | val[1];
 
-	dev_dbg(chip->dev, "rc_clk_cal = %u, auto_res_done = %d\n",
-			rc_clk_cal, auto_res_done);
+	dev_err(chip->dev, "in_boot = %d,rc_clk_cal = %u, auto_res_done = %d,cal_tlra_cl_sts=%#x\n",
+			in_boot,rc_clk_cal, auto_res_done,cal_tlra_cl_sts);
 
-	if (rc_clk_cal == CAL_RC_CLK_DISABLED_VAL && !auto_res_done) {
+	if ((rc_clk_cal == CAL_RC_CLK_DISABLED_VAL && !auto_res_done)||(cal_tlra_cl_sts==0)) {
 		/* TLRA_CL_ERR(us) = TLRA_CL_ERR_STS * 1.667 us */
 		tmp = tlra_cl_err_sts * TLRA_AUTO_RES_ERR_NO_CAL_STEP_PSEC;
 		dev_dbg(chip->dev, "tlra_cl_err_sts = %#x\n", tlra_cl_err_sts);
@@ -4745,7 +4745,6 @@ static int haptics_probe(struct platform_device *pdev)
 	input_dev = devm_input_allocate_device(&pdev->dev);
 	if (!input_dev)
 		return -ENOMEM;
-	dev_err(chip->dev, "haptics_probe start1\n");
 	chip->dev = &pdev->dev;
 	chip->regmap = dev_get_regmap(chip->dev->parent, NULL);
 	if (!chip->regmap) {
@@ -4848,7 +4847,6 @@ static int haptics_probe(struct platform_device *pdev)
 	if (rc < 0)
 		dev_err(chip->dev, "Creating debugfs failed, rc=%d\n", rc);
 #endif
-	dev_err(chip->dev, "haptics_probe end\n");
 	return 0;
 destroy_ff:
 	input_ff_destroy(chip->input_dev);
