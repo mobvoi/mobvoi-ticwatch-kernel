@@ -1074,7 +1074,13 @@ static int haptics_get_closeloop_lra_period_v2(
 
 	dev_err(chip->dev, "in_boot = %d,rc_clk_cal = %u, auto_res_done = %d,cal_tlra_cl_sts=%#x\n",
 			in_boot,rc_clk_cal, auto_res_done,cal_tlra_cl_sts);
-
+	
+	if((cal_tlra_cl_sts==0)||(auto_res_done==0))//vib cali no success
+	{
+		dev_err(chip->dev, "auto cali error,use default 250hz !\n");
+		config->cl_t_lra_us = USEC_PER_SEC/250;
+		return 0;
+	}
 	if ((rc_clk_cal == CAL_RC_CLK_DISABLED_VAL && !auto_res_done)||(cal_tlra_cl_sts==0)) {
 		/* TLRA_CL_ERR(us) = TLRA_CL_ERR_STS * 1.667 us */
 		tmp = tlra_cl_err_sts * TLRA_AUTO_RES_ERR_NO_CAL_STEP_PSEC;
