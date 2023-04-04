@@ -26,6 +26,8 @@
 #include <linux/types.h>
 #include <linux/uaccess.h>
 #include <linux/qpnp/qpnp-pbs.h>
+#include <linux/jiffies.h>
+#include <linux/workqueue.h>
 
 /* status register definitions in HAPTICS_CFG module */
 #define HAP_CFG_REVISION1_REG			0x00
@@ -149,6 +151,9 @@
 #define HAP_CFG_AUTORES_ERR_RECOVERY_REG	0x64
 #define EN_HW_RECOVERY_BIT			BIT(1)
 #define SW_ERR_DRV_FREQ_BIT			BIT(0)
+#define HAP_CFG_ISC_CFG_REG 0x65
+#define ILIM_CC_EN_BIT BIT(7)
+#define ILIM_CC_EN_BIT_VAL 1
 
 #define HAP_CFG_FAULT_CLR_REG			0x66
 #define SC_CLR_BIT				BIT(2)
@@ -180,6 +185,11 @@
 #define CAL_RC_CLK_DISABLED_VAL			0
 #define CAL_RC_CLK_AUTO_VAL			1
 #define CAL_RC_CLK_MANUAL_VAL			2
+#define HAP_CFG_ISC_CFG2_REG 0x77
+#define EN_SC_DET_P_HAP520_MV_BIT BIT(6)
+#define EN_SC_DET_N_HAP520_MV_BIT BIT(5)
+#define ISC_THRESH_HAP520_MV_MASK GENMASK(2, 0)
+#define ISC_THRESH_HAP520_MV_140MA 0x01
 
 /* These registers are only applicable for PM5100 */
 #define HAP_CFG_HW_CONFIG_REG			0x0D
@@ -509,6 +519,7 @@ struct haptics_chip {
 	struct haptics_effect		*custom_effect;
 	struct haptics_play_info	play;
 	struct dentry			*debugfs_dir;
+	struct delayed_work stop_work;
 	struct regulator_dev		*swr_slave_rdev;
 	struct nvmem_cell		*cl_brake_nvmem;
 	struct nvmem_device		*hap_cfg_nvmem;
@@ -1166,7 +1177,7 @@ static int haptics_get_closeloop_lra_period_v2(
 				rc_clk_cal);
 		return -EINVAL;
 	}
-
+	
 	return 0;
 }
 
@@ -2386,25 +2397,39 @@ static u8 get_direct_play_max_amplitude(struct haptics_chip *chip)
 	dev_dbg(chip->dev, "max amplitude for direct play: %#x\n", amplitude);
 	return (u8)amplitude;
 }
+static void haptics_stop_constant_effect_play(struct work_struct *work)
+{
+ 	struct haptics_chip *chip = container_of(work, struct haptics_chip, stop_work.work);
+ 	int rc = 0;
+
+ 	rc = haptics_enable_play(chip, false);
+ 	if (rc < 0)
+ 		dev_err(chip->dev, "stop constant effect play failed");
+
+ 	rc = haptics_enable_hpwr_vreg(chip, false);
+ 	if (rc < 0)
+	 	dev_err(chip->dev, "disable hpwr_vreg failed");
+}
 
 static int haptics_upload_effect(struct input_dev *dev,
 		struct ff_effect *effect, struct ff_effect *old)
 {
 	struct haptics_chip *chip = input_get_drvdata(dev);
-	u32 length_us, tmp;
+	u32 length_ms, tmp;
 	s16 level;
 	u8 amplitude;
 	int rc = 0;
 
 	switch (effect->type) {
 	case FF_CONSTANT:
-		length_us = effect->replay.length * USEC_PER_MSEC;
+		length_ms = effect->replay.length;
 		level = effect->u.constant.level;
 		tmp = get_direct_play_max_amplitude(chip);
 		tmp *= level;
 		amplitude = tmp / 0x7fff;
-		dev_dbg(chip->dev, "upload constant effect, length = %dus, amplitude = %#x\n",
-				length_us, amplitude);
+		dev_dbg(chip->dev, "upload constant effect, length = %dms, amplitude = %#x\n",
+				length_ms, amplitude);
+		schedule_delayed_work(&chip->stop_work, msecs_to_jiffies(length_ms));
 		haptics_load_constant_effect(chip, amplitude);
 		if (rc < 0) {
 			dev_err(chip->dev, "set direct play failed, rc=%d\n",
@@ -2530,6 +2555,7 @@ static int haptics_erase(struct input_dev *dev, int effect_id)
 	int rc;
 
 	mutex_lock(&play->lock);
+	cancel_delayed_work_sync(&chip->stop_work);
 	if ((play->pattern_src == FIFO) &&
 			atomic_read(&play->fifo_status.is_busy)) {
 		if (atomic_read(&play->fifo_status.written_done) == 0) {
@@ -4347,22 +4373,35 @@ static int haptics_pbs_trigger_isc_config(struct haptics_chip *chip)
 }
 
 #define MAX_SWEEP_STEPS		5
-#define MAX_IMPEDANCE_MOHM	40000
-#define MIN_ISC_MA		250
 #define MIN_DUTY_MILLI_PCT	0
 #define MAX_DUTY_MILLI_PCT	100000
 #define LRA_CONFIG_REGS		3
 static u32 get_lra_impedance_capable_max(struct haptics_chip *chip)
 {
-	u32 mohms = MAX_IMPEDANCE_MOHM;
-
-	if (chip->clamp_at_5v)
-		mohms = MAX_IMPEDANCE_MOHM / 2;
-
+	u32 mohms;
+	u32 max_vmax_mv, min_isc_ma;
+	
+	switch (chip->pmic_type) {
+	case PM8350B:
+		min_isc_ma = 250;
+		if (chip->clamp_at_5v)
+			max_vmax_mv = 5000;
+		else
+			max_vmax_mv = 10000;
+		break;
+	case PM5100:
+		max_vmax_mv = 5000;
+		min_isc_ma = 140;
+		break;
+	default:
+		return 0;
+	}
+	
+	mohms = (max_vmax_mv * 1000) / min_isc_ma;
 	if (is_haptics_external_powered(chip))
-		mohms = (chip->hpwr_voltage_mv * 1000) / MIN_ISC_MA;
-
-	dev_dbg(chip->dev, "LRA impedance capable max: %u mohms\n", mohms);
+		mohms = (chip->hpwr_voltage_mv * 1000) / min_isc_ma;
+	
+	dev_info(chip->dev, "LRA impedance capable max: %u mohms", mohms);
 	return mohms;
 }
 
@@ -4375,7 +4414,7 @@ static int haptics_detect_lra_impedance(struct haptics_chip *chip)
 		{ HAP_CFG_VMAX_HDRM_REG, 0x00 },
 	};
 	struct haptics_reg_info backup[LRA_CONFIG_REGS];
-	u8 val;
+	u8 val, cfg1, cfg2, reg1, reg2, mask1, mask2, val1, val2;
 	u32 duty_milli_pct, low_milli_pct, high_milli_pct;
 	u32 amplitude, lra_min_mohms, lra_max_mohms, capability_mohms;
 
@@ -4393,13 +4432,47 @@ static int haptics_detect_lra_impedance(struct haptics_chip *chip)
 			return rc;
 	}
 
-	/* Trigger PBS to config 250mA ISC setting */
-	rc = haptics_pbs_trigger_isc_config(chip);
-	if (rc < 0)
-		return rc;
+	 if (chip->pmic_type == PM8350B) {
+		/* Trigger PBS to config 250mA ISC setting */
+		rc = haptics_pbs_trigger_isc_config(chip);
+		if (rc < 0)
+			return rc;
+	 } else {
+	 /* Config ISC_CFG settings for LRA impedance_detection */
+	 switch (chip->pmic_type) {
+	 case PM5100:
+	 	reg1 = HAP_CFG_ISC_CFG_REG;
+	 	mask1 = ILIM_CC_EN_BIT;
+	 	val1 = !ILIM_CC_EN_BIT_VAL;
+	 	reg2 = HAP_CFG_ISC_CFG2_REG;
+		mask2 = EN_SC_DET_P_HAP520_MV_BIT | EN_SC_DET_N_HAP520_MV_BIT | ISC_THRESH_HAP520_MV_MASK;
+	 	val2 = EN_SC_DET_P_HAP520_MV_BIT| EN_SC_DET_N_HAP520_MV_BIT| ISC_THRESH_HAP520_MV_140MA;
+	 	break;
+	 default:
+	 	dev_err(chip->dev, "unsupported HW type: %d", chip->pmic_type);
+	 	return -EOPNOTSUPP;
+	 }
+	 /* save ISC_CFG default settings */
+	 rc = haptics_read(chip, chip->cfg_addr_base, reg1, &cfg1, 1);
+ 	 if (rc < 0)
+ 		return rc;
 
+ 	 rc = haptics_read(chip, chip->cfg_addr_base, reg2, &cfg2, 1);
+ 	 if (rc < 0)
+ 		return rc;
+ 	 /* update ISC_CFG settings for the detection */
+ 	rc = haptics_masked_write(chip, chip->cfg_addr_base, reg1, mask1, val1);
+ 	if (rc < 0)
+ 		return rc;
+ 	rc = haptics_masked_write(chip, chip->cfg_addr_base, reg2, mask2, val2);
+ 	if (rc < 0)
+ 		goto restore;
+ 	}
 	/* Set square drive waveform, 10V Vmax, no HDRM */
 	for (i = 0; i < LRA_CONFIG_REGS; i++) {
+	/* PM5100 has 6V Vmax so update the setting for it */
+ 	if (chip->pmic_type == PM5100 && lra_config[i].addr == HAP_CFG_VMAX_REG)
+	 	lra_config[i].val = 0x78;
 		rc = haptics_write(chip, chip->cfg_addr_base,
 				lra_config[i].addr, &lra_config[i].val, 1);
 		if (rc < 0)
@@ -4473,10 +4546,21 @@ restore:
 	if (rc < 0)
 		return rc;
 
+	 if (chip->pmic_type == PM8350B) {
 	/* Trigger PBS to restore 1500mA ISC setting */
 	rc = haptics_pbs_trigger_isc_config(chip);
 	if (rc < 0)
 		return rc;
+	 } else {
+	 /* restore ISC_CFG settings to default */
+	 rc = haptics_write(chip, chip->cfg_addr_base, reg1, &cfg1, 1);
+	 if (rc < 0)
+	 	return rc;
+	
+	 rc = haptics_write(chip, chip->cfg_addr_base, reg2, &cfg2, 1);
+	 if (rc < 0)
+	 	return rc;
+	 }
 
 	/* Restore driver waveform, Vmax, HDRM settings */
 	for (i = 0; i < LRA_CONFIG_REGS; i++) {
@@ -4794,7 +4878,7 @@ static int haptics_probe(struct platform_device *pdev)
 	mutex_init(&chip->play.lock);
 	disable_irq_nosync(chip->fifo_empty_irq);
 	chip->fifo_empty_irq_en = false;
-
+	INIT_DELAYED_WORK(&chip->stop_work, haptics_stop_constant_effect_play);
 	atomic_set(&chip->play.fifo_status.is_busy, 0);
 	atomic_set(&chip->play.fifo_status.written_done, 0);
 	atomic_set(&chip->play.fifo_status.cancelled, 0);
@@ -4864,7 +4948,7 @@ static int haptics_remove(struct platform_device *pdev)
 #ifdef CONFIG_DEBUG_FS
 	debugfs_remove_recursive(chip->debugfs_dir);
 #endif
-	input_ff_destroy(chip->input_dev);
+	input_unregister_device(chip->input_dev);
 	dev_set_drvdata(chip->dev, NULL);
 
 	return 0;
