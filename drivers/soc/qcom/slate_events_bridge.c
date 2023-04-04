@@ -458,7 +458,7 @@ void slate_event_set_tn_flag(uint32_t flag)
 {
 	struct seb_priv *dev =
 		container_of(seb_drv, struct seb_priv, lhndl);
-	
+
 	mutex_lock(&dev->tn_flag_mutex);
 	tn_flag=flag;
 	mutex_unlock(&dev->tn_flag_mutex);
@@ -471,7 +471,7 @@ uint32_t slate_event_get_tn_flag(void)
 	uint32_t data;
 	struct seb_priv *dev =
 		container_of(seb_drv, struct seb_priv, lhndl);
-	
+
 	mutex_lock(&dev->tn_flag_mutex);
 	data=tn_flag;
 	mutex_unlock(&dev->tn_flag_mutex);
@@ -479,6 +479,8 @@ uint32_t slate_event_get_tn_flag(void)
 	return data;
 }
 EXPORT_SYMBOL(slate_event_get_tn_flag);
+
+extern void set_seb_fstream_rx_size(int len);
 
 void handle_rx_event(struct seb_priv *dev, void *rx_event_buf, int len)
 {
@@ -514,6 +516,13 @@ void handle_rx_event(struct seb_priv *dev, void *rx_event_buf, int len)
 		printk("slate-tn TN_OFF_COMPLETED:%d\n",data);
 		slate_event_set_tn_flag(0);
 		return;
+	}
+	else if(event_header->opcode == GMI_SLATE_EVENT_FSTREAM)
+	{
+		if(len > HED_EVENT_DATA_TIME_LEN)
+			set_seb_fstream_rx_size(len - HED_EVENT_DATA_TIME_LEN);
+		else
+			set_seb_fstream_rx_size(0);
 	}
 
 	rx_notif = kzalloc(sizeof(struct seb_buf_list), GFP_ATOMIC);
