@@ -20,7 +20,7 @@
 #define _LINUX_BT541_TS_H
 
 //#include "zinitix_touch_zxt_firmware.h"
-#include "zinitix_touch_zxt_firmware_v080307.h"
+#include "zinitix_touch_zxt_firmware_v080309.h"
 /*used for fw compatible*/
 #define TSP_TYPE_COUNT	1
 
@@ -94,13 +94,13 @@
 
 #define zinitix_printk(fmt, args...) \
 	do { \
-		printk(KERN_ERR "bt541_ts[%-18s:%5d] " fmt, \
+		printk(KERN_ERR "bt541_ts_device[%-18s:%5d] " fmt, \
 				__func__, __LINE__, ## args); \
 	} while (0);
 
 #define bt541_err(fmt) \
 	do { \
-		pr_err("bt541_ts : %s " fmt, __func__); \
+		pr_err("bt541_ts_device : %s " fmt, __func__); \
 	} while (0);
 
 struct bt541_ts_platform_data {
