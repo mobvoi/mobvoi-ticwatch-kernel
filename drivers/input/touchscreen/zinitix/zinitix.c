@@ -1427,8 +1427,10 @@ static bool ts_check_need_upgrade(struct bt541_ts_info *info,
 
 
 	zinitix_printk("cur version = 0x%x, new version = 0x%x\n",cur_version, new_version);
-	if(cur_version > 0xFF)
+	if(cur_version > 0xFF || cur_version == 0x12){
+		dev_err(&info->client->dev,"current firmware abnormal,need upgrade");
 		return true;
+	}
 	if (cur_version < new_version)
 			return true;
 	else if (cur_version > new_version)
