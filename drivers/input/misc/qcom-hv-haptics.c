@@ -1077,11 +1077,11 @@ static int haptics_get_closeloop_lra_period_v2(
 	
 	if((cal_tlra_cl_sts==0)||(auto_res_done==0))//vib cali no success
 	{
-		dev_err(chip->dev, "auto cali error,use default 250hz !\n");
-		config->cl_t_lra_us = USEC_PER_SEC/250;
+		dev_err(chip->dev, "auto cali error(frequency is 0),use default 245hz !\n");
+		config->cl_t_lra_us = USEC_PER_SEC/245;
 		return 0;
 	}
-	if ((rc_clk_cal == CAL_RC_CLK_DISABLED_VAL && !auto_res_done)||(cal_tlra_cl_sts==0)) {
+	if ((rc_clk_cal == CAL_RC_CLK_DISABLED_VAL && !auto_res_done)) {
 		/* TLRA_CL_ERR(us) = TLRA_CL_ERR_STS * 1.667 us */
 		tmp = tlra_cl_err_sts * TLRA_AUTO_RES_ERR_NO_CAL_STEP_PSEC;
 		dev_dbg(chip->dev, "tlra_cl_err_sts = %#x\n", tlra_cl_err_sts);
@@ -1168,6 +1168,12 @@ static int haptics_get_closeloop_lra_period_v2(
 		if (!config->t_lra_us || !config->cl_t_lra_us)
 			return -EINVAL;
 
+		if((config->cl_t_lra_us< (USEC_PER_SEC/255))||(config->cl_t_lra_us > (USEC_PER_SEC/235)))
+		{
+			dev_err(chip->dev, "auto cali error(frequency abnormal),use default 245hz !\n");
+			config->cl_t_lra_us = USEC_PER_SEC/245;
+		}
+		
 		/*
 		 * RC_CLK_CAL_COUNT =
 		 *	600 * (CAL_TLRA_CL_STS_AUTO_CAL / LAST_GOOD_TLRA_CL_STS)
