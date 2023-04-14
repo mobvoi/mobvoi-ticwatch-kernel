@@ -205,6 +205,20 @@ static int send_uevent(struct slate_event *pce)
 	return kobject_uevent_env(&dev_ret->kobj, KOBJ_CHANGE, envp);
 }
 
+
+#define FROM_TN_HAVE_DATA_READ 20
+int send_uevent_from_tn(void)
+{
+	char event_string[32];
+	char *envp[2] = { event_string, NULL };
+
+	snprintf(event_string, ARRAY_SIZE(event_string),
+			"SLATE_EVENT=%d", FROM_TN_HAVE_DATA_READ);
+	return kobject_uevent_env(&dev_ret->kobj, KOBJ_CHANGE, envp);
+}
+EXPORT_SYMBOL(send_uevent_from_tn);
+
+
 void slatecom_intf_notify_glink_channel_state(bool state)
 {
 	struct slatedaemon_priv *dev =

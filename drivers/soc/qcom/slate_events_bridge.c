@@ -481,6 +481,7 @@ uint32_t slate_event_get_tn_flag(void)
 EXPORT_SYMBOL(slate_event_get_tn_flag);
 
 extern void set_seb_fstream_rx_size(int len);
+extern int send_uevent_from_tn(void);
 
 void handle_rx_event(struct seb_priv *dev, void *rx_event_buf, int len)
 {
@@ -515,6 +516,13 @@ void handle_rx_event(struct seb_priv *dev, void *rx_event_buf, int len)
 		uint32_t data= *(uint32_t *)(rx_event_buf + sizeof(struct gmi_header));
 		printk("slate-tn TN_OFF_COMPLETED:%d\n",data);
 		slate_event_set_tn_flag(0);
+		return;
+	}
+	else if(event_header->opcode == GMI_SLATE_EVENT_TN_HAVE_DATA)
+	{
+		uint32_t data= *(uint32_t *)(rx_event_buf + sizeof(struct gmi_header));
+		printk("slate-tn TN_HAVE_DATA:%d\n",data);
+		send_uevent_from_tn();
 		return;
 	}
 	else if(event_header->opcode == GMI_SLATE_EVENT_FSTREAM)
