@@ -186,8 +186,8 @@ int slate_mobvoi_rpc_tx_msg_ext(void  *msg, size_t len)
     int ret=0;
 	if(!slatecom_is_spi_active_ext())
 	{
-		pr_err("spi is inactive,slate_mobvoi_rpc_tx_msg_ext return\n");
-		return -1;
+		pr_err("spi is inactive,slate_mobvoi_rpc_tx_msg_ext warning\n");
+		//return -1;
 	}
 
 	struct slatemobrpc_priv *dev =
