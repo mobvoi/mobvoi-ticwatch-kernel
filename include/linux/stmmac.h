@@ -214,5 +214,6 @@ struct plat_stmmacenet_data {
 	int (*phy_intr_enable)(void *priv);
 	void (*phy_irq_enable)(void *priv);
 	void (*phy_irq_disable)(void *priv);
+	bool sph_disable;
 };
 #endif

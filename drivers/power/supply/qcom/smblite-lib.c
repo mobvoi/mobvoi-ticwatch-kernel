@@ -3291,7 +3291,7 @@ void smblite_lib_rerun_apsd(struct smb_charger *chg)
 		smblite_lib_err(chg, "Couldn't re-run APSD rc=%d\n", rc);
 }
 
-static int smblite_lib_rerun_apsd_if_required(struct smb_charger *chg)
+int smblite_lib_rerun_apsd_if_required(struct smb_charger *chg)
 {
 	union power_supply_propval val;
 	int rc;
@@ -4212,11 +4212,9 @@ static void jeita_update_work(struct work_struct *work)
 		goto out;
 	}
 
-	/* if BMS is not ready, defer the work */
-	if (IS_ERR_OR_NULL(chg->iio_chan_list_qg)){
-		smblite_lib_err(chg, "iio_chan_list_qg not available\n");
-		//return;
-	}
+	/* if BMS is not ready and remote FG does not exist, defer the work */
+	if ((IS_ERR_OR_NULL(chg->iio_chan_list_qg)) && (!chg->is_fg_remote))
+		return;
 
 	rc = smblite_lib_get_prop_from_bms(chg,
 			SMB5_QG_RESISTANCE_ID, &val.intval);

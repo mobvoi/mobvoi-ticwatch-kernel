@@ -26,7 +26,7 @@
 #include "smblite-remote-bms.h"
 
 static struct smblite_remote_bms *the_bms;
-static int received_first_data;
+
 
 #define DEBUG_BATT_ID_LOW	6000
 #define DEBUG_BATT_ID_HIGH	8500
@@ -130,8 +130,9 @@ int remote_bms_get_prop(int channel, int *val, int src)
 	case SMB5_QG_CAPACITY:
 		if (is_debug_batt_id(the_bms)) {
 			*val = REMOTE_FG_DEBUG_BATT_SOC;
-		} else if (!the_bms->is_seb_up || !received_first_data) {
-			pr_err("Wait for remote GLINK to be up\n");
+		} else if (!the_bms->is_seb_up || !the_bms->received_first_data) {
+			pr_debug("Waiting for Co-Proc Up: %d / QBG Data : %d\n",
+				the_bms->is_seb_up, the_bms->received_first_data);
 			return -EAGAIN;
 		} else{
 			rc = bms_get_buffered_data(channel, val, src);
@@ -379,8 +380,11 @@ static void rx_data_work(struct work_struct *work)
 		};
 	}
 
-	received_first_data = 1;
-	pr_info("First SOC reported is :%d\n", bms->rx_params[CAPACITY].data);
+	if (!bms->received_first_data) {
+		pr_debug("First SOC reported from Co-Proc : %d\n",
+				bms->rx_params[CAPACITY].data);
+		bms->received_first_data = true;
+	}
 
 	rc = remote_bms_handle_recharge(bms);
 	if (rc < 0) {
@@ -784,6 +788,7 @@ int remote_bms_init(struct smblite_remote_bms *bms)
 	}
 
 	bms->is_seb_up = false;
+	bms->received_first_data = false;
 	mutex_init(&bms->data_lock);
 	mutex_init(&bms->tx_lock);
 	mutex_init(&bms->rx_lock);
