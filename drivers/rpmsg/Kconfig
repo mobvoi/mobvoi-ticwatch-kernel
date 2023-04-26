@@ -76,8 +76,6 @@ config RPMSG_VIRTIO
 	select RPMSG
 	select VIRTIO
 
-
-
 config MSM_RPM_SMD
 	tristate "RPM driver using SMD protocol"
 	help
