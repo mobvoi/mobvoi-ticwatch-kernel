@@ -84,6 +84,7 @@ struct seb_priv {
 	struct work_struct slate_down_work;
 	struct work_struct glink_up_work;
 	struct work_struct slate_notify_work;
+	struct work_struct tn_sync_work;
 	void *slate_subsys_handle;
 	struct completion wrk_cmplt;
 	struct completion slate_lnikup_cmplt;
@@ -264,6 +265,21 @@ static void seb_notify_work(struct work_struct *work)
 		}
 	}
 	pr_debug("notifier call successful\n");
+}
+
+extern int send_uevent_from_tn(void);
+static void seb_tn_sync_work(struct work_struct *work)
+{
+
+	struct seb_priv *dev =
+		container_of(work, struct seb_priv, tn_sync_work);
+
+	if(!dev)
+	{
+		pr_debug("seb_tn_sync_work dev err\n");
+		return; 
+	}
+	send_uevent_from_tn();
 }
 
 static int seb_tx_msg(struct seb_priv *dev, void  *msg, size_t len, bool wait_for_resp)
@@ -481,7 +497,7 @@ uint32_t slate_event_get_tn_flag(void)
 EXPORT_SYMBOL(slate_event_get_tn_flag);
 
 extern void set_seb_fstream_rx_size(int len);
-extern int send_uevent_from_tn(void);
+
 
 void handle_rx_event(struct seb_priv *dev, void *rx_event_buf, int len)
 {
@@ -522,7 +538,7 @@ void handle_rx_event(struct seb_priv *dev, void *rx_event_buf, int len)
 	{
 		uint32_t data= *(uint32_t *)(rx_event_buf + sizeof(struct gmi_header));
 		printk("slate-tn TN_HAVE_DATA:%d\n",data);
-		send_uevent_from_tn();
+		queue_work(dev->seb_wq, &dev->tn_sync_work);
 		return;
 	}
 	else if(event_header->opcode == GMI_SLATE_EVENT_FSTREAM)
@@ -660,6 +676,8 @@ static int seb_init(struct seb_priv *dev)
 	INIT_WORK(&dev->slate_up_work, seb_slateup_work);
 	INIT_WORK(&dev->slate_down_work, seb_slatedown_work);
 	INIT_WORK(&dev->slate_notify_work, seb_notify_work);
+	INIT_WORK(&dev->tn_sync_work, seb_tn_sync_work);
+	
 	INIT_LIST_HEAD(&dev->rx_list);
 	spin_lock_init(&dev->rx_lock);
 
