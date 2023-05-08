@@ -76,7 +76,7 @@
 #define SPI_FREQ_1MHZ	1000000
 #define SPI_FREQ_40MHZ	40000000
 
-#define MAX_RETRY 1
+#define MAX_RETRY 5
 #define START_HEALTH_CHECK 3
 static uint32_t  hc_counter;
 
