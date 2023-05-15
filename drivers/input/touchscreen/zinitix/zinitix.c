@@ -2340,15 +2340,11 @@ static int bt541_ts_resume(struct device *dev)
 	info->work_state = RESUME;
 
 	//disable_irq(info->irq);
-	if (!info->enable_wakeup) {
-		zinitix_hw_reset(info,true);
-		mdelay(CHIP_ON_DELAY);
-	}
-
 
 	//Link  modified  on  20190703//Resume reset
 	//resume_hw_reset(info,true);
-	write_cmd(client, 0x0FF8);
+	zinitix_hw_reset(info,true);
+	//write_cmd(client, 0x0FF8);
 	mdelay(50);
 	//resume sequence
 	if(!bt541_power_sequence(info)){
