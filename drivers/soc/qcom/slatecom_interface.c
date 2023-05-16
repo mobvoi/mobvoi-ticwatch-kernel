@@ -601,6 +601,9 @@ static long slate_com_ioctl(struct file *filp,
 		ret = 0;
 		if (dev->pil_h) {
 			pr_err("slate is already loaded\n");
+			pr_err("[offlining]bug on\n");
+			pr_err("trigger reboot\n");
+			BUG();
 			ret = -EFAULT;
 			break;
 		}
