@@ -375,6 +375,8 @@ static void get_chip_name(void *device_data);
 static void get_x_num(void *device_data);
 static void get_y_num(void *device_data);
 static void not_support_cmd(void *device_data);
+static int bt541_ts_resume(struct device *dev);
+
 
 /* Vendor dependant command */
 static void run_reference_read(void *device_data);
@@ -437,6 +439,7 @@ static u16 m_optional_mode = 0;
 #if ESD_TIMER_INTERVAL
 static struct workqueue_struct *esd_tmr_workqueue;
 #endif
+static struct workqueue_struct *resume_workqueue;
 
 struct coord {
 	u16	x;
@@ -541,7 +544,7 @@ struct bt541_ts_info {
 	void (*register_cb) (struct tsp_callbacks *tsp_cb);
 	struct tsp_callbacks callbacks;
 #endif
-
+	struct work_struct		resume_work;
 #if ESD_TIMER_INTERVAL
 	struct work_struct		tmr_work;
 	struct timer_list		esd_timeout_tmr;
@@ -1042,6 +1045,19 @@ out:
 
 	return true;
 }
+
+static void ts_resume_work(struct work_struct *work)
+{
+	struct bt541_ts_info *info =
+			container_of(work, struct bt541_ts_info, resume_work);
+	if(!info)
+	{
+		zinitix_printk("ts_resume_work dev err\n");
+		return; 
+	}
+	bt541_ts_resume(&misc_touch_dev->client->dev);
+}
+
 
 #if ESD_TIMER_INTERVAL
 static void esd_timeout_handler(unsigned long data)
@@ -2396,7 +2412,7 @@ static int bt541_ts_suspend(struct device *dev)
 #if ESD_TIMER_INTERVAL
 	flush_work(&info->tmr_work);
 #endif
-
+	flush_work(&info->resume_work);
 	down(&info->work_lock);
 	if (info->work_state != NOTHING
 		&& info->work_state != SUSPEND) {
@@ -4033,7 +4049,8 @@ static int zinitix_notifier_callback(struct notifier_block *self,
 			last_power_state=panel_power_state;
 		}
 		if (event == DRM_PANEL_EVENT_BLANK) {
-			bt541_ts_resume(&misc_touch_dev->client->dev);
+			//bt541_ts_resume(&misc_touch_dev->client->dev);
+			queue_work(resume_workqueue, &misc_touch_dev->resume_work);
 		}
 
 	} else if (*blank == DRM_PANEL_BLANK_POWERDOWN || *blank == DRM_PANEL_BLANK_LP ) {
@@ -4306,7 +4323,15 @@ static int bt541_ts_probe(struct i2c_client *client,
 	info->work_state = NOTHING;
 	sema_init(&info->work_lock, 1);
 	info->enable_wakeup = true;
-
+	
+	INIT_WORK(&info->resume_work, ts_resume_work);
+	resume_workqueue = create_singlethread_workqueue("resume_workqueue");
+	if (!resume_workqueue) {
+		dev_err(&client->dev, "Failed to create resume_workqueue work queue\n");
+		ret = -EPERM;
+		goto err_input_register_device2;
+	}
+	
 #if ESD_TIMER_INTERVAL
 	spin_lock_init(&info->lock);
 	INIT_WORK(&info->tmr_work, ts_tmr_work);
@@ -4462,7 +4487,7 @@ static int bt541_ts_remove(struct i2c_client *client)
 #endif
 	destroy_workqueue(esd_tmr_workqueue);
 #endif
-
+	destroy_workqueue(resume_workqueue);
 	if (info->irq)
 		free_irq(info->irq, info);
 
