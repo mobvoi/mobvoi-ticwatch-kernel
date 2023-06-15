@@ -143,6 +143,7 @@ static int slate_mobvoi_rpc_tx_msg(struct slatemobrpc_priv *dev, void  *msg, siz
 	
 	if (!dev->slate_mobvoi_rpc_rpmsg) {
 		pr_err("slatemobrpc-rpmsg is not probed yet, waiting for it to be probed\n");
+		rc = -1;
 		goto err_ret;
 	}
 	rc = slate_mobvoi_rpc_rpmsg_tx_msg(msg, len);
@@ -152,6 +153,7 @@ static int slate_mobvoi_rpc_tx_msg(struct slatemobrpc_priv *dev, void  *msg, siz
 			(rc == 0), msecs_to_jiffies(TIMEOUT_MS));
 	if (rc == 0) {
 		pr_err("failed to send command to SLATE %d\n", rc);
+		rc = -1;
 		goto err_ret;
 	}
 
@@ -161,6 +163,7 @@ static int slate_mobvoi_rpc_tx_msg(struct slatemobrpc_priv *dev, void  *msg, siz
 				 msecs_to_jiffies(TIMEOUT_MS));
 	if (rc == 0) {
 		pr_err("failed to get SLATE response %d\n", rc);
+		rc = -1;
 		goto err_ret;
 	}
 	dev->slate_resp_cmplt = false;
